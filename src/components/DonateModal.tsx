@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, ExternalLink, CreditCard, ShieldCheck, X, CheckCircle2, Sparkles } from 'lucide-react';
+import { Heart, ExternalLink, CreditCard, ShieldCheck, X, Sparkles, Home, Brain, Users, GraduationCap, Building2 } from 'lucide-react';
 
 interface DonateModalProps {
   onClose: () => void;
@@ -8,7 +8,7 @@ interface DonateModalProps {
 export function DonateModal({ onClose }: DonateModalProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(10);
   const [customAmount, setCustomAmount] = useState('15');
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [showBankDetails, setShowBankDetails] = useState(false);
 
   const getFinalAmount = (): number => {
     if (selectedAmount === 'custom') {
@@ -20,32 +20,71 @@ export function DonateModal({ onClose }: DonateModalProps) {
 
   const handleStripeDonate = () => {
     const amount = getFinalAmount();
-    // Use official Stripe payment link or fallback redirect
     const stripeUrl = `https://buy.stripe.com/donate?amount=${amount}&currency=gbp`;
     window.open(stripeUrl, '_blank');
   };
 
   const handleDirectCharityDonate = () => {
-    window.open('https://www.kairoshousing.org.uk/', '_blank');
+    window.open('https://localgiving.org/charity/kairoshousing', '_blank');
   };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card modal-card--donate" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card modal-card--donate-rich" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header modal-header--donate">
           <div className="donate-badge">
-            <Heart size={16} fill="currentColor" /> Voluntary Support & Charity Gift
+            <Heart size={16} fill="currentColor" /> Voluntary Charity Gift & Sanctuary Support
           </div>
-          <button type="button" className="icon-btn" onClick={onClose}><X size={18} /></button>
+          <button type="button" className="icon-btn-light" onClick={onClose}><X size={18} /></button>
         </div>
 
-        <div className="modal-body donate-modal__body">
-          <div className="donate-intro">
-            <h3>Support This App & Gift to Charity</h3>
+        <div className="modal-body donate-modal__body-scroll">
+          {/* Mission Hero Banner */}
+          <div className="charity-mission-hero">
+            <span className="charity-mission-hero__subtitle">PARTNER CHARITY SUPPORT</span>
+            <h3>More Than Just a Roof: Rebuilding Lives with Dignity</h3>
             <p>
-              <strong>Worship Word Video is 100% free</strong> for churches, leaders, and congregations worldwide. 
-              If this app has blessed your worship services and you would like to give back, you can choose to make a voluntary gift to our housing & sanctuary charity partner.
+              Worship Word Video is <strong>100% free</strong> for all churches. 
+              If this app blesses your worship services, consider making a voluntary gift to our housing & sanctuary charity partner.
             </p>
+            <p className="charity-mission-hero__statement">
+              Supporting asylum seekers, refugees, and individuals at risk of homelessness — providing safe accommodation and trauma-informed support to help people rebuild their lives.
+            </p>
+          </div>
+
+          {/* 4 Impact Pillars */}
+          <div className="impact-pillars-grid">
+            <div className="pillar-card">
+              <Home size={18} className="pillar-icon pillar-icon--blue" />
+              <div>
+                <strong>Safe Homes</strong>
+                <p>A secure base where healing and stability begin.</p>
+              </div>
+            </div>
+
+            <div className="pillar-card">
+              <Brain size={18} className="pillar-icon pillar-icon--teal" />
+              <div>
+                <strong>Healing & Dignity</strong>
+                <p>Therapeutic workshops & agency restoration.</p>
+              </div>
+            </div>
+
+            <div className="pillar-card">
+              <Users size={18} className="pillar-icon pillar-icon--purple" />
+              <div>
+                <strong>Connecting to Life</strong>
+                <p>Combating isolation through community & volunteering.</p>
+              </div>
+            </div>
+
+            <div className="pillar-card">
+              <GraduationCap size={18} className="pillar-icon pillar-icon--gold" />
+              <div>
+                <strong>Building a Future</strong>
+                <p>Practical navigation of UK housing, healthcare & education.</p>
+              </div>
+            </div>
           </div>
 
           {/* Option 1: Direct Charity Website Link */}
@@ -53,8 +92,8 @@ export function DonateModal({ onClose }: DonateModalProps) {
             <div className="donate-card__header">
               <span className="donate-card__number">1</span>
               <div>
-                <h4>Donate Directly via Official Charity Page</h4>
-                <p>Support safe accommodation and support for individuals in need.</p>
+                <h4>Donate Directly via Official LocalGiving / Charity Page</h4>
+                <p>Support safe accommodation and monthly sanctuary giving.</p>
               </div>
             </div>
             <button
@@ -76,7 +115,7 @@ export function DonateModal({ onClose }: DonateModalProps) {
               <span className="donate-card__number">2</span>
               <div>
                 <h4>Quick Card Gift via Stripe</h4>
-                <p>Fast, secure payment with Credit Card, Apple Pay, or Google Pay.</p>
+                <p>Fast payment with Credit Card, Apple Pay, or Google Pay.</p>
               </div>
             </div>
 
@@ -126,10 +165,34 @@ export function DonateModal({ onClose }: DonateModalProps) {
               <ShieldCheck size={14} /> 256-Bit SSL Encrypted & Secured by Stripe
             </div>
           </div>
+
+          {/* Option 3: Direct Bank Transfer Accordion */}
+          <div className="donate-card donate-card--bank">
+            <button
+              type="button"
+              className="bank-accordion-toggle"
+              onClick={() => setShowBankDetails(!showBankDetails)}
+            >
+              <span><Building2 size={16} /> Direct Bank Transfer / Standing Order</span>
+              <span className="toggle-text">{showBankDetails ? 'Hide' : 'Show Details'}</span>
+            </button>
+
+            {showBankDetails && (
+              <div className="bank-details-box">
+                <p>You can make a one-off donation or set up a standing order directly through your UK bank:</p>
+                <ul>
+                  <li><strong>Bank:</strong> CAF Bank</li>
+                  <li><strong>Account Name:</strong> Kairos Housing</li>
+                  <li><strong>Sort Code:</strong> 40-52-40</li>
+                  <li><strong>Account Number:</strong> 00035327</li>
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="modal-footer donate-modal__footer">
-          <p>Thank you for supporting worship ministry and homeless sanctuary!</p>
+          <p>Thank you for supporting worship ministry and sanctuary housing!</p>
         </div>
       </div>
     </div>
