@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, ListMusic, Play, RotateCcw, SkipBack, SkipForward, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ListMusic, Play, RotateCcw, SkipBack, SkipForward, Trash2, X, Cloud, Save, LogIn } from 'lucide-react';
 import { YouTubePlayer } from './YouTubePlayer';
 import { isCatalogueWordVideo } from '../data/videoApproval';
+import { useAuth } from '../context/AuthContext';
+import { AuthModal } from './AuthModal';
 import {
   WORSHIP_QUEUE_LIMIT,
   moveWorshipQueueItem,
@@ -13,10 +15,13 @@ interface WorshipQueueProps {
   queue: WorshipQueueItem[];
   onChange: (queue: WorshipQueueItem[]) => void;
   approvedVideoIds: ReadonlySet<string>;
+  onOpenSavedPlaylists?: () => void;
 }
 
-export function WorshipQueue({ queue, onChange, approvedVideoIds }: WorshipQueueProps) {
+export function WorshipQueue({ queue, onChange, approvedVideoIds, onOpenSavedPlaylists }: WorshipQueueProps) {
+  const { user } = useAuth();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const playingItem = playingIndex == null ? null : queue[playingIndex] ?? null;
 
   useEffect(() => {
@@ -48,25 +53,46 @@ export function WorshipQueue({ queue, onChange, approvedVideoIds }: WorshipQueue
           <span className="worship-queue__eyebrow"><ListMusic size={16} /> Worship Word Video Playlist</span>
           <h2 id="worship-queue-title">Service Video Queue ({queue.length}/{WORSHIP_QUEUE_LIMIT})</h2>
         </div>
-        {queue.length > 0 && (
-          <div className="worship-queue__heading-actions">
+
+        <div className="worship-queue__heading-actions">
+          {user ? (
             <button
               type="button"
-              className="worship-queue__btn-secondary"
-              onClick={() => setPlayingIndex(0)}
+              className="worship-queue__btn-cloud"
+              onClick={onOpenSavedPlaylists}
             >
-              <Play size={14} /> Start Singalong
+              <Cloud size={15} /> Saved Playlists
             </button>
+          ) : (
             <button
               type="button"
-              className="worship-queue__btn-icon-danger"
-              onClick={clearQueue}
-              title="Clear Playlist"
+              className="worship-queue__btn-login"
+              onClick={() => setShowAuthModal(true)}
             >
-              <Trash2 size={15} />
+              <LogIn size={14} /> Log In to Save Playlists
             </button>
-          </div>
-        )}
+          )}
+
+          {queue.length > 0 && (
+            <>
+              <button
+                type="button"
+                className="worship-queue__btn-secondary"
+                onClick={() => setPlayingIndex(0)}
+              >
+                <Play size={14} /> Start Singalong
+              </button>
+              <button
+                type="button"
+                className="worship-queue__btn-icon-danger"
+                onClick={clearQueue}
+                title="Clear Playlist"
+              >
+                <Trash2 size={15} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {playingItem && (
@@ -181,6 +207,13 @@ export function WorshipQueue({ queue, onChange, approvedVideoIds }: WorshipQueue
             );
           })}
         </ol>
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          initialTab="signin"
+          onClose={() => setShowAuthModal(false)}
+        />
       )}
     </section>
   );
