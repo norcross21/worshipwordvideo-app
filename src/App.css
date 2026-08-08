@@ -2,18 +2,25 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-serif: 'Cinzel', Georgia, serif;
 
+  --color-brand-navy: #0f256e;
+  --color-brand-navy-dark: #0a194a;
+  
+  --color-brand-teal: #0d9488;
+  --color-brand-teal-light: #ccfbf1;
+  --color-brand-teal-dark: #0f766e;
+
   --color-brand-gold: #d97706;
   --color-brand-gold-light: #fef3c7;
   --color-brand-gold-hover: #b45309;
   
-  --color-bg-main: #f8fafc;
+  --color-bg-main: #faf8f5;
   --color-bg-card: #ffffff;
   --color-bg-sidebar: #ffffff;
   
   --color-border: #e2e8f0;
   --color-border-hover: #cbd5e1;
   
-  --color-text-main: #0f172a;
+  --color-text-main: #1e293b;
   --color-text-muted: #64748b;
   --color-text-light: #94a3b8;
   
@@ -23,8 +30,8 @@
   --color-green: #059669;
   --color-green-bg: #d1fae5;
   
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
   
   --radius-sm: 6px;
@@ -70,18 +77,18 @@ body {
 
 /* Header */
 .app-header {
-  background: var(--color-bg-card);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-brand-navy);
+  color: #ffffff;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 
 .app-header__container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -98,36 +105,38 @@ body {
 .app-header__logo {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, var(--color-brand-gold), #f59e0b);
+  background: linear-gradient(135deg, var(--color-brand-teal), #059669);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
 }
 
 .app-header__title {
   font-family: var(--font-serif);
-  font-size: 1.45rem;
+  font-size: 1.4rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
   line-height: 1.2;
+  color: #ffffff;
+  text-transform: uppercase;
 }
 
 .app-header__subtitle {
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  color: #94a3b8;
 }
 
 .app-header__domain {
-  color: var(--color-brand-gold);
+  color: #38bdf8;
   font-weight: 600;
 }
 
 .app-header__nav {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   overflow-x: auto;
   padding-bottom: 2px;
 }
@@ -140,7 +149,7 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--color-text-muted);
+  color: #cbd5e1;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -149,25 +158,51 @@ body {
 }
 
 .nav-tab:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--color-text-main);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .nav-tab.is-active {
-  background: var(--color-brand-gold-light);
-  color: var(--color-brand-gold-hover);
-  border-color: rgba(217, 119, 6, 0.3);
-  font-weight: 600;
+  background: #ffffff;
+  color: var(--color-brand-navy);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
 }
 
 .playlist-badge {
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
   margin-left: 0.25rem;
+}
+
+.app-header__right-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-donate-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  background: linear-gradient(135deg, #e11d48, #be123c);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(225, 29, 72, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.btn-donate-header:hover {
+  transform: scale(1.03);
 }
 
 /* User Account Header Controls */
@@ -189,9 +224,9 @@ body {
   gap: 0.35rem;
   padding: 0.45rem 0.85rem;
   background: transparent;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-sm);
-  color: var(--color-text-main);
+  color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -199,7 +234,7 @@ body {
 
 .btn-register {
   padding: 0.45rem 0.85rem;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-sm);
@@ -217,10 +252,10 @@ body {
   align-items: center;
   gap: 0.45rem;
   padding: 0.35rem 0.75rem;
-  background: var(--color-bg-main);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
-  color: var(--color-text-main);
+  color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -230,7 +265,7 @@ body {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -257,6 +292,7 @@ body {
   padding: 0.5rem;
   border-bottom: 1px solid var(--color-border);
   font-size: 0.78rem;
+  color: var(--color-text-main);
 }
 
 .user-dropdown__info p {
@@ -293,7 +329,7 @@ body {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  background: #0f172a;
+  background: var(--color-brand-navy);
   color: #ffffff;
   padding: 0.75rem 1.25rem;
   border-radius: var(--radius-md);
@@ -360,8 +396,8 @@ body {
 }
 
 .search-box__input:focus {
-  border-color: var(--color-brand-gold);
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+  border-color: var(--color-brand-teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
 }
 
 .search-box__clear {
@@ -381,7 +417,7 @@ body {
   align-items: center;
   gap: 0.4rem;
   padding: 0.75rem 1.15rem;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-md);
@@ -392,7 +428,7 @@ body {
 }
 
 .btn-add-song:hover {
-  background: var(--color-brand-gold-hover);
+  background: var(--color-brand-teal-dark);
 }
 
 /* Filter Bar */
@@ -441,9 +477,9 @@ body {
 }
 
 .chip.is-active {
-  background: var(--color-brand-gold);
+  background: var(--color-brand-navy);
   color: #ffffff;
-  border-color: var(--color-brand-gold);
+  border-color: var(--color-brand-navy);
   font-weight: 600;
 }
 
@@ -556,8 +592,8 @@ body {
 }
 
 .song-card.is-selected {
-  background: var(--color-brand-gold-light);
-  border-color: var(--color-brand-gold);
+  background: var(--color-brand-teal-light);
+  border-color: var(--color-brand-teal);
 }
 
 .song-card__title {
@@ -603,8 +639,8 @@ body {
 .badge-hymnal {
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--color-brand-gold-hover);
-  background: var(--color-brand-gold-light);
+  color: var(--color-brand-navy);
+  background: #e0e7ff;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
 }
@@ -652,7 +688,7 @@ body {
   align-items: center;
   gap: 0.35rem;
   padding: 0.5rem 0.9rem;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-sm);
@@ -763,7 +799,7 @@ body {
 .btn-link {
   background: none;
   border: none;
-  color: var(--color-brand-gold);
+  color: var(--color-brand-teal-dark);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -790,7 +826,7 @@ body {
 
 .btn-primary-sm {
   padding: 0.4rem 0.85rem;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-sm);
@@ -878,7 +914,7 @@ body {
 .worship-queue__eyebrow {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--color-brand-gold);
+  color: var(--color-brand-teal-dark);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   display: flex;
@@ -897,9 +933,9 @@ body {
   align-items: center;
   gap: 0.35rem;
   padding: 0.5rem 0.85rem;
-  background: var(--color-brand-gold-light);
-  color: var(--color-brand-gold-hover);
-  border: 1px solid rgba(217, 119, 6, 0.3);
+  background: var(--color-brand-teal-light);
+  color: var(--color-brand-teal-dark);
+  border: 1px solid rgba(13, 148, 136, 0.3);
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
   font-weight: 600;
@@ -925,7 +961,7 @@ body {
   align-items: center;
   gap: 0.35rem;
   padding: 0.5rem 0.9rem;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-sm);
@@ -1011,8 +1047,8 @@ body {
 }
 
 .worship-queue__item.is-playing {
-  border-color: var(--color-brand-gold);
-  background: var(--color-brand-gold-light);
+  border-color: var(--color-brand-teal);
+  background: var(--color-brand-teal-light);
 }
 
 .worship-queue__item-index {
@@ -1037,7 +1073,7 @@ body {
   align-items: center;
   gap: 0.25rem;
   padding: 0.35rem 0.7rem;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-sm);
@@ -1058,7 +1094,7 @@ body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -1078,8 +1114,8 @@ body {
   animation: modalIn 0.2s ease;
 }
 
-.modal-card--auth, .modal-card--playlists {
-  max-width: 480px;
+.modal-card--auth, .modal-card--playlists, .modal-card--donate {
+  max-width: 500px;
 }
 
 @keyframes modalIn {
@@ -1095,6 +1131,20 @@ body {
   align-items: center;
 }
 
+.modal-header--donate {
+  background: var(--color-brand-navy);
+  color: #ffffff;
+}
+
+.donate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f43f5e;
+}
+
 .modal-header h3 {
   font-size: 1.1rem;
   font-weight: 700;
@@ -1103,6 +1153,261 @@ body {
   gap: 0.4rem;
 }
 
+/* Charity Banner Section */
+.charity-banner {
+  background: linear-gradient(135deg, var(--color-brand-navy), #1e1b4b);
+  color: #ffffff;
+  padding: 2rem 1.5rem;
+  margin: 2rem 0 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.charity-banner__container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.charity-banner__content {
+  max-width: 750px;
+}
+
+.charity-banner__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.15);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  margin-bottom: 0.5rem;
+}
+
+.charity-banner__content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-serif);
+  margin-bottom: 0.35rem;
+}
+
+.charity-banner__content p {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.btn-charity-gift {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 1.35rem;
+  background: linear-gradient(135deg, var(--color-brand-teal), #059669);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.btn-charity-gift:hover {
+  transform: scale(1.03);
+}
+
+/* Donate Modal Styles */
+.donate-modal__body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.donate-intro h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.donate-intro p {
+  font-size: 0.84rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.donate-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  background: var(--color-bg-main);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.donate-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.donate-card__number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-brand-navy);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.donate-card__header h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.donate-card__header p {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.btn-donate-direct {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  background: var(--color-brand-navy);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.donate-divider {
+  text-align: center;
+  position: relative;
+  margin: 0.2rem 0;
+}
+
+.donate-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  right: 0;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.donate-divider span {
+  position: relative;
+  background: var(--color-bg-card);
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+}
+
+.donate-amounts {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.amt-btn {
+  flex: 1;
+  min-width: 60px;
+  padding: 0.45rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-main);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.amt-btn.is-selected {
+  background: var(--color-brand-teal);
+  color: #ffffff;
+  border-color: var(--color-brand-teal);
+}
+
+.custom-amt-input {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 0.75rem;
+}
+
+.custom-amt-input span {
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.custom-amt-input input {
+  flex: 1;
+  border: none;
+  padding: 0.45rem 0.5rem;
+  outline: none;
+  font-size: 0.85rem;
+  background: transparent;
+}
+
+.btn-donate-stripe {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem;
+  background: linear-gradient(135deg, var(--color-brand-teal), #059669);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(13, 148, 136, 0.25);
+}
+
+.donate-security-note {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+
+.donate-modal__footer {
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-main);
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+/* Auth Modal Adjustments */
 .auth-tab-switch {
   display: flex;
   gap: 0.25rem;
@@ -1127,7 +1432,7 @@ body {
 
 .auth-tab-btn.is-active {
   background: var(--color-bg-card);
-  color: var(--color-brand-gold);
+  color: var(--color-brand-navy);
   box-shadow: var(--shadow-sm);
 }
 
@@ -1255,7 +1560,7 @@ body {
   padding: 0.55rem 1.15rem;
   border-radius: var(--radius-sm);
   border: none;
-  background: var(--color-brand-gold);
+  background: var(--color-brand-teal);
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 600;
@@ -1365,14 +1670,13 @@ body {
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-card);
   padding: 1.5rem;
-  margin-top: auto;
   font-size: 0.82rem;
   color: var(--color-text-muted);
   text-align: center;
 }
 
 .app-footer a {
-  color: var(--color-brand-gold);
+  color: var(--color-brand-navy);
   font-weight: 600;
   text-decoration: none;
 }

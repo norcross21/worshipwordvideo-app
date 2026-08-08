@@ -4,9 +4,11 @@ import { Header } from './components/Header';
 import { SongLibraryDashboard } from './components/SongLibraryDashboard';
 import { WorshipQueue } from './components/WorshipQueue';
 import { SavedPlaylistsModal } from './components/SavedPlaylistsModal';
+import { DonateModal } from './components/DonateModal';
 import { getWorshipQueue, addToWorshipQueue, worshipQueueItem, type WorshipQueueItem } from './data/worshipQueue';
 import { getApprovedWorshipVideos } from './data/videoApproval';
 import type { WorshipSong } from './data/worshipSongs';
+import { Heart, Sparkles } from 'lucide-react';
 import './App.css';
 
 function MainApp() {
@@ -15,6 +17,7 @@ function MainApp() {
   const [approvedVideoIds, setApprovedVideoIds] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState('');
   const [showSavedPlaylistsModal, setShowSavedPlaylistsModal] = useState(false);
+  const [showDonateModal, setShowDonateModal] = useState(false);
 
   useEffect(() => {
     setQueue(getWorshipQueue());
@@ -48,6 +51,7 @@ function MainApp() {
         onSelectTab={setActiveTab}
         playlistCount={queue.length}
         onOpenSavedPlaylists={() => setShowSavedPlaylistsModal(true)}
+        onOpenDonate={() => setShowDonateModal(true)}
       />
 
       {toastMessage && (
@@ -72,6 +76,24 @@ function MainApp() {
         )}
       </main>
 
+      {/* Charity Support Callout Banner */}
+      <section className="charity-banner" aria-label="Charity Partner Support">
+        <div className="charity-banner__container">
+          <div className="charity-banner__content">
+            <span className="charity-banner__badge"><Heart size={14} fill="currentColor" /> 100% Free App</span>
+            <h3>Supporting Homelessness & Sanctuary Support</h3>
+            <p>Worship Word Video is completely free for all church leaders and congregations. If you find this app helpful in your worship ministry, please consider making a voluntary gift to our charity partner.</p>
+          </div>
+          <button
+            type="button"
+            className="btn-charity-gift"
+            onClick={() => setShowDonateModal(true)}
+          >
+            <Sparkles size={15} /> Gift to Charity Partner
+          </button>
+        </div>
+      </section>
+
       {showSavedPlaylistsModal && (
         <SavedPlaylistsModal
           currentQueue={queue}
@@ -80,10 +102,16 @@ function MainApp() {
         />
       )}
 
+      {showDonateModal && (
+        <DonateModal
+          onClose={() => setShowDonateModal(false)}
+        />
+      )}
+
       <footer className="app-footer">
         <div className="app-footer__container">
           <p>© {new Date().getFullYear()} Worship Word Video (<a href="https://worshipwordvideo.org" target="_blank" rel="noreferrer">worshipwordvideo.org</a>) — UK Hymn & Worship Lyric Video Finder for Churches.</p>
-          <p className="app-footer__sub">Privacy-focused ad-free sing-along embeds powered by YouTube & Supabase Auth.</p>
+          <p className="app-footer__sub">Privacy-focused ad-free sing-along embeds powered by YouTube.</p>
         </div>
       </footer>
     </div>

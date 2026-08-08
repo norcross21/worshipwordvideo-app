@@ -1,24 +1,32 @@
 import { useState } from 'react';
-import { BadgeCheck, Film, ListMusic, Search, Sparkles, BookOpen, User, LogIn, LogOut, Cloud } from 'lucide-react';
+import { BadgeCheck, Film, ListMusic, Search, Sparkles, BookOpen, User, LogIn, LogOut, Cloud, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
+import { DonateModal } from './DonateModal';
 
 interface HeaderProps {
   activeTab: 'all' | 'ccli' | 'hymnals' | 'verified' | 'playlist';
   onSelectTab: (tab: 'all' | 'ccli' | 'hymnals' | 'verified' | 'playlist') => void;
   playlistCount: number;
   onOpenSavedPlaylists?: () => void;
+  onOpenDonate?: () => void;
 }
 
-export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlaylists }: HeaderProps) {
+export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlaylists, onOpenDonate }: HeaderProps) {
   const { user, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showDonateModalInternal, setShowDonateModalInternal] = useState(false);
 
   const openAuth = (tab: 'signin' | 'signup') => {
     setAuthModalTab(tab);
     setShowAuthModal(true);
+  };
+
+  const handleDonateClick = () => {
+    if (onOpenDonate) onOpenDonate();
+    else setShowDonateModalInternal(true);
   };
 
   return (
@@ -72,70 +80,80 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
           </button>
         </nav>
 
-        {/* User Account Controls */}
-        <div className="app-header__user">
-          {user ? (
-            <div className="user-menu-wrapper">
-              <button
-                type="button"
-                className="user-pill"
-                onClick={() => setShowUserMenu(!showUserMenu)}
-              >
-                <div className="user-avatar">
-                  <User size={14} />
-                </div>
-                <span className="user-email">{user.email?.split('@')[0]}</span>
-              </button>
+        {/* User Account & Donate Controls */}
+        <div className="app-header__right-controls">
+          <button
+            type="button"
+            className="btn-donate-header"
+            onClick={handleDonateClick}
+          >
+            <Heart size={14} fill="currentColor" /> Gift to Charity
+          </button>
 
-              {showUserMenu && (
-                <div className="user-dropdown">
-                  <div className="user-dropdown__info">
-                    <strong>Signed in as</strong>
-                    <p>{user.email}</p>
+          <div className="app-header__user">
+            {user ? (
+              <div className="user-menu-wrapper">
+                <button
+                  type="button"
+                  className="user-pill"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                >
+                  <div className="user-avatar">
+                    <User size={14} />
                   </div>
-                  {onOpenSavedPlaylists && (
+                  <span className="user-email">{user.email?.split('@')[0]}</span>
+                </button>
+
+                {showUserMenu && (
+                  <div className="user-dropdown">
+                    <div className="user-dropdown__info">
+                      <strong>Signed in as</strong>
+                      <p>{user.email}</p>
+                    </div>
+                    {onOpenSavedPlaylists && (
+                      <button
+                        type="button"
+                        className="user-dropdown__item"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          onOpenSavedPlaylists();
+                        }}
+                      >
+                        <Cloud size={15} /> My Saved Playlists
+                      </button>
+                    )}
                     <button
                       type="button"
-                      className="user-dropdown__item"
+                      className="user-dropdown__item user-dropdown__item--logout"
                       onClick={() => {
                         setShowUserMenu(false);
-                        onOpenSavedPlaylists();
+                        void signOut();
                       }}
                     >
-                      <Cloud size={15} /> My Saved Playlists
+                      <LogOut size={15} /> Log Out
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    className="user-dropdown__item user-dropdown__item--logout"
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      void signOut();
-                    }}
-                  >
-                    <LogOut size={15} /> Log Out
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="auth-buttons">
-              <button
-                type="button"
-                className="btn-login"
-                onClick={() => openAuth('signin')}
-              >
-                <LogIn size={15} /> Log In
-              </button>
-              <button
-                type="button"
-                className="btn-register"
-                onClick={() => openAuth('signup')}
-              >
-                Create Account
-              </button>
-            </div>
-          )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="auth-buttons">
+                <button
+                  type="button"
+                  className="btn-login"
+                  onClick={() => openAuth('signin')}
+                >
+                  <LogIn size={15} /> Log In
+                </button>
+                <button
+                  type="button"
+                  className="btn-register"
+                  onClick={() => openAuth('signup')}
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -143,6 +161,12 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
         <AuthModal
           initialTab={authModalTab}
           onClose={() => setShowAuthModal(false)}
+        />
+      )}
+
+      {showDonateModalInternal && (
+        <DonateModal
+          onClose={() => setShowDonateModalInternal(false)}
         />
       )}
     </header>
