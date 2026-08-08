@@ -5,6 +5,7 @@ import { SongLibraryDashboard } from './components/SongLibraryDashboard';
 import { WorshipQueue } from './components/WorshipQueue';
 import { SavedPlaylistsModal } from './components/SavedPlaylistsModal';
 import { DonateModal } from './components/DonateModal';
+import { VersionRefreshButton } from './components/VersionRefreshButton';
 import { getWorshipQueue, addToWorshipQueue, worshipQueueItem, type WorshipQueueItem } from './data/worshipQueue';
 import { getApprovedWorshipVideos } from './data/videoApproval';
 import type { WorshipSong } from './data/worshipSongs';
@@ -112,6 +113,7 @@ function MainApp() {
         <div className="app-footer__container">
           <p>© {new Date().getFullYear()} Worship Word Video (<a href="https://worshipwordvideo.org" target="_blank" rel="noreferrer">worshipwordvideo.org</a>) — UK Hymn & Worship Lyric Video Finder for Churches.</p>
           <p className="app-footer__sub">Privacy-focused ad-free sing-along embeds powered by YouTube.</p>
+          <VersionRefreshButton />
         </div>
       </footer>
     </div>

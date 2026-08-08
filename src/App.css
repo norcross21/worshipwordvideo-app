@@ -1665,7 +1665,7 @@ body {
   font-size: 0.82rem;
 }
 
-/* Footer */
+/* Footer & Version Refresh Button */
 .app-footer {
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-card);
@@ -1685,4 +1685,44 @@ body {
   font-size: 0.75rem;
   color: var(--color-text-light);
   margin-top: 0.25rem;
+}
+
+.version-refresh-wrapper {
+  margin-top: 0.85rem;
+  display: flex;
+  justify-content: center;
+}
+
+.version-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  background: var(--color-bg-main);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: 0.73rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.version-refresh-btn:hover {
+  background: var(--color-brand-teal-light);
+  color: var(--color-brand-teal-dark);
+  border-color: rgba(13, 148, 136, 0.3);
+}
+
+.version-refresh-btn.is-refreshing {
+  opacity: 0.8;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
