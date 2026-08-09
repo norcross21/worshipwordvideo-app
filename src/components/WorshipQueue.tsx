@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { YouTubePlayer } from './YouTubePlayer';
+import { VideoTrimEditor } from './VideoTrimEditor';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
 import { publishProjectionState } from '../data/projection';
@@ -237,16 +238,46 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
                 </div>
                 {isEditingTiming && (
                   <div className="queue-timing-editor">
-                    <div className="queue-timing-editor__heading"><Scissors size={15} /><strong>Clean playback</strong><span>Skip silence, speaking or an untidy ending.</span></div>
-                    <label>Start at<input value={startDraft} onChange={(event) => setStartDraft(event.target.value)} placeholder="0:26" inputMode="numeric" /></label>
-                    <label>Stop at<input value={endDraft} onChange={(event) => setEndDraft(event.target.value)} placeholder={item.durationSeconds ? formatPlaybackTime(item.durationSeconds) : '3:58'} inputMode="numeric" /></label>
-                    <div className="queue-timing-editor__actions">
-                      <button type="button" className="btn-primary-sm" onClick={() => applyTiming(item)}>Apply</button>
-                      <button type="button" className="btn-link" onClick={() => { setStartDraft(''); setEndDraft(''); setTimingError(''); }}>Clear fields</button>
-                      <button type="button" className="btn-link" onClick={() => setTimingEditorId(null)}>Cancel</button>
+                    <div className="queue-timing-editor__heading">
+                      <span className="queue-timing-editor__heading-icon"><Scissors size={16} /></span>
+                      <div><strong>Choose the clean part of the video</strong><span>Watch the video and mark exactly where worship should begin and finish.</span></div>
                     </div>
+
+                    <div className="queue-timing-editor__layout">
+                      <VideoTrimEditor
+                        videoId={item.youtubeId}
+                        title={`${item.title} - ${item.artist}`}
+                        startValue={startDraft}
+                        endValue={endDraft}
+                        initialStartSeconds={item.startSeconds}
+                        durationSeconds={item.durationSeconds}
+                        onStartChange={(value) => { setStartDraft(value); setTimingError(''); }}
+                        onEndChange={(value) => { setEndDraft(value); setTimingError(''); }}
+                      />
+
+                      <div className="queue-timing-editor__settings">
+                        <div className="queue-timing-editor__settings-intro">
+                          <strong>Your playback markers</strong>
+                          <span>The buttons under the video fill these times automatically. You can still type an exact time.</span>
+                        </div>
+                        <label>Start at<input value={startDraft} onChange={(event) => setStartDraft(event.target.value)} placeholder="0:26" inputMode="numeric" /></label>
+                        <label>Finish at<input value={endDraft} onChange={(event) => setEndDraft(event.target.value)} placeholder={item.durationSeconds ? formatPlaybackTime(item.durationSeconds) : '3:58'} inputMode="numeric" /></label>
+                        <div className="queue-timing-editor__selection-summary">
+                          <span>Selected playback</span>
+                          <strong>{startDraft || 'Start'} <span aria-hidden="true">→</span> {endDraft || 'Video end'}</strong>
+                        </div>
+                      </div>
+                    </div>
+
                     {timingError && <p className="queue-timing-editor__error" role="alert">{timingError}</p>}
-                    <small>Use seconds or m:ss. YouTube may begin up to about two seconds before the exact point.</small>
+                    <div className="queue-timing-editor__footer">
+                      <small>YouTube may begin up to about two seconds before the exact marker. Preview it before the service.</small>
+                      <div className="queue-timing-editor__actions">
+                        <button type="button" className="btn-link" onClick={() => { setStartDraft(''); setEndDraft(''); setTimingError(''); }}>Clear markers</button>
+                        <button type="button" className="btn-link" onClick={() => setTimingEditorId(null)}>Cancel</button>
+                        <button type="button" className="btn-primary-sm" onClick={() => applyTiming(item)}>Save trim</button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </li>

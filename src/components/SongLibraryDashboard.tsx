@@ -85,7 +85,9 @@ export function SongLibraryDashboard({ initialFilter = 'all', onAddToPlaylist, p
   const [selectedSeason, setSelectedSeason] = useState<'all' | WorshipSeason>(initialSeason);
   const [selectedArrangement, setSelectedArrangement] = useState(initialArrangement);
   const [selectedPresentation, setSelectedPresentation] = useState(initialPresentation);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(
+    initialSeason !== 'all' || initialArrangement !== 'all' || initialPresentation !== 'all',
+  );
   const [onlyVerifiedWords, setOnlyVerifiedWords] = useState(initialFilter === 'verified');
   const [onlyCcliTop100, setOnlyCcliTop100] = useState(initialFilter === 'ccli');
   
@@ -95,6 +97,13 @@ export function SongLibraryDashboard({ initialFilter = 'all', onAddToPlaylist, p
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
+  const advancedFilterCount = Number(selectedSeason !== 'all')
+    + Number(selectedCategory !== 'All')
+    + Number(selectedArrangement !== 'all')
+    + Number(selectedPresentation !== 'all')
+    + Number(selectedHymnal !== 'all')
+    + Number(onlyVerifiedWords)
+    + Number(onlyCcliTop100);
 
   // Sync initial tab changes
   useEffect(() => {
@@ -223,16 +232,8 @@ export function SongLibraryDashboard({ initialFilter = 'all', onAddToPlaylist, p
               {LANGUAGE_FILTERS.map((language) => <option key={language} value={language}>{language}</option>)}
             </select>
           </label>
-          <label className="language-select season-select">
-            <CalendarDays size={16} />
-            <span className="sr-only">Church season</span>
-            <select value={selectedSeason} onChange={(event) => setSelectedSeason(event.target.value as 'all' | WorshipSeason)} aria-label="Filter by church season">
-              <option value="all">Any season</option>
-              {WORSHIP_SEASONS.map((season) => <option key={season} value={season}>{season}</option>)}
-            </select>
-          </label>
           <button type="button" className="btn-secondary" aria-expanded={showAdvancedFilters} onClick={() => setShowAdvancedFilters((value) => !value)}>
-            <SlidersHorizontal size={15} /> Filters
+            <SlidersHorizontal size={15} /> Filters {advancedFilterCount > 0 ? <span className="filter-count">{advancedFilterCount}</span> : null}
           </button>
         </div>
       </div>
@@ -240,6 +241,14 @@ export function SongLibraryDashboard({ initialFilter = 'all', onAddToPlaylist, p
       {/* Optional filters stay out of the main search path until requested. */}
       {showAdvancedFilters && <div className="filter-bar">
         <div className="filter-bar__grid">
+          <label className="filter-field">
+            <span><CalendarDays size={13} /> Church season</span>
+            <select value={selectedSeason} onChange={(event) => setSelectedSeason(event.target.value as 'all' | WorshipSeason)} aria-label="Filter by church season">
+              <option value="all">Any season</option>
+              {WORSHIP_SEASONS.map((season) => <option key={season} value={season}>{season}</option>)}
+            </select>
+          </label>
+
           <label className="filter-field">
             <span><Music size={13} /> Worship style</span>
             <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value as 'All' | 'Well-known' | MusicStyle)} aria-label="Filter by worship style">

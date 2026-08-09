@@ -46,14 +46,26 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
               <ListMusic size={17} /> <span className="nav-tab__label">My service</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
             </button>
           )}
-          <button
-            type="button"
-            className="nav-tab nav-tab--donate"
-            onClick={onOpenDonate}
-            aria-label="Support Kairos Housing charity"
-          >
-            <Heart size={16} /> <span className="nav-tab__label">Support Kairos</span>
-          </button>
+          {user ? (
+            <a
+              className="nav-tab nav-tab--donate"
+              href="https://operations.kairoshousing.org.uk/donate"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Support Kairos Housing charity"
+            >
+              <Heart size={16} /> <span className="nav-tab__label">Support Kairos</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              className="nav-tab nav-tab--donate"
+              onClick={onOpenDonate}
+              aria-label="Support Kairos Housing charity"
+            >
+              <Heart size={16} /> <span className="nav-tab__label">Support Kairos</span>
+            </button>
+          )}
         </nav>
 
         {/* User Account & Donate Controls */}

@@ -96,7 +96,7 @@ function MainApp() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [authLoading, user]);
+  }, [authLoading, user?.id]);
 
   const closeDonateModal = () => {
     try {
@@ -208,7 +208,7 @@ function MainApp() {
         </Suspense>
       )}
 
-      {showDonateModal && (
+      {showDonateModal && !user && (
         <Suspense fallback={null}>
           <DonateModal onClose={closeDonateModal} />
         </Suspense>
