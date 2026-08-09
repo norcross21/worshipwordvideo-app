@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "src" / "data" / "researchedWordWorshipVideos.json"
 SOURCE = Path("/tmp/wwv-trusted-channel-videos.json")
-TARGET = 5700
+TARGET = 15650
 MAX_PER_CHANNEL = 400
 MIN_VIEWS = 25
 

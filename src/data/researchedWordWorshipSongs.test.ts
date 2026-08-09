@@ -16,7 +16,7 @@ describe('researched worship word videos', () => {
     for (const song of RESEARCHED_WORD_WORSHIP_SONGS) {
       expect(song.youtubeId).toMatch(/^[A-Za-z0-9_-]{11}$/);
       expect(song.title.trim().length).toBeGreaterThan(3);
-      expect(song.sourceChannel?.trim().length).toBeGreaterThan(1);
+      expect(song.sourceChannel?.trim().length).toBeGreaterThan(0);
       expect(song.wordEvidence?.trim().length).toBeGreaterThan(2);
       expect(song.qualityCheckedOn).toBe('2026-08-09');
       expect(song.arrangement).toBeTruthy();

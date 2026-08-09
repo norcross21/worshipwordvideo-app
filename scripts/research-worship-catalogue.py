@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "src" / "data"
 OUTPUT = DATA_DIR / "researchedWordWorshipVideos.json"
-TARGET = 5700
+TARGET = 15650
 RESULTS_PER_QUERY = 50
 
 LANGUAGES = [
@@ -108,11 +108,17 @@ LANGUAGES = [
 
 WORD_PATTERNS = [
     ("lyrics", re.compile(r"\blyrics?\b", re.I)),
-    ("words", re.compile(r"\bwords?\b|sing[ -]?along|karaoke", re.I)),
+    ("words", re.compile(
+        r"\b(?:with|on[- ]screen|scrolling|displayed|showing)\s+(?:the\s+)?words?\b|"
+        r"\bwords?\s+(?:in\s+(?:english|[a-z]+(?:\s+[a-z]+)?)|on[- ]screen|video|included)\b|"
+        r"sing[ -]?along|karaoke",
+        re.I,
+    )),
     ("subtitles", re.compile(r"subtitles?|captions?|subtitled|translated|translation", re.I)),
     ("local-language words", re.compile(
         r"letras?|legendad[oa]|subtitulado|paroles|sous[- ]titres|untertitel|napisy|tekst|"
-        r"текст|слова|ترجمه|زیرنویس|كلمات|مترجم|가사|자막|歌詞|字幕|歌词|lời bài hát",
+        r"tradu[cç][aã]o|traducci[oó]n|traduction|текст|слова|ترجمه|زیرنویس|كلمات|مترجم|"
+        r"가사|자막|歌詞|字幕|歌词|lời bài hát",
         re.I,
     )),
 ]
@@ -123,13 +129,44 @@ REJECT = re.compile(
     r"worship mix|prayer mix|medley|top \d+|best \d+|sermon|debate|podcast|interview|bible study|"
     r"documentary|apologetics|q\s*&\s*a|questions? and answers?|lecture|baptism testimony|christian testimony|"
     r"news report|worship tutorial|how to play|spoken word|devotional|meditation|affirmation|"
-    r"prayer for|scripture reading|psalm \d+ reading|behind the scenes|teaser|trailer|episode|vlog|"
+    r"prayer for|scripture reading|bible reading|psalm \d+ reading|behind the scenes|teaser|trailer|episode|vlog|"
     r"birthday song|national anthem|school song|military hymn|the marines.? hymn|hymn for the weekend|"
     r"jingle bells|rudolph|frosty|santa|holly jolly|let it snow|bhakti|shiva|krishna|quran|nasheed|"
     r"bollywood|romantic song|love song|movie soundtrack|film song|god gave me you|there you.ll be|"
     r"jesus,? take the wheel|something in the water|god.s country|praise jah in the moonlight|"
     r"praise to the man|500 miles|rahman baba|sacred madness|allah loves praise|am i god|"
-    r"church of almighty god|全能神教会|全能神教會",
+    r"church of almighty god|全能神教会|全能神教會|ai[- ]generated|ai\s+(?:cover|rumba|gospel|worship|christian|music|lyric)|"
+    r"suno(?: ai| music)?|created with ai|ai\s+20\d{2}|lyrics? video ai|lyrics? in (?:the )?description|lyrics? below|audio only|without words|"
+    r"lds primary|latter[- ]day saints?|\blds\b|jehovah.?s witnesses?|hindu goddess|buddhist worship|"
+    r"long black train|carrie underwood\s*[-–—]\s*church bells|the star\s*[-–—]\s*mariah carey|"
+    r"mariah carey.*the star|celine dion.*(?:wonderful jesus|living god)",
+    re.I,
+)
+
+EXCLUDED_CHANNEL = re.compile(
+    r"worship jamz|szabo music|worship rehearsal videos|top gospel mix|christian love songs|"
+    r"almightygod|almighty god church|ang iglesia ng makapangyarihang diyos|"
+    r"ibandla likankulunkulu usomandla|god.?s words|efy karaoke|islamic naat|buddhist worship|"
+    r"hari priya positivity|divineechoes|modern tunes|ai ncm zone|ai gospel music",
+    re.I,
+)
+
+# Popular secular songs and artists can accidentally satisfy generic religious
+# words such as "God", "church", "Christian" or "worship". Keep these known
+# false matches out without weakening discovery of genuine worship songs.
+SECULAR_FALSE_POSITIVE = re.compile(
+    r"(?:drake.*god.?s plan|god.?s plan.*drake|hozier.*take me to church|take me to church.*hozier|"
+    r"ghost.*mary on a cross|mary on a cross.*ghost|ariana grande.*god is a woman|god is a woman.*ariana grande|"
+    r"tupac.*only god can judge me|only god can judge me.*tupac|christian nodal|christian french|rotting christ|"
+    r"sabaton.*gott mit uns|gott mit uns.*sabaton|gott erhalte.*(?:austria|kaiser|franz|imperial|anthem)|"
+    r"we are the world|morgan wallen.*man made a bar|man made a bar.*morgan wallen|"
+    r"anti[- ]flag.*christian nationalist|christian nationalist.*anti[- ]flag|"
+    r"(?:a7x|avenged sevenfold).*dear god|dear god.*(?:a7x|avenged sevenfold)|"
+    r"amber run.*worship|worship.*amber run|laces.*worship|worship.*laces|"
+    r"lord huron.*the night we met|the night we met.*lord huron|"
+    r"don williams.*lord,? i hope this day is good|lord,? i hope this day is good.*don williams|"
+    r"aaron lewis.*everybody talks to god|everybody talks to god.*aaron lewis|"
+    r"red clay strays.*god does|god does.*red clay strays)",
     re.I,
 )
 
@@ -250,7 +287,7 @@ def has_language_signal(title: str, channel: str, language: str, code: str) -> b
 
 def is_quality_row(title: str, channel: str, language: str, code: str) -> bool:
     value = f"{title} {channel}"
-    if REJECT.search(value):
+    if REJECT.search(value) or EXCLUDED_CHANNEL.search(channel) or SECULAR_FALSE_POSITIVE.search(value):
         return False
     if re.search(r"\bpreaching\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship music)\b", value, re.I):
         return False
