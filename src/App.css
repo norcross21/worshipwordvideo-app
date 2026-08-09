@@ -4710,3 +4710,24 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   .video-trim-editor__capture-actions button[aria-label="Pause trim preview"] { grid-column: 1 / -1; }
   .worship-queue__empty-actions { align-items: stretch; flex-direction: column; }
 }
+
+@media (max-width: 520px) {
+  .app-header__nav { gap: 0.3rem; }
+  .app-header__nav .nav-tab {
+    min-width: 0;
+    padding-inline: 0.48rem;
+    font-size: 0.76rem;
+  }
+  .app-header__nav .nav-tab--playlist { flex: 1 1 auto; }
+  .app-header__nav .nav-tab--playlist .nav-tab__label {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-header__nav .nav-tab--donate { flex: 0 0 auto; }
+  .app-header__nav .nav-tab--donate .nav-tab__label { font-size: 0; }
+  .app-header__nav .nav-tab--donate .nav-tab__label::after {
+    font-size: 0.76rem;
+    content: 'Kairos';
+  }
+}
