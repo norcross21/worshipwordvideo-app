@@ -67,15 +67,15 @@ export function WorshipQueue({
   const [timingError, setTimingError] = useState('');
   const [projectionMessage, setProjectionMessage] = useState('');
   const [showProjectionGuide, setShowProjectionGuide] = useState(false);
-  const playingItem = playingIndex == null ? null : queue[playingIndex] ?? null;
+  const playingItem = !activeService || playingIndex == null ? null : queue[playingIndex] ?? null;
 
   useEffect(() => {
     if (playingIndex != null && playingIndex >= queue.length) setPlayingIndex(queue.length ? queue.length - 1 : null);
   }, [playingIndex, queue]);
 
   useEffect(() => {
-    publishProjectionState({ queue, playingIndex, playbackRevision });
-  }, [queue, playingIndex, playbackRevision]);
+    publishProjectionState({ queue: activeService ? queue : [], playingIndex: activeService ? playingIndex : null, playbackRevision });
+  }, [activeService?.id, queue, playingIndex, playbackRevision]);
 
   const update = (next: WorshipQueueItem[]) => onChange(next.slice(0, WORSHIP_QUEUE_LIMIT));
 
@@ -189,7 +189,7 @@ export function WorshipQueue({
           ) : (
             <button type="button" className="worship-queue__btn-login" onClick={() => setShowAuthModal(true)}><LogIn size={14} /> Log in to save</button>
           )}
-          {queue.length > 0 && (
+          {activeService && queue.length > 0 && (
             <>
               <button type="button" className="worship-queue__btn-project" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={15} /> Present on second screen</button>
               <button type="button" className="worship-queue__btn-secondary" onClick={() => playAt(0)}><Play size={14} /> Start here</button>
@@ -229,7 +229,7 @@ export function WorshipQueue({
         </div>
       )}
 
-      {queue.length === 0 ? (
+      {!activeService || queue.length === 0 ? (
         <div className="worship-queue__empty">
           <ListMusic size={32} />
           <p>{activeService ? `${activeService.title} is ready for its first video.` : 'Create a service before adding videos.'}</p>

@@ -226,8 +226,11 @@ function MainApp() {
   const handleActivateService = async (playlist: SavedUserPlaylist) => {
     if (!user) return;
     let items = Array.isArray(playlist.items) ? playlist.items : [];
-    if (pendingPlaylistItem) {
-      items = addToWorshipQueue(items, pendingPlaylistItem);
+    const recoveredItems = activeService ? [] : queue;
+    for (const recoveredItem of recoveredItems) items = addToWorshipQueue(items, recoveredItem);
+    if (pendingPlaylistItem) items = addToWorshipQueue(items, pendingPlaylistItem);
+    const itemsChanged = JSON.stringify(items) !== JSON.stringify(playlist.items ?? []);
+    if (itemsChanged) {
       if (!supabase) throw new Error('Cloud services are unavailable. Please refresh and try again.');
       const { error } = await supabase
         .from('user_playlists')
@@ -246,6 +249,8 @@ function MainApp() {
     setServiceSaveState('saved');
     setToastMessage(pendingPlaylistItem
       ? `✓ Added “${pendingPlaylistItem.title}” to ${playlist.title}`
+      : recoveredItems.length
+        ? `✓ Opened ${playlist.title} and recovered ${recoveredItems.length} unsaved video${recoveredItems.length === 1 ? '' : 's'}`
       : `✓ ${playlist.title} is now your active service`);
     window.setTimeout(() => {
       setToastMessage('');
