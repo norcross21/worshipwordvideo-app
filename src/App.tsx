@@ -5,7 +5,7 @@ import { LegalModal } from './components/LegalModal';
 import { VersionRefreshButton } from './components/VersionRefreshButton';
 import { getWorshipQueue, addToWorshipQueue, saveWorshipQueue, worshipQueueItem, type WorshipQueueItem } from './data/worshipQueue';
 import type { WorshipSong } from './data/worshipSongs';
-import { Heart, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import './App.css';
 import { ProjectionScreen } from './components/ProjectionScreen';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
@@ -13,7 +13,6 @@ import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 const SongLibraryDashboard = lazy(() => import('./components/SongLibraryDashboard').then((module) => ({ default: module.SongLibraryDashboard })));
 const WorshipQueue = lazy(() => import('./components/WorshipQueue').then((module) => ({ default: module.WorshipQueue })));
 const SavedPlaylistsModal = lazy(() => import('./components/SavedPlaylistsModal').then((module) => ({ default: module.SavedPlaylistsModal })));
-const DonateModal = lazy(() => import('./components/DonateModal').then((module) => ({ default: module.DonateModal })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then((module) => ({ default: module.AdminDashboard })));
 const AuthModal = lazy(() => import('./components/AuthModal').then((module) => ({ default: module.AuthModal })));
 const AccountModal = lazy(() => import('./components/AccountModal').then((module) => ({ default: module.AccountModal })));
@@ -29,7 +28,6 @@ function MainApp() {
   const [queueOwnerId, setQueueOwnerId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState('');
   const [showSavedPlaylistsModal, setShowSavedPlaylistsModal] = useState(false);
-  const [showDonateModal, setShowDonateModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(() =>
     new URLSearchParams(window.location.search).get('legal') === '1'
   );
@@ -69,44 +67,6 @@ function MainApp() {
     setShowAccountModal(true);
   }, [authModalTab, profile, profileLoading, user]);
 
-  useEffect(() => {
-    if (authLoading || user) return;
-
-    let cancelled = false;
-    let timer = 0;
-    const promptWasSeen = () => {
-      try {
-        return sessionStorage.getItem('worship_donation_prompt_seen') === 'yes';
-      } catch {
-        return false;
-      }
-    };
-    const openWhenInterfaceIsSettled = () => {
-      if (cancelled || promptWasSeen()) return;
-      if (document.querySelector('[role="dialog"]')) {
-        timer = window.setTimeout(openWhenInterfaceIsSettled, 1500);
-        return;
-      }
-      setShowDonateModal(true);
-    };
-
-    // Let the catalogue settle and never stack this invitation over another dialog.
-    timer = window.setTimeout(openWhenInterfaceIsSettled, 1800);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [authLoading, user]);
-
-  const closeDonateModal = () => {
-    try {
-      sessionStorage.setItem('worship_donation_prompt_seen', 'yes');
-    } catch {
-      // Closing the modal must always work, even in strict privacy modes.
-    }
-    setShowDonateModal(false);
-  };
-
   const handleAddToPlaylist = (song: WorshipSong) => {
     if (!user) {
       setAuthModalTab('signup');
@@ -141,7 +101,6 @@ function MainApp() {
         onSelectTab={setActiveTab}
         playlistCount={queue.length}
         onOpenSavedPlaylists={() => setShowSavedPlaylistsModal(true)}
-        onOpenDonate={() => setShowDonateModal(true)}
         onOpenAuth={setAuthModalTab}
         onOpenAccount={() => setShowAccountModal(true)}
       />
@@ -153,8 +112,7 @@ function MainApp() {
             <p><strong>Planning a worship service?</strong> Create an account to save and reuse services, set clean video start and finish points, and present on a distraction-free second screen.</p>
           </div>
           <div className="member-value-bar__actions">
-            <button type="button" className="member-value-bar__login" onClick={() => setAuthModalTab('signin')}>Already a member? Log in</button>
-            <button type="button" className="member-value-bar__create" onClick={() => setAuthModalTab('signup')}>Create account</button>
+            <button type="button" className="member-value-bar__create" onClick={() => setAuthModalTab('signup')}>Create an account</button>
           </div>
         </section>
       )}
@@ -187,24 +145,6 @@ function MainApp() {
         {activeTab === 'all' && <SeoDiscoverySection />}
       </main>
 
-      {/* Charity Support Callout Banner */}
-      <section className="charity-banner" aria-label="Charity Partner Support">
-        <div className="charity-banner__container">
-          <div className="charity-banner__content">
-            <span className="charity-banner__badge"><Heart size={14} fill="currentColor" /> Optional charity support</span>
-            <h3>Kairos Housing — Rebuilding lives with dignity</h3>
-            <p>Catalogue browsing and member tools are currently provided without charge. If the app helps your church, you may choose to support Kairos Housing.</p>
-          </div>
-          <button
-            type="button"
-            className="btn-charity-gift"
-            onClick={() => setShowDonateModal(true)}
-          >
-            <Sparkles size={15} /> Gift to Charity Partner
-          </button>
-        </div>
-      </section>
-
       {showSavedPlaylistsModal && (
         <Suspense fallback={null}>
           <SavedPlaylistsModal
@@ -224,12 +164,6 @@ function MainApp() {
       {showAccountModal && user && (
         <Suspense fallback={null}>
           <AccountModal onClose={() => setShowAccountModal(false)} />
-        </Suspense>
-      )}
-
-      {showDonateModal && (
-        <Suspense fallback={null}>
-          <DonateModal onClose={closeDonateModal} />
         </Suspense>
       )}
 

@@ -24,8 +24,6 @@ interface AuthModalProps {
   initialTab?: AuthTab;
 }
 
-const DONATION_URL = 'https://operations.kairoshousing.org.uk/donate';
-
 export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
   const [tab, setTab] = useState<AuthTab>(initialTab);
   const [displayName, setDisplayName] = useState('');
@@ -94,7 +92,11 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
     try {
       if (tab === 'signin') {
         const { error: signInError } = await signInWithEmail(email.trim().toLowerCase(), password);
-        if (signInError) setError(signInError.message);
+        if (signInError) {
+          setError(signInError.message.toLowerCase().includes('invalid login credentials')
+            ? 'That email and password do not match. Clear the password field and type it again carefully; passwords are case-sensitive.'
+            : signInError.message);
+        }
         else onClose();
       } else if (tab === 'new-password') {
         const { error: updateError } = await updatePassword(password);
@@ -215,6 +217,7 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
                 <input type={showPassword ? 'text' : 'password'} id="auth-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" autoComplete={tab === 'signin' ? 'current-password' : 'new-password'} />
                 <button type="button" className="input-eye-btn" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
               </div>
+              {tab === 'signin' && <small className="auth-password-help">Passwords are case-sensitive. Check for extra characters if your browser filled this field.</small>}
             </div>
           )}
 
@@ -229,10 +232,6 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
                 <span><Heart size={14} /> I would like occasional emails from Kairos Housing about <strong>Rebuilding lives with dignity</strong>, including charity news, appeals and ways to donate. Optional; I can unsubscribe at any time.</span>
               </label>
             </div>
-          )}
-
-          {successMessage && tab === 'signup' && (
-            <p className="auth-donation-note">Giving is optional. <a href={DONATION_URL} target="_blank" rel="noreferrer">Visit Kairos Housing’s donation page</a>.</p>
           )}
 
           <div className="modal-actions modal-actions--auth">
