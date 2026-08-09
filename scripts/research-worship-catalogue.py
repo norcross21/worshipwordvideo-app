@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "src" / "data"
 OUTPUT = DATA_DIR / "researchedWordWorshipVideos.json"
-TARGET = 1800
+TARGET = 2400
 RESULTS_PER_QUERY = 45
 
 LANGUAGES = [
@@ -106,7 +106,9 @@ WORD_PATTERNS = [
 REJECT = re.compile(
     r"\b(1|2|3|4|5|6|7|8|9|10|12|24)\s*hours?\b|non[- ]?stop|full album|playlist|compilation|"
     r"reaction|tutorial|lesson|how to play|instrumental tutorial|shorts?\b|nightcore|sped up|slowed|"
-    r"worship mix|prayer mix|medley|top \d+|best \d+",
+    r"worship mix|prayer mix|medley|top \d+|best \d+|sermon|debate|podcast|interview|bible study|"
+    r"documentary|apologetics|q\s*&\s*a|questions? and answers?|lecture|baptism testimony|christian testimony|"
+    r"news report|worship tutorial|how to play",
     re.I,
 )
 
@@ -227,6 +229,14 @@ def has_language_signal(title: str, channel: str, language: str, code: str) -> b
 
 def is_quality_row(title: str, channel: str, language: str, code: str) -> bool:
     value = f"{title} {channel}"
+    if REJECT.search(value):
+        return False
+    if re.search(r"\bpreaching\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship music)\b", value, re.I):
+        return False
+    if re.search(r"\bconference\s*20\d{2}\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship|praise)\b", value, re.I):
+        return False
+    if re.search(r"\btalk talk\s*[-–—]\s*it'?s my life\b", value, re.I):
+        return False
     return bool(CHRISTIAN_SIGNAL.search(value))
 
 
@@ -237,8 +247,6 @@ def query_for(language: str, translated: bool) -> str:
 
 
 def main() -> None:
-    from yt_dlp import YoutubeDL
-
     existing = existing_video_ids()
     loaded_rows: list[list[object]] = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else []
     base_rows: list[list[object]] = []
@@ -253,6 +261,8 @@ def main() -> None:
         OUTPUT.write_text(json.dumps(base_rows, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(json.dumps({"cleaned": len(base_rows), "removed": len(loaded_rows) - len(base_rows)}, indent=2))
         return
+    from yt_dlp import YoutubeDL
+
     by_language: dict[str, list[list[object]]] = {language: [] for language, _, _ in LANGUAGES}
     seen = set(existing) | {str(row[0]) for row in base_rows}
     options = {

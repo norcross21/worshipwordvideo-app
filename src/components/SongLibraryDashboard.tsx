@@ -45,6 +45,8 @@ interface SongLibraryDashboardProps {
   initialFilter?: 'all' | 'ccli' | 'hymnals' | 'verified';
   onAddToPlaylist: (song: WorshipSong) => void;
   playlistEnabled?: boolean;
+  activeServiceTitle?: string | null;
+  onOpenServiceManager?: () => void;
 }
 
 const initialSongLibrary = getFullSongLibrary();
@@ -76,7 +78,13 @@ const initialArrangement = WORSHIP_ARRANGEMENTS.includes(requestedArrangement as
 const requestedPresentation = initialQueryParameter('presentation');
 const initialPresentation = LANGUAGE_PRESENTATIONS.includes(requestedPresentation as (typeof LANGUAGE_PRESENTATIONS)[number]) ? requestedPresentation : 'all';
 
-export function SongLibraryDashboard({ initialFilter = 'all', onAddToPlaylist, playlistEnabled = false }: SongLibraryDashboardProps) {
+export function SongLibraryDashboard({
+  initialFilter = 'all',
+  onAddToPlaylist,
+  playlistEnabled = false,
+  activeServiceTitle = null,
+  onOpenServiceManager,
+}: SongLibraryDashboardProps) {
   const songs = initialSongLibrary;
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'Well-known' | MusicStyle>('All');
@@ -205,6 +213,19 @@ export function SongLibraryDashboard({ initialFilter = 'all', onAddToPlaylist, p
           <p>Search by song, artist, language or hymn number. Choose a video, then add it to your service playlist.</p>
         </div>
       </section>
+
+      {playlistEnabled && (
+        <div className={`active-service-bar ${activeServiceTitle ? 'has-service' : ''}`} role="status">
+          <span className="active-service-bar__icon"><ListPlus size={18} /></span>
+          <div>
+            <strong>{activeServiceTitle ? `Adding videos to “${activeServiceTitle}”` : 'Start by creating a service'}</strong>
+            <span>{activeServiceTitle ? 'Every video you add is saved to this service automatically.' : 'Give the service a name, then choose its worship videos.'}</span>
+          </div>
+          {onOpenServiceManager && (
+            <button type="button" onClick={onOpenServiceManager}>{activeServiceTitle ? 'Switch service' : 'Create service'}</button>
+          )}
+        </div>
+      )}
 
       {/* Top Filter & Toolbar */}
       <div className="music-dashboard__toolbar">
@@ -407,7 +428,9 @@ export function SongLibraryDashboard({ initialFilter = 'all', onAddToPlaylist, p
                       wordsIndicated: selectedSong.wordsIndicated || isCatalogueWordVideo(selectedSong.youtubeId) || approvedVideoIds.has(selectedSong.youtubeId),
                     })}
                   >
-                    <ListPlus size={16} /> {playlistEnabled ? 'Add to service' : 'Create account to plan a service'}
+                    <ListPlus size={16} /> {playlistEnabled
+                      ? activeServiceTitle ? `Add to ${activeServiceTitle}` : 'Choose a service first'
+                      : 'Create account to plan a service'}
                   </button>
                 </div>
               </div>

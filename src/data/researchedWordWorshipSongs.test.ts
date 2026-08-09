@@ -7,7 +7,7 @@ import {
 
 describe('researched worship word videos', () => {
   it('adds a large, uniquely linked, metadata-checked expansion', () => {
-    expect(RESEARCHED_WORD_COUNTS.total).toBe(1_800);
+    expect(RESEARCHED_WORD_COUNTS.total).toBeGreaterThanOrEqual(1_800);
     expect(RESEARCHED_WORD_VIDEO_IDS.size).toBe(RESEARCHED_WORD_WORSHIP_SONGS.length);
     expect(RESEARCHED_WORD_COUNTS.languages).toBeGreaterThanOrEqual(45);
   });

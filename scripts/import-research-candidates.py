@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "src" / "data" / "researchedWordWorshipVideos.json"
-TARGET = 1800
+TARGET = 2400
 SOURCE_PATHS = [
     Path("/tmp/modern-word-video-deep-candidates.json"),
     Path("/tmp/modern-word-video-candidates.json"),

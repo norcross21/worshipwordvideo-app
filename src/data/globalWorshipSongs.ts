@@ -47,6 +47,7 @@ export const GLOBAL_WORSHIP_SONGS: WorshipSong[] = rows.map(([
   sourceChannel,
   versionType: wordsIndicated ? 'Lyrics / subtitles indicated' : 'Native-language worship',
   catalogueReview: 'Metadata and embed checked',
+  wordsIndicated,
   durationSeconds,
   viewCountAtReview,
 }));

@@ -7,8 +7,8 @@ import {
   Library,
   ListMusic,
   Music2,
+  Plus,
   Play,
-  Save,
   Trash2,
   X,
 } from 'lucide-react';
@@ -17,8 +17,11 @@ import { useAuth } from '../context/AuthContext';
 import { formatPlaybackTime, type WorshipQueueItem } from '../data/worshipQueue';
 
 interface SavedPlaylistsModalProps {
-  currentQueue: WorshipQueueItem[];
-  onLoadPlaylist: (items: WorshipQueueItem[]) => void;
+  activePlaylistId: string | null;
+  activePlaylist?: SavedUserPlaylist | null;
+  pendingItem?: WorshipQueueItem | null;
+  onActivatePlaylist: (playlist: SavedUserPlaylist) => Promise<void> | void;
+  onPlaylistDeleted?: (playlistId: string) => void;
   onClose: () => void;
 }
 
@@ -31,6 +34,8 @@ interface SavedServiceCardProps {
   playlist: SavedUserPlaylist;
   deleteCandidateId: string | null;
   deletingId: string | null;
+  openingId: string | null;
+  isActive: boolean;
   onOpen: (playlist: SavedUserPlaylist) => void;
   onRequestDelete: (id: string) => void;
   onCancelDelete: () => void;
@@ -91,6 +96,8 @@ function SavedServiceCard({
   playlist,
   deleteCandidateId,
   deletingId,
+  openingId,
+  isActive,
   onOpen,
   onRequestDelete,
   onCancelDelete,
@@ -103,7 +110,7 @@ function SavedServiceCard({
   const previewItems = items.slice(0, 3);
 
   return (
-    <li className="saved-service-card">
+    <li className={`saved-service-card ${isActive ? 'is-active' : ''}`}>
       <div className="saved-service-card__cover">
         <VideoThumbnail item={items[0]} className="saved-service-card__cover-image" />
         <span className="saved-service-card__cover-count"><Play size={13} fill="currentColor" /> {items.length} video{items.length === 1 ? '' : 's'}</span>
@@ -112,7 +119,7 @@ function SavedServiceCard({
       <div className="saved-service-card__body">
         <div className="saved-service-card__heading">
           <div>
-            <span className="saved-service-card__eyebrow">{serviceDate ? 'Planned service' : 'Saved service'}</span>
+            <span className="saved-service-card__eyebrow">{isActive ? 'Active service' : serviceDate ? 'Planned service' : 'Saved service'}</span>
             <h5>{playlist.title}</h5>
           </div>
           {serviceDate ? (
@@ -152,8 +159,8 @@ function SavedServiceCard({
         <div className="saved-service-card__footer">
           <span>{serviceDate ? formatUpdatedAt(playlist.updated_at) : 'Ready to open and edit'}</span>
           <div className="saved-service-card__actions">
-            <button type="button" className="saved-service-card__open" onClick={() => onOpen(playlist)} disabled={!items.length}>
-              <Play size={15} fill="currentColor" /> Open service
+            <button type="button" className="saved-service-card__open" onClick={() => onOpen(playlist)} disabled={openingId === playlist.id}>
+              <Play size={15} fill="currentColor" /> {openingId === playlist.id ? 'Opening…' : isActive ? 'Continue service' : 'Open service'}
             </button>
             {isConfirmingDelete ? (
               <div className="saved-service-card__delete-confirm" role="group" aria-label={`Confirm deletion of ${playlist.title}`}>
@@ -175,23 +182,14 @@ function SavedServiceCard({
   );
 }
 
-function CurrentServicePreview({ items }: { items: WorshipQueueItem[] }) {
-  return (
-    <div className={`current-service-preview ${items.length ? '' : 'is-empty'}`.trim()}>
-      <div className="current-service-preview__images">
-        {items.length ? items.slice(0, 3).map((item, index) => (
-          <VideoThumbnail key={`${item.id}-${index}`} item={item} />
-        )) : <VideoThumbnail />}
-      </div>
-      <div>
-        <strong>{items.length ? `${items.length} video${items.length === 1 ? '' : 's'} ready to save` : 'Your current service is empty'}</strong>
-        <span>{items.length ? items.slice(0, 2).map((item) => item.title).join(' · ') : 'Add videos from the catalogue first.'}</span>
-      </div>
-    </div>
-  );
-}
-
-export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: SavedPlaylistsModalProps) {
+export function SavedPlaylistsModal({
+  activePlaylistId,
+  activePlaylist = null,
+  pendingItem = null,
+  onActivatePlaylist,
+  onPlaylistDeleted,
+  onClose,
+}: SavedPlaylistsModalProps) {
   const { user } = useAuth();
   const userId = user?.id;
   const [playlists, setPlaylists] = useState<SavedUserPlaylist[]>([]);
@@ -200,10 +198,14 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [openingId, setOpeningId] = useState<string | null>(null);
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const displayedPlaylists = playlists.map((playlist) => playlist.id === activePlaylist?.id
+    ? { ...playlist, items: activePlaylist.items, updated_at: activePlaylist.updated_at }
+    : playlist);
 
   const fetchUserPlaylists = useCallback(async () => {
     if (!supabase || !userId) {
@@ -244,18 +246,13 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
 
-  const handleSaveCurrentQueue = async (event: React.FormEvent) => {
+  const handleCreateService = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
     setSuccess('');
 
     if (!newTitle.trim()) {
       setError('Give this service a name before saving it.');
-      return;
-    }
-
-    if (!currentQueue.length) {
-      setError('Your current service is empty. Add videos before saving.');
       return;
     }
 
@@ -271,7 +268,7 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
         .insert({
           user_id: userId,
           title: newTitle.trim(),
-          items: currentQueue,
+          items: [],
           service_date: serviceDate || null,
           notes: notes.trim() || null,
         })
@@ -281,11 +278,16 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
       if (saveError) {
         setError(saveError.message);
       } else {
-        setSuccess(`Saved “${newTitle.trim()}” to your service library.`);
+        setSuccess(`Created “${newTitle.trim()}”.`);
         setNewTitle('');
         setServiceDate('');
         setNotes('');
-        if (data) setPlaylists((current) => [data as SavedUserPlaylist, ...current]);
+        if (data) {
+          const playlist = data as SavedUserPlaylist;
+          setPlaylists((current) => [playlist, ...current]);
+          await onActivatePlaylist(playlist);
+          onClose();
+        }
       }
     } catch (err: unknown) {
       setError(supabaseErrorMessage(err, 'Failed to save this service.'));
@@ -311,6 +313,7 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
         setError(deleteError.message);
       } else {
         setPlaylists((current) => current.filter((item) => item.id !== playlist.id));
+        onPlaylistDeleted?.(playlist.id);
         setSuccess(`Deleted “${playlist.title}”.`);
       }
     } catch (err: unknown) {
@@ -321,11 +324,17 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
     }
   };
 
-  const openPlaylist = (playlist: SavedUserPlaylist) => {
-    const items = Array.isArray(playlist.items) ? playlist.items : [];
-    if (!items.length) return;
-    onLoadPlaylist(items);
-    onClose();
+  const openPlaylist = async (playlist: SavedUserPlaylist) => {
+    setError('');
+    setOpeningId(playlist.id);
+    try {
+      await onActivatePlaylist(playlist);
+      onClose();
+    } catch (openError) {
+      setError(supabaseErrorMessage(openError, 'This service could not be opened.'));
+    } finally {
+      setOpeningId(null);
+    }
   };
 
   return (
@@ -343,7 +352,7 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
             <div>
               <span className="saved-services-header__eyebrow">Your planning space</span>
               <h3 id="saved-playlists-title">Saved services</h3>
-              <p>See each service at a glance, reopen its videos and keep future worship plans together.</p>
+              <p>Create a service first, then switch between services and add videos to the one you have open.</p>
             </div>
           </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close saved services"><X size={20} /></button>
@@ -360,7 +369,7 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
                   <span><Cloud size={15} /> Stored securely in your account</span>
                   <h4 id="service-library-heading">Your service library</h4>
                 </div>
-                <strong>{playlists.length} saved</strong>
+                <strong>{displayedPlaylists.length} saved</strong>
               </div>
 
               {loading ? (
@@ -368,20 +377,22 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
                   <span className="service-library-loading__image" />
                   <span><strong>Loading your services…</strong><small>Bringing back your videos and service notes.</small></span>
                 </div>
-              ) : playlists.length === 0 ? (
+              ) : displayedPlaylists.length === 0 ? (
                 <div className="empty-playlists">
                   <span className="empty-playlists__icon"><ListMusic size={28} /></span>
                   <h5>Your first saved service will appear here</h5>
-                  <p>Build a playlist, then use the form alongside to save its running order, video trims and notes.</p>
+                  <p>Create a named service using the form alongside. It can start empty, ready for you to add videos.</p>
                 </div>
               ) : (
                 <ul className="saved-playlists__items">
-                  {playlists.map((playlist) => (
+                  {displayedPlaylists.map((playlist) => (
                     <SavedServiceCard
                       key={playlist.id}
                       playlist={playlist}
                       deleteCandidateId={deleteCandidateId}
                       deletingId={deletingId}
+                      openingId={openingId}
+                      isActive={playlist.id === activePlaylistId}
                       onOpen={openPlaylist}
                       onRequestDelete={setDeleteCandidateId}
                       onCancelDelete={() => setDeleteCandidateId(null)}
@@ -393,12 +404,17 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
             </section>
 
             <aside className="save-service-panel" aria-labelledby="save-current-service-heading">
-              <form onSubmit={handleSaveCurrentQueue} className="save-queue-box save-queue-box--rich">
-                <span className="save-service-panel__eyebrow"><Save size={14} /> Current service</span>
-                <h4 id="save-current-service-heading">Save this plan</h4>
-                <p className="save-service-panel__intro">Keep the exact running order and any video trims for another device or service.</p>
+              <form onSubmit={handleCreateService} className="save-queue-box save-queue-box--rich">
+                <span className="save-service-panel__eyebrow"><Plus size={14} /> New service</span>
+                <h4 id="save-current-service-heading">Create a service</h4>
+                <p className="save-service-panel__intro">Name the service first. It opens immediately, and every video you add afterwards is saved into it.</p>
 
-                <CurrentServicePreview items={currentQueue} />
+                {pendingItem ? (
+                  <div className="pending-service-video">
+                    <VideoThumbnail item={pendingItem} />
+                    <span><strong>{pendingItem.title}</strong><small>This video will be added as soon as you create or choose a service.</small></span>
+                  </div>
+                ) : null}
 
                 <label className="save-service-form__field">
                   <span>Service name</span>
@@ -421,10 +437,10 @@ export function SavedPlaylistsModal({ currentQueue, onLoadPlaylist, onClose }: S
                   <textarea rows={3} maxLength={500} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Theme, speaker or anything to remember" />
                 </label>
 
-                <button type="submit" className="btn-primary save-service-panel__submit" disabled={saving || !currentQueue.length}>
-                  <Save size={15} /> {saving ? 'Saving service…' : 'Save to my library'}
+                <button type="submit" className="btn-primary save-service-panel__submit" disabled={saving}>
+                  <Plus size={15} /> {saving ? 'Creating service…' : 'Create and open service'}
                 </button>
-                <p className="save-queue-box__hint">Saved services are private to your account.</p>
+                <p className="save-queue-box__hint">Services are private to your account and automatically updated as you plan.</p>
               </form>
             </aside>
           </div>

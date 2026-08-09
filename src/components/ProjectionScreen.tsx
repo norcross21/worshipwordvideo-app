@@ -52,8 +52,13 @@ export function ProjectionScreen() {
       ) : (
         <div className="projection-screen__waiting">
           <MonitorUp size={52} />
-          <h1>Projection screen ready</h1>
-          <p>Choose Play on the service playlist. Only the worship video will appear here.</p>
+          <h1>Church screen ready</h1>
+          <ol>
+            <li>Move this window onto the projector or second monitor if it is still on your dashboard.</li>
+            <li>Press the Full screen button below.</li>
+            <li>Return to the dashboard and choose Start the first video.</li>
+          </ol>
+          {!isFullscreen && <button type="button" className="projection-screen__fullscreen-primary" onClick={() => void enterFullscreen()}><Maximize2 size={19} /> Make this screen full screen</button>}
         </div>
       )}
       <div className="projection-screen__tools">

@@ -1,14 +1,23 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { LegalModal } from './components/LegalModal';
 import { VersionRefreshButton } from './components/VersionRefreshButton';
-import { getWorshipQueue, addToWorshipQueue, saveWorshipQueue, worshipQueueItem, type WorshipQueueItem } from './data/worshipQueue';
+import {
+  getActiveServiceId,
+  getWorshipQueue,
+  addToWorshipQueue,
+  saveActiveServiceId,
+  saveWorshipQueue,
+  worshipQueueItem,
+  type WorshipQueueItem,
+} from './data/worshipQueue';
 import type { WorshipSong } from './data/worshipSongs';
 import { Sparkles } from 'lucide-react';
 import './App.css';
 import { ProjectionScreen } from './components/ProjectionScreen';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
+import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
 
 const SongLibraryDashboard = lazy(() => import('./components/SongLibraryDashboard').then((module) => ({ default: module.SongLibraryDashboard })));
 const WorshipQueue = lazy(() => import('./components/WorshipQueue').then((module) => ({ default: module.WorshipQueue })));
@@ -27,6 +36,11 @@ function MainApp() {
   const [activeTab, setActiveTab] = useState<'all' | 'playlist' | 'admin'>('all');
   const [queue, setQueue] = useState<WorshipQueueItem[]>([]);
   const [queueOwnerId, setQueueOwnerId] = useState<string | null>(null);
+  const [activeService, setActiveService] = useState<SavedUserPlaylist | null>(null);
+  const [serviceLoading, setServiceLoading] = useState(false);
+  const [serviceSaveState, setServiceSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [pendingPlaylistItem, setPendingPlaylistItem] = useState<WorshipQueueItem | null>(null);
+  const lastCloudItemsRef = useRef('');
   const [toastMessage, setToastMessage] = useState('');
   const [showSavedPlaylistsModal, setShowSavedPlaylistsModal] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
@@ -41,21 +55,94 @@ function MainApp() {
 
   useEffect(() => {
     if (authLoading) return;
+    let active = true;
     if (!user) {
       setQueue([]);
       setQueueOwnerId(null);
+      setActiveService(null);
+      setServiceLoading(false);
       setActiveTab('all');
       setShowSavedPlaylistsModal(false);
       setShowAccountModal(false);
       return;
     }
-    setQueue(getWorshipQueue(user.id));
-    setQueueOwnerId(user.id);
+
+    const restoreService = async () => {
+      setServiceLoading(true);
+      setQueueOwnerId(null);
+      const localQueue = getWorshipQueue(user.id);
+      const activeServiceId = getActiveServiceId(user.id);
+      if (!supabase || !activeServiceId) {
+        if (!active) return;
+        setActiveService(null);
+        setQueue(localQueue);
+        lastCloudItemsRef.current = '';
+        setQueueOwnerId(user.id);
+        setServiceLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_playlists')
+        .select('id,user_id,title,items,service_date,notes,created_at,updated_at')
+        .eq('id', activeServiceId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!active) return;
+      if (error || !data) {
+        saveActiveServiceId(null, user.id);
+        setActiveService(null);
+        setQueue(localQueue);
+        lastCloudItemsRef.current = '';
+      } else {
+        const restored = data as SavedUserPlaylist;
+        const items = Array.isArray(restored.items) ? restored.items : [];
+        lastCloudItemsRef.current = JSON.stringify(items);
+        setActiveService(restored);
+        setQueue(items);
+      }
+      setQueueOwnerId(user.id);
+      setServiceLoading(false);
+    };
+
+    void restoreService();
+    return () => { active = false; };
   }, [authLoading, user?.id]);
 
   useEffect(() => {
     if (user && queueOwnerId === user.id) saveWorshipQueue(queue, user.id);
   }, [queue, queueOwnerId, user?.id]);
+
+  useEffect(() => {
+    if (!user || queueOwnerId !== user.id) return;
+    setActiveService((current) => current ? { ...current, items: queue } : current);
+  }, [queue, queueOwnerId, user?.id]);
+
+  useEffect(() => {
+    const client = supabase;
+    if (!client || !user || !activeService || queueOwnerId !== user.id) return;
+    const serialisedItems = JSON.stringify(queue);
+    if (serialisedItems === lastCloudItemsRef.current) return;
+    setServiceSaveState('saving');
+    const timer = window.setTimeout(() => {
+      void client
+        .from('user_playlists')
+        .update({ items: queue })
+        .eq('id', activeService.id)
+        .eq('user_id', user.id)
+        .then(({ error }) => {
+          if (error) {
+            setServiceSaveState('error');
+            return;
+          }
+          lastCloudItemsRef.current = serialisedItems;
+          setActiveService((current) => current?.id === activeService.id ? { ...current, items: queue, updated_at: new Date().toISOString() } : current);
+          setServiceSaveState('saved');
+          window.setTimeout(() => setServiceSaveState('idle'), 1800);
+        });
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [activeService?.id, queue, queueOwnerId, user?.id]);
 
   useEffect(() => {
     if (!user || profileLoading || !profile || profile.terms_accepted_at || authModalTab) return;
@@ -120,17 +207,58 @@ function MainApp() {
     }
 
     const item = worshipQueueItem(song);
+    if (!activeService) {
+      setPendingPlaylistItem(item);
+      setShowSavedPlaylistsModal(true);
+      setToastMessage('Choose a service or create a new one before adding this video.');
+      window.setTimeout(() => setToastMessage(''), 3500);
+      return;
+    }
     const nextQueue = addToWorshipQueue(queue, item);
 
     setQueue(nextQueue);
-    setToastMessage(`✓ Added "${song.title}" to Service Playlist`);
+    setToastMessage(nextQueue.length === queue.length
+      ? `“${song.title}” is already in ${activeService.title}.`
+      : `✓ Added “${song.title}” to ${activeService.title}`);
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleLoadPlaylistFromCloud = (items: WorshipQueueItem[]) => {
+  const handleActivateService = async (playlist: SavedUserPlaylist) => {
+    if (!user) return;
+    let items = Array.isArray(playlist.items) ? playlist.items : [];
+    if (pendingPlaylistItem) {
+      items = addToWorshipQueue(items, pendingPlaylistItem);
+      if (!supabase) throw new Error('Cloud services are unavailable. Please refresh and try again.');
+      const { error } = await supabase
+        .from('user_playlists')
+        .update({ items })
+        .eq('id', playlist.id)
+        .eq('user_id', user.id);
+      if (error) throw new Error(supabaseErrorMessage(error, 'The video could not be added to this service.'));
+    }
+    const nextService = { ...playlist, items };
+    lastCloudItemsRef.current = JSON.stringify(items);
+    setActiveService(nextService);
     setQueue(items);
-    setToastMessage(`✓ Loaded playlist into active queue (${items.length} songs)`);
-    setTimeout(() => setToastMessage(''), 3500);
+    setQueueOwnerId(user.id);
+    saveActiveServiceId(playlist.id, user.id);
+    setPendingPlaylistItem(null);
+    setServiceSaveState('saved');
+    setToastMessage(pendingPlaylistItem
+      ? `✓ Added “${pendingPlaylistItem.title}” to ${playlist.title}`
+      : `✓ ${playlist.title} is now your active service`);
+    window.setTimeout(() => {
+      setToastMessage('');
+      setServiceSaveState('idle');
+    }, 3000);
+  };
+
+  const handleServiceDeleted = (serviceId: string) => {
+    if (activeService?.id !== serviceId) return;
+    setActiveService(null);
+    setQueue([]);
+    lastCloudItemsRef.current = '';
+    saveActiveServiceId(null, user?.id);
   };
 
   return (
@@ -140,6 +268,7 @@ function MainApp() {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         playlistCount={queue.length}
+        activeServiceTitle={activeService?.title ?? null}
         onOpenSavedPlaylists={() => setShowSavedPlaylistsModal(true)}
         onOpenAuth={setAuthModalTab}
         onOpenAccount={() => setShowAccountModal(true)}
@@ -172,6 +301,9 @@ function MainApp() {
             <WorshipQueue
               queue={queue}
               onChange={setQueue}
+              activeService={activeService}
+              serviceLoading={serviceLoading}
+              saveState={serviceSaveState}
               onOpenSavedPlaylists={() => setShowSavedPlaylistsModal(true)}
               onBrowseSongs={() => setActiveTab('all')}
             />
@@ -180,6 +312,11 @@ function MainApp() {
               initialFilter="all"
               onAddToPlaylist={handleAddToPlaylist}
               playlistEnabled={Boolean(user)}
+              activeServiceTitle={activeService?.title ?? null}
+              onOpenServiceManager={() => {
+                setPendingPlaylistItem(null);
+                setShowSavedPlaylistsModal(true);
+              }}
             />
           )}
         </Suspense>
@@ -189,9 +326,15 @@ function MainApp() {
       {showSavedPlaylistsModal && (
         <Suspense fallback={null}>
           <SavedPlaylistsModal
-            currentQueue={queue}
-            onLoadPlaylist={handleLoadPlaylistFromCloud}
-            onClose={() => setShowSavedPlaylistsModal(false)}
+            activePlaylistId={activeService?.id ?? null}
+            activePlaylist={activeService}
+            pendingItem={pendingPlaylistItem}
+            onActivatePlaylist={handleActivateService}
+            onPlaylistDeleted={handleServiceDeleted}
+            onClose={() => {
+              setPendingPlaylistItem(null);
+              setShowSavedPlaylistsModal(false);
+            }}
           />
         </Suspense>
       )}

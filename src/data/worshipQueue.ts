@@ -2,6 +2,7 @@ import type { WorshipSong } from './worshipSongs';
 
 export const WORSHIP_QUEUE_LIMIT = 10;
 const WORSHIP_QUEUE_KEY_PREFIX = 'worship_word_video_queue_v2';
+const ACTIVE_SERVICE_KEY_PREFIX = 'worship_word_video_active_service_v1';
 
 export interface WorshipQueueItem {
   id: string;
@@ -90,5 +91,28 @@ export function saveWorshipQueue(queue: WorshipQueueItem[], userId?: string) {
     localStorage.setItem(worshipQueueKey(userId), JSON.stringify(queue.slice(0, WORSHIP_QUEUE_LIMIT)));
   } catch {
     // The queue remains available for this session when storage is unavailable.
+  }
+}
+
+function activeServiceKey(userId: string): string {
+  return `${ACTIVE_SERVICE_KEY_PREFIX}:${userId}`;
+}
+
+export function getActiveServiceId(userId?: string): string | null {
+  if (!userId) return null;
+  try {
+    return localStorage.getItem(activeServiceKey(userId));
+  } catch {
+    return null;
+  }
+}
+
+export function saveActiveServiceId(serviceId: string | null, userId?: string) {
+  if (!userId) return;
+  try {
+    if (serviceId) localStorage.setItem(activeServiceKey(userId), serviceId);
+    else localStorage.removeItem(activeServiceKey(userId));
+  } catch {
+    // The selected service still remains active for the current session.
   }
 }

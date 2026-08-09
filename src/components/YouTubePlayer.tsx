@@ -29,7 +29,7 @@ export function YouTubePlayer({ videoId, title, autoplay = false, className, sta
       <iframe
         src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`}
         title={title}
-        loading="lazy"
+        loading="eager"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen

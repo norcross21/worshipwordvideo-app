@@ -6,13 +6,14 @@ interface HeaderProps {
   activeTab: 'all' | 'playlist' | 'admin';
   onSelectTab: (tab: 'all' | 'playlist' | 'admin') => void;
   playlistCount: number;
+  activeServiceTitle: string | null;
   onOpenSavedPlaylists?: () => void;
   onOpenAuth: (tab: 'signin' | 'signup') => void;
   onOpenAccount: () => void;
   onOpenDonate: () => void;
 }
 
-export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlaylists, onOpenAuth, onOpenAccount, onOpenDonate }: HeaderProps) {
+export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTitle, onOpenSavedPlaylists, onOpenAuth, onOpenAccount, onOpenDonate }: HeaderProps) {
   const { user, profile, adminRole, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const memberName = profile?.display_name?.trim() || user?.user_metadata?.display_name || user?.email?.split('@')[0];
@@ -43,7 +44,7 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
               aria-pressed={activeTab === 'playlist'}
               onClick={() => onSelectTab('playlist')}
             >
-              <ListMusic size={17} /> <span className="nav-tab__label">My service</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
+              <ListMusic size={17} /> <span className="nav-tab__label">{activeServiceTitle || 'New service'}</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
             </button>
           )}
           {user ? (
@@ -101,7 +102,7 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
                           onOpenSavedPlaylists();
                         }}
                       >
-                        <Cloud size={15} /> My Saved Playlists
+                        <Cloud size={15} /> Manage services
                       </button>
                     )}
                     <button

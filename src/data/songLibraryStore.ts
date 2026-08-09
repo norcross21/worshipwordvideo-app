@@ -15,6 +15,7 @@ import { EASTERN_CHRISTIAN_WORD_VIDEOS } from './easternChristianVideos';
 import { INTERNATIONAL_WORSHIP_SONGS, LANGUAGE_FILTERS } from './internationalWorshipSongs';
 import { WORSHIP_WORD_VIDEO_REPLACEMENTS } from './worshipWordVideoReplacements';
 import { enrichSongPresentation, inferLanguagePresentation, inferWorshipArrangement } from './songPresentation';
+import { isUsableWorshipVideoListing } from './videoQuality';
 
 export { LANGUAGE_FILTERS };
 
@@ -485,7 +486,9 @@ export function getFullSongLibrary(): WorshipSong[] {
     return song;
   });
 
-  return [...mappedDefaults, ...custom].map(enrichSongPresentation);
+  return [...mappedDefaults, ...custom]
+    .map(enrichSongPresentation)
+    .filter(isUsableWorshipVideoListing);
 }
 
 export function addCustomSong(song: Omit<WorshipSong, 'id'>): WorshipSong {

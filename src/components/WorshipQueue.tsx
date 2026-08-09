@@ -8,6 +8,7 @@ import {
   LogIn,
   MonitorUp,
   Play,
+  Plus,
   RotateCcw,
   Scissors,
   SkipBack,
@@ -19,7 +20,9 @@ import { YouTubePlayer } from './YouTubePlayer';
 import { VideoTrimEditor } from './VideoTrimEditor';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
+import { ProjectionSetupGuide, type ProjectionLaunchResult } from './ProjectionSetupGuide';
 import { publishProjectionState } from '../data/projection';
+import type { SavedUserPlaylist } from '../lib/supabase';
 import {
   WORSHIP_QUEUE_LIMIT,
   formatPlaybackTime,
@@ -32,6 +35,9 @@ import {
 interface WorshipQueueProps {
   queue: WorshipQueueItem[];
   onChange: (queue: WorshipQueueItem[]) => void;
+  activeService: SavedUserPlaylist | null;
+  serviceLoading?: boolean;
+  saveState?: 'idle' | 'saving' | 'saved' | 'error';
   onOpenSavedPlaylists?: () => void;
   onBrowseSongs?: () => void;
 }
@@ -42,7 +48,15 @@ interface ScreenPlacement {
 
 type WindowWithScreenDetails = Window & { getScreenDetails?: () => Promise<ScreenPlacement> };
 
-export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSongs }: WorshipQueueProps) {
+export function WorshipQueue({
+  queue,
+  onChange,
+  activeService,
+  serviceLoading = false,
+  saveState = 'idle',
+  onOpenSavedPlaylists,
+  onBrowseSongs,
+}: WorshipQueueProps) {
   const { user } = useAuth();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [playbackRevision, setPlaybackRevision] = useState(0);
@@ -52,6 +66,7 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
   const [endDraft, setEndDraft] = useState('');
   const [timingError, setTimingError] = useState('');
   const [projectionMessage, setProjectionMessage] = useState('');
+  const [showProjectionGuide, setShowProjectionGuide] = useState(false);
   const playingItem = playingIndex == null ? null : queue[playingIndex] ?? null;
 
   useEffect(() => {
@@ -115,10 +130,9 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
     setTimingError('');
   };
 
-  const openProjection = async () => {
-    const nextIndex = playingIndex ?? (queue.length ? 0 : null);
-    if (nextIndex !== playingIndex) setPlayingIndex(nextIndex);
-    publishProjectionState({ queue, playingIndex: nextIndex, playbackRevision: playbackRevision + 1 });
+  const openProjection = async (): Promise<ProjectionLaunchResult> => {
+    setPlayingIndex(null);
+    publishProjectionState({ queue, playingIndex: null, playbackRevision: playbackRevision + 1 });
 
     const url = new URL(window.location.href);
     url.search = '?projection=1';
@@ -126,10 +140,10 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
     const popup = window.open(url.toString(), 'worship-word-video-projection', 'popup=yes,width=1280,height=720');
     if (!popup) {
       setProjectionMessage('Your browser blocked the projection window. Allow pop-ups for this site, then try again.');
-      return;
+      return 'blocked';
     }
     setPlaybackRevision((value) => value + 1);
-    setProjectionMessage('Projection opened. Move it to the church screen and choose Full screen. Your dashboard stays here.');
+    setProjectionMessage('Projection window opened. Follow the final step to make it full screen, then start the service here.');
 
     const multiScreenWindow = window as WindowWithScreenDetails;
     if (multiScreenWindow.getScreenDetails) {
@@ -141,6 +155,7 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
           popup.resizeTo(target.availWidth, target.availHeight);
           popup.focus();
           setProjectionMessage('Projection placed on the second screen. Choose Full screen in that window.');
+          return 'placed';
         }
       } catch {
         popup.focus();
@@ -148,26 +163,35 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
     } else {
       popup.focus();
     }
+    return 'opened';
+  };
+
+  const startProjection = () => {
+    if (!queue.length) return;
+    playAt(0);
+    setShowProjectionGuide(false);
+    setProjectionMessage('Service started on the projection screen. Use Previous and Next here while the congregation sees only the video.');
   };
 
   return (
     <section className="worship-queue" aria-labelledby="worship-queue-title">
       <div className="worship-queue__heading">
         <div>
-          <span className="worship-queue__eyebrow"><ListMusic size={16} /> Service playlist</span>
-          <h2 id="worship-queue-title">Your service ({queue.length}/{WORSHIP_QUEUE_LIMIT})</h2>
-          <p>Arrange the running order, trim untidy beginnings or endings, then project the clean video window.</p>
+          <span className="worship-queue__eyebrow"><ListMusic size={16} /> {activeService ? 'Active service' : 'Service planning'}</span>
+          <h2 id="worship-queue-title">{serviceLoading ? 'Loading your service…' : activeService?.title || 'Create or choose a service'} {activeService ? `(${queue.length}/${WORSHIP_QUEUE_LIMIT})` : ''}</h2>
+          <p>{activeService ? 'Changes save automatically. Arrange the running order, set clean video timing, then present it.' : 'Start with a named service so every video, trim and running-order change has somewhere to save.'}</p>
+          {activeService && <span className={`service-save-status is-${saveState}`}>{saveState === 'saving' ? 'Saving changes…' : saveState === 'error' ? 'Could not save—check your connection' : saveState === 'saved' ? 'Saved' : 'Saved to your account'}</span>}
         </div>
 
         <div className="worship-queue__heading-actions">
           {user ? (
-            <button type="button" className="worship-queue__btn-cloud" onClick={onOpenSavedPlaylists}><Cloud size={15} /> Saved playlists</button>
+            <button type="button" className="worship-queue__btn-cloud" onClick={onOpenSavedPlaylists}>{activeService ? <Cloud size={15} /> : <Plus size={15} />} {activeService ? 'Switch or add service' : 'Add service'}</button>
           ) : (
             <button type="button" className="worship-queue__btn-login" onClick={() => setShowAuthModal(true)}><LogIn size={14} /> Log in to save</button>
           )}
           {queue.length > 0 && (
             <>
-              <button type="button" className="worship-queue__btn-project" onClick={() => void openProjection()}><MonitorUp size={15} /> Open projection</button>
+              <button type="button" className="worship-queue__btn-project" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={15} /> Present on second screen</button>
               <button type="button" className="worship-queue__btn-secondary" onClick={() => playAt(0)}><Play size={14} /> Start here</button>
               <button type="button" className="worship-queue__btn-icon-danger" onClick={clearQueue} title="Clear playlist" aria-label="Clear playlist"><Trash2 size={15} /><span>Clear</span></button>
             </>
@@ -208,9 +232,12 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
       {queue.length === 0 ? (
         <div className="worship-queue__empty">
           <ListMusic size={32} />
-          <p>No videos in your service yet.</p>
-          <span>Choose a song and select <strong>Add to playlist</strong>. You can add up to {WORSHIP_QUEUE_LIMIT} videos.</span>
-          {onBrowseSongs && <button type="button" className="btn-primary" onClick={onBrowseSongs}>Browse songs</button>}
+          <p>{activeService ? `${activeService.title} is ready for its first video.` : 'Create a service before adding videos.'}</p>
+          <span>{activeService ? `Choose a worship video and add it to this service. You can add up to ${WORSHIP_QUEUE_LIMIT} videos.` : 'You can keep several services and switch between them whenever you plan.'}</span>
+          <div className="worship-queue__empty-actions">
+            {!activeService && onOpenSavedPlaylists && <button type="button" className="btn-primary" onClick={onOpenSavedPlaylists}><Plus size={15} /> Create a service</button>}
+            {activeService && onBrowseSongs && <button type="button" className="btn-primary" onClick={onBrowseSongs}>Browse worship videos</button>}
+          </div>
         </div>
       ) : (
         <ol className="worship-queue__list">
@@ -287,6 +314,15 @@ export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSo
       )}
 
       {showAuthModal && <AuthModal initialTab="signin" onClose={() => setShowAuthModal(false)} />}
+      {showProjectionGuide && (
+        <ProjectionSetupGuide
+          serviceTitle={activeService?.title || 'Current service'}
+          songCount={queue.length}
+          onOpenProjection={openProjection}
+          onStartService={startProjection}
+          onClose={() => setShowProjectionGuide(false)}
+        />
+      )}
     </section>
   );
 }

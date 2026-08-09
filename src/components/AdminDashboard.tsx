@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  AlertTriangle,
   CheckCircle2,
   Clock3,
   Download,
@@ -10,6 +11,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Trash2,
   UsersRound,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -29,9 +31,11 @@ interface AdminMemberRow {
   saved_playlist_count: number;
 }
 
+const adminDateFormatter = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+
 function formatDate(value: string | null): string {
   if (!value) return 'Never';
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  return adminDateFormatter.format(new Date(value));
 }
 
 function csvCell(value: string | number | boolean | null): string {
@@ -39,7 +43,7 @@ function csvCell(value: string | number | boolean | null): string {
 }
 
 export function AdminDashboard() {
-  const { adminRole, adminLoading, session } = useAuth();
+  const { adminRole, adminLoading, session, user } = useAuth();
   const [members, setMembers] = useState<AdminMemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,6 +55,10 @@ export function AdminDashboard() {
   const [inviteExpected, setInviteExpected] = useState(false);
   const [inviteSending, setInviteSending] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<AdminMemberRow | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletingMember, setDeletingMember] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadMembers = async () => {
     if (!supabase || adminRole !== 'master_admin') return;
@@ -157,6 +165,31 @@ export function AdminDashboard() {
     }
   };
 
+  const deleteMember = async () => {
+    if (!supabase || !deleteCandidate?.email) return;
+    setDeleteMessage(null);
+    if (deleteConfirmation.trim().toLowerCase() !== deleteCandidate.email.trim().toLowerCase()) {
+      setDeleteMessage({ type: 'error', text: 'Type the member email exactly before deleting the account.' });
+      return;
+    }
+    setDeletingMember(true);
+    const { error: deleteError } = await supabase.rpc('delete_member_account', {
+      target_user_id: deleteCandidate.user_id,
+      confirmation_email: deleteConfirmation.trim(),
+    });
+    if (deleteError) {
+      setDeleteMessage({ type: 'error', text: supabaseErrorMessage(deleteError, 'The member account could not be deleted.') });
+      setDeletingMember(false);
+      return;
+    }
+    const deletedEmail = deleteCandidate.email;
+    setMembers((current) => current.filter((member) => member.user_id !== deleteCandidate.user_id));
+    setDeleteCandidate(null);
+    setDeleteConfirmation('');
+    setDeletingMember(false);
+    setDeleteMessage({ type: 'success', text: `Deleted ${deletedEmail} and their saved services.` });
+  };
+
   if (adminLoading) return <div className="admin-state">Checking administrator access…</div>;
   if (adminRole !== 'master_admin') return <div className="admin-state"><ShieldCheck size={32} /><h2>Administrator access required</h2><p>This area is protected by your verified account role.</p></div>;
 
@@ -201,6 +234,7 @@ export function AdminDashboard() {
       </section>
 
       {error && <div className="auth-alert auth-alert--error" role="alert">{error}</div>}
+      {deleteMessage && <div className={`auth-alert auth-alert--${deleteMessage.type}`} role={deleteMessage.type === 'error' ? 'alert' : 'status'}>{deleteMessage.text}</div>}
       <div className="admin-tools">
         <label className="admin-search"><Search size={16} /><span className="sr-only">Search members</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name, church or email…" /></label>
         <label className="admin-status-filter"><span className="sr-only">Member status</span><select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">All members</option><option value="confirmed">Email confirmed</option><option value="awaiting">Awaiting confirmation</option><option value="recent">Active in 30 days</option><option value="kairos-emails">Kairos email opt-in</option></select></label>
@@ -208,7 +242,7 @@ export function AdminDashboard() {
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>Member</th><th>Email status</th><th>Kairos emails</th><th>Saved</th><th>Joined</th><th>Last sign-in</th></tr></thead>
+          <thead><tr><th>Member</th><th>Email status</th><th>Kairos emails</th><th>Saved</th><th>Joined</th><th>Last sign-in</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>
             {visibleMembers.map((item) => (
               <tr key={item.user_id}>
@@ -218,14 +252,40 @@ export function AdminDashboard() {
                 <td>{item.saved_playlist_count}</td>
                 <td>{formatDate(item.created_at)}</td>
                 <td>{formatDate(item.last_sign_in_at)}</td>
+                <td className="admin-table__actions">
+                  {item.user_id !== user?.id && (
+                    <button type="button" className="admin-delete-member" onClick={() => { setDeleteCandidate(item); setDeleteConfirmation(''); setDeleteMessage(null); }} aria-label={`Delete ${item.email || 'member'}`} title="Delete member account"><Trash2 size={15} /></button>
+                  )}
+                </td>
               </tr>
             ))}
-            {!loading && visibleMembers.length === 0 && <tr><td colSpan={6}>{members.length ? 'No members match these filters.' : 'No members have registered yet.'}</td></tr>}
+            {!loading && visibleMembers.length === 0 && <tr><td colSpan={7}>{members.length ? 'No members match these filters.' : 'No members have registered yet.'}</td></tr>}
           </tbody>
         </table>
         {loading && <div className="admin-table__loading">Loading members…</div>}
       </div>
-      <p className="admin-safety-note">This first management release is deliberately non-destructive. Account deletion or suspension should only be added with multi-factor authentication and an audit trail.</p>
+      <p className="admin-safety-note">Member deletion requires exact-email confirmation, cannot delete the master administrator, removes the member's saved services and writes a private audit record.</p>
+
+      {deleteCandidate && (
+        <div className="modal-backdrop" onClick={() => !deletingMember && setDeleteCandidate(null)}>
+          <div className="modal-card admin-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="admin-delete-title" onClick={(event) => event.stopPropagation()}>
+            <div className="admin-delete-modal__icon"><AlertTriangle size={26} /></div>
+            <h3 id="admin-delete-title">Permanently delete this member?</h3>
+            <p>This removes the login for <strong>{deleteCandidate.email}</strong> and deletes all {deleteCandidate.saved_playlist_count} saved service{deleteCandidate.saved_playlist_count === 1 ? '' : 's'}. This cannot be undone.</p>
+            <label>
+              <span>Type the member's email to confirm</span>
+              <input value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} autoComplete="off" placeholder={deleteCandidate.email ?? ''} />
+            </label>
+            {deleteMessage?.type === 'error' && <div className="auth-alert auth-alert--error" role="alert">{deleteMessage.text}</div>}
+            <div className="admin-delete-modal__actions">
+              <button type="button" className="btn-secondary" onClick={() => setDeleteCandidate(null)} disabled={deletingMember}>Cancel</button>
+              <button type="button" className="btn-danger" onClick={() => void deleteMember()} disabled={deletingMember || deleteConfirmation.trim().toLowerCase() !== deleteCandidate.email?.trim().toLowerCase()}>
+                <Trash2 size={15} /> {deletingMember ? 'Deleting member…' : 'Delete member permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

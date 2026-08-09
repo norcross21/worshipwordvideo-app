@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Crosshair, Pause, Play, Scissors } from 'lucide-react';
+import { Crosshair, Pause, Play, RotateCcw, RotateCw, Scissors } from 'lucide-react';
 import { formatPlaybackTime, parsePlaybackTime, playbackTimingError } from '../data/worshipQueue';
 import { YouTubePlayer } from './YouTubePlayer';
 
@@ -109,10 +109,14 @@ export function VideoTrimEditor({
     let player: YouTubePlayerInstance | null = null;
     let positionTimer = 0;
     let durationNoticeTimer = 0;
+    let loadingTimeout = 0;
 
     setReady(false);
     setPlayerError('');
     setCurrentSeconds(initialStartSeconds ?? 0);
+    loadingTimeout = window.setTimeout(() => {
+      if (!disposed && !playerRef.current) setPlayerError('The interactive timeline is taking too long to load. You can still preview the video and type exact times.');
+    }, 9000);
 
     void loadYouTubeIframeApi()
       .then((api) => {
@@ -137,6 +141,7 @@ export function VideoTrimEditor({
               setVideoDuration(detectedDuration);
               setCurrentSeconds(safePlayerValue(() => event.target.getCurrentTime(), initialStartSeconds ?? 0));
               setReady(true);
+              window.clearTimeout(loadingTimeout);
               durationNoticeTimer = window.setTimeout(() => {
                 if (safePlayerValue(() => event.target.getDuration(), 0) <= 0) {
                   setPreviewMessage('This upload is not exposing its timeline here. Try another video or enter exact times in the boxes.');
@@ -147,6 +152,8 @@ export function VideoTrimEditor({
                 if (!activePlayer) return;
                 const nextPosition = safePlayerValue(() => activePlayer.getCurrentTime());
                 setCurrentSeconds(nextPosition);
+                const nextDuration = safePlayerValue(() => activePlayer.getDuration(), 0);
+                if (nextDuration > 0) setVideoDuration((current) => Math.abs(current - nextDuration) > 0.5 ? nextDuration : current);
                 const previewEnd = previewEndRef.current;
                 if (previewEnd != null && nextPosition >= previewEnd) {
                   activePlayer.pauseVideo();
@@ -167,6 +174,7 @@ export function VideoTrimEditor({
       disposed = true;
       window.clearInterval(positionTimer);
       window.clearTimeout(durationNoticeTimer);
+      window.clearTimeout(loadingTimeout);
       previewEndRef.current = null;
       playerRef.current = null;
       try {
@@ -203,6 +211,13 @@ export function VideoTrimEditor({
     if (kind === 'start') onStartChange(formatPlaybackTime(seconds));
     else onEndChange(formatPlaybackTime(seconds));
     setPreviewMessage(`${kind === 'start' ? 'Start' : 'Finish'} marker set at ${formatPlaybackTime(seconds)}.`);
+  };
+
+  const nudge = (seconds: number) => {
+    const player = playerRef.current;
+    if (!player) return;
+    const current = safePlayerValue(() => player.getCurrentTime());
+    seekTo(Math.min(duration || Number.POSITIVE_INFINITY, Math.max(0, current + seconds)));
   };
 
   const previewSelection = () => {
@@ -254,6 +269,8 @@ export function VideoTrimEditor({
       </div>
 
       <div className="video-trim-editor__capture-actions">
+        <button type="button" onClick={() => nudge(-5)} disabled={!ready} title="Move back five seconds"><RotateCcw size={14} /> −5 sec</button>
+        <button type="button" onClick={() => nudge(5)} disabled={!ready} title="Move forward five seconds">+5 sec <RotateCw size={14} /></button>
         <button type="button" onClick={() => captureMarker('start')} disabled={!ready}><Crosshair size={15} /> Set start here</button>
         <button type="button" onClick={() => captureMarker('end')} disabled={!ready}><Crosshair size={15} /> Set finish here</button>
         <button type="button" className="is-preview" onClick={previewSelection} disabled={!ready}><Play size={14} fill="currentColor" /> Preview selection</button>

@@ -1,5 +1,6 @@
 import type { WorshipSong } from './worshipSongs';
 import { WORSHIP_VIDEO_AUDIT } from './worshipVideoAudit';
+import { videoTitleIndicatesWords } from './videoApproval';
 
 export type VideoQualityLevel = 'strong' | 'check' | 'long' | 'unavailable' | 'unchecked';
 
@@ -9,6 +10,41 @@ export interface VideoQualityAssessment {
   detail: string;
   duration?: string;
   channel?: string;
+}
+
+const NON_WORSHIP_PROGRAMME = /\b(?:sermons?|debates?|podcasts?|interviews?|bible stud(?:y|ies)|documentar(?:y|ies)|apologetics|q\s*&\s*a|questions? and answers?|lectures?|baptism testimon(?:y|ies)|christian testimon(?:y|ies)|news reports?|worship tutorials?|how to play)\b/i;
+const FALSE_POSITIVE_TITLE = /\btalk talk\s*[-–—]\s*it'?s my life\b/i;
+
+/**
+ * The public catalogue only contains playable, service-length worship videos.
+ * Automated discoveries must also contain clear word/subtitle evidence and are
+ * rejected when their metadata identifies preaching, debate or another spoken
+ * programme rather than congregational song.
+ */
+export function isUsableWorshipVideoListing(song: WorshipSong): boolean {
+  if (!/^[A-Za-z0-9_-]{11}$/.test(song.youtubeId?.trim() ?? '')) return false;
+  const audit = WORSHIP_VIDEO_AUDIT[song.youtubeId];
+  if (audit && (!audit.available || audit.embeddable === false)) return false;
+
+  const metadata = [song.title, song.artist, song.sourceChannel, audit?.title, audit?.channel].filter(Boolean).join(' ');
+  if (NON_WORSHIP_PROGRAMME.test(metadata) || FALSE_POSITIVE_TITLE.test(metadata)) return false;
+  if (song.language === 'French' && /\baustin french\b/i.test(metadata)) return false;
+  if (/\bpreaching\b/i.test(metadata) && !/\b(?:song|hymn|lyrics?|worship music)\b/i.test(metadata)) return false;
+  if (/\bconference\s*20\d{2}\b/i.test(metadata) && !/\b(?:song|hymn|lyrics?|worship|praise)\b/i.test(metadata)) return false;
+
+  const duration = song.durationSeconds ?? audit?.durationSeconds;
+  if (duration != null && (duration < 45 || duration > 15 * 60)) return false;
+
+  if (song.catalogueReview) {
+    const wordsAreEvidenced = song.wordsIndicated === true
+      || Boolean(song.wordEvidence)
+      || videoTitleIndicatesWords(song.title)
+      || videoTitleIndicatesWords(audit?.title ?? '')
+      || /lyrics?|words|subtitles?|translation/i.test(song.versionType ?? '');
+    if (!wordsAreEvidenced) return false;
+  }
+
+  return true;
 }
 
 const STOP_WORDS = new Set(['a', 'an', 'and', 'for', 'from', 'in', 'is', 'my', 'of', 'o', 'our', 'the', 'to', 'we', 'with', 'you', 'your']);
