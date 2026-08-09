@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { addToWorshipQueue, moveWorshipQueueItem, type WorshipQueueItem } from './worshipQueue';
+import {
+  addToWorshipQueue,
+  formatPlaybackTime,
+  moveWorshipQueueItem,
+  parsePlaybackTime,
+  playbackTimingError,
+  type WorshipQueueItem,
+} from './worshipQueue';
 
 const item = (number: number): WorshipQueueItem => ({
   id: `song-${number}`,
@@ -19,5 +26,19 @@ describe('worship queue', () => {
     const queue = [item(1), item(2), item(3)];
     expect(moveWorshipQueueItem(queue, 1, -1).map((entry) => entry.id)).toEqual(['song-2', 'song-1', 'song-3']);
     expect(queue.map((entry) => entry.id)).toEqual(['song-1', 'song-2', 'song-3']);
+  });
+
+  it('accepts seconds, minutes and hours for clean playback points', () => {
+    expect(parsePlaybackTime('26')).toBe(26);
+    expect(parsePlaybackTime('0:26')).toBe(26);
+    expect(parsePlaybackTime('1:02:03')).toBe(3723);
+    expect(parsePlaybackTime('1:75')).toBeUndefined();
+    expect(formatPlaybackTime(238)).toBe('3:58');
+  });
+
+  it('rejects a stop point before the start or beyond the known video', () => {
+    expect(playbackTimingError(26, 20, 240)).toContain('later than the start');
+    expect(playbackTimingError(26, 260, 240)).toContain('beyond');
+    expect(playbackTimingError(26, 220, 240)).toBe('');
   });
 });

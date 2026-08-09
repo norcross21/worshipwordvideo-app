@@ -1,95 +1,63 @@
 import { useState } from 'react';
-import { BadgeCheck, Film, ListMusic, Search, Sparkles, BookOpen, User, LogIn, LogOut, Cloud, Heart } from 'lucide-react';
+import { ListMusic, User, LogIn, LogOut, Cloud, Heart, Settings, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { AuthModal } from './AuthModal';
-import { DonateModal } from './DonateModal';
 
 interface HeaderProps {
-  activeTab: 'all' | 'ccli' | 'hymnals' | 'verified' | 'playlist';
-  onSelectTab: (tab: 'all' | 'ccli' | 'hymnals' | 'verified' | 'playlist') => void;
+  activeTab: 'all' | 'playlist' | 'admin';
+  onSelectTab: (tab: 'all' | 'playlist' | 'admin') => void;
   playlistCount: number;
   onOpenSavedPlaylists?: () => void;
-  onOpenDonate?: () => void;
+  onOpenDonate: () => void;
+  onOpenAuth: (tab: 'signin' | 'signup') => void;
+  onOpenAccount: () => void;
 }
 
-export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlaylists, onOpenDonate }: HeaderProps) {
-  const { user, signOut } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin');
+export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlaylists, onOpenDonate, onOpenAuth, onOpenAccount }: HeaderProps) {
+  const { user, profile, adminRole, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showDonateModalInternal, setShowDonateModalInternal] = useState(false);
-
-  const openAuth = (tab: 'signin' | 'signup') => {
-    setAuthModalTab(tab);
-    setShowAuthModal(true);
-  };
-
-  const handleDonateClick = () => {
-    if (onOpenDonate) onOpenDonate();
-    else setShowDonateModalInternal(true);
-  };
+  const memberName = profile?.display_name?.trim() || user?.user_metadata?.display_name || user?.email?.split('@')[0];
 
   return (
     <header className="app-header">
       <div className="app-header__container">
-        <div className="app-header__brand">
-          <div className="app-header__logo">
-            <Film size={26} className="app-header__icon" />
+        <button type="button" className="app-header__brand" onClick={() => onSelectTab('all')} aria-label="Worship Word Video home">
+          <span className="app-header__logo" aria-hidden="true">
+            <img src="/worship-word-video-logo-512.png" alt="" />
+          </span>
+          <div className="app-header__brand-copy">
+            <h1 className="app-header__title"><span>Worship</span>{' '}Word Video</h1>
+            <p className="app-header__subtitle">Find the words. Plan the service. Press play.</p>
           </div>
-          <div>
-            <h1 className="app-header__title">Worship Word Video</h1>
-            <p className="app-header__subtitle">UK Worship & Hymn Lyric Video Finder — <span className="app-header__domain">worshipwordvideo.org</span></p>
-          </div>
-        </div>
+        </button>
 
         <nav className="app-header__nav" aria-label="Main Navigation">
+          {adminRole === 'master_admin' && (
+            <button type="button" className={`nav-tab ${activeTab === 'admin' ? 'is-active' : ''}`} aria-pressed={activeTab === 'admin'} onClick={() => onSelectTab('admin')}>
+              <ShieldCheck size={16} /> Admin
+            </button>
+          )}
+          {user && (
+            <button
+              type="button"
+              className={`nav-tab nav-tab--playlist ${activeTab === 'playlist' ? 'is-active' : ''}`}
+              aria-pressed={activeTab === 'playlist'}
+              onClick={() => onSelectTab('playlist')}
+            >
+              <ListMusic size={17} /> <span className="nav-tab__label">My service</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
+            </button>
+          )}
           <button
             type="button"
-            className={`nav-tab ${activeTab === 'all' ? 'is-active' : ''}`}
-            onClick={() => onSelectTab('all')}
+            className="nav-tab nav-tab--donate"
+            onClick={onOpenDonate}
+            aria-label="Support Kairos Housing charity"
           >
-            <Search size={16} /> All Songs & Hymns
-          </button>
-          <button
-            type="button"
-            className={`nav-tab ${activeTab === 'ccli' ? 'is-active' : ''}`}
-            onClick={() => onSelectTab('ccli')}
-          >
-            <Sparkles size={16} /> CCLI Top 100
-          </button>
-          <button
-            type="button"
-            className={`nav-tab ${activeTab === 'hymnals' ? 'is-active' : ''}`}
-            onClick={() => onSelectTab('hymnals')}
-          >
-            <BookOpen size={16} /> Hymnal Numbers
-          </button>
-          <button
-            type="button"
-            className={`nav-tab ${activeTab === 'verified' ? 'is-active' : ''}`}
-            onClick={() => onSelectTab('verified')}
-          >
-            <BadgeCheck size={16} /> Verified Words
-          </button>
-          <button
-            type="button"
-            className={`nav-tab nav-tab--playlist ${activeTab === 'playlist' ? 'is-active' : ''}`}
-            onClick={() => onSelectTab('playlist')}
-          >
-            <ListMusic size={16} /> Playlist {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
+            <Heart size={16} /> <span className="nav-tab__label">Support charity</span>
           </button>
         </nav>
 
         {/* User Account & Donate Controls */}
         <div className="app-header__right-controls">
-          <button
-            type="button"
-            className="btn-donate-header"
-            onClick={handleDonateClick}
-          >
-            <Heart size={14} fill="currentColor" /> Gift to Charity
-          </button>
-
           <div className="app-header__user">
             {user ? (
               <div className="user-menu-wrapper">
@@ -97,15 +65,17 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
                   type="button"
                   className="user-pill"
                   onClick={() => setShowUserMenu(!showUserMenu)}
+                  aria-expanded={showUserMenu}
+                  aria-haspopup="menu"
                 >
                   <div className="user-avatar">
                     <User size={14} />
                   </div>
-                  <span className="user-email">{user.email?.split('@')[0]}</span>
+                  <span className="user-email">{memberName}</span>
                 </button>
 
                 {showUserMenu && (
-                  <div className="user-dropdown">
+                  <div className="user-dropdown" role="menu">
                     <div className="user-dropdown__info">
                       <strong>Signed in as</strong>
                       <p>{user.email}</p>
@@ -124,6 +94,16 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
                     )}
                     <button
                       type="button"
+                      className="user-dropdown__item"
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onOpenAccount();
+                      }}
+                    >
+                      <Settings size={15} /> Account & email choices
+                    </button>
+                    <button
+                      type="button"
                       className="user-dropdown__item user-dropdown__item--logout"
                       onClick={() => {
                         setShowUserMenu(false);
@@ -140,14 +120,14 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
                 <button
                   type="button"
                   className="btn-login"
-                  onClick={() => openAuth('signin')}
+                  onClick={() => onOpenAuth('signin')}
                 >
-                  <LogIn size={15} /> Log In
+                  <LogIn size={15} /> <span>Log In</span>
                 </button>
                 <button
                   type="button"
                   className="btn-register"
-                  onClick={() => openAuth('signup')}
+                  onClick={() => onOpenAuth('signup')}
                 >
                   Create Account
                 </button>
@@ -157,18 +137,6 @@ export function Header({ activeTab, onSelectTab, playlistCount, onOpenSavedPlayl
         </div>
       </div>
 
-      {showAuthModal && (
-        <AuthModal
-          initialTab={authModalTab}
-          onClose={() => setShowAuthModal(false)}
-        />
-      )}
-
-      {showDonateModalInternal && (
-        <DonateModal
-          onClose={() => setShowDonateModalInternal(false)}
-        />
-      )}
     </header>
   );
 }

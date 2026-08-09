@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Worship Word Video</title>
+  <desc id="desc">Free worship videos with words, ready for church</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0d256d"/><stop offset="1" stop-color="#19398c"/></linearGradient>
+    <linearGradient id="film" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#38b6a3"/><stop offset="1" stop-color="#86d8b8"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1100" cy="70" r="260" fill="#2c4ca0" opacity=".38"/>
+  <circle cx="80" cy="650" r="260" fill="#087f77" opacity=".28"/>
+  <rect x="82" y="88" width="112" height="112" rx="28" fill="#f4efe7"/>
+  <rect x="102" y="112" width="72" height="64" rx="12" fill="url(#film)"/>
+  <path d="M130 128 158 144 130 160Z" fill="#fff"/>
+  <g fill="#0d256d"><rect x="90" y="107" width="10" height="12" rx="2"/><rect x="90" y="128" width="10" height="12" rx="2"/><rect x="90" y="149" width="10" height="12" rx="2"/><rect x="176" y="107" width="10" height="12" rx="2"/><rect x="176" y="128" width="10" height="12" rx="2"/><rect x="176" y="149" width="10" height="12" rx="2"/></g>
+  <text x="230" y="142" fill="#8ce0c7" font-family="Arial, sans-serif" font-size="29" font-weight="700" letter-spacing="2">ENGLISH + MULTILINGUAL CHURCHES</text>
+  <text x="82" y="302" fill="#fff" font-family="Georgia, serif" font-size="78" font-weight="700">Worship Word Video</text>
+  <text x="85" y="376" fill="#dce7ff" font-family="Arial, sans-serif" font-size="38">Worship videos with words, ready for church</text>
+  <text x="85" y="454" fill="#8ce0c7" font-family="Arial, sans-serif" font-size="27" font-weight="700">15,000+ SONG LISTINGS  ·  85 LANGUAGE LABELS</text>
+  <rect x="82" y="506" width="560" height="2" fill="#8ce0c7" opacity=".55"/>
+  <text x="85" y="554" fill="#dce7ff" font-family="Arial, sans-serif" font-size="24">Search  ·  Build a playlist  ·  Project a clean second screen</text>
+</svg>

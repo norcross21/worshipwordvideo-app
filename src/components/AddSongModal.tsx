@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, X } from 'lucide-react';
-import { addCustomSong } from '../data/songLibraryStore';
+import { addCustomSong, normalizeYouTubeVideoId } from '../data/songLibraryStore';
 import type { MusicStyle } from '../data/songLibraryStore';
 
 interface AddSongModalProps {
@@ -13,21 +13,23 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
   const [artist, setArtist] = useState('');
   const [category, setCategory] = useState<MusicStyle>('Contemporary worship');
   const [youtubeId, setYoutubeId] = useState('');
-  const [lyrics, setLyrics] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !youtubeId) return;
 
-    const match = youtubeId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^\s&?#]+)/);
-    const finalId = match ? match[1] : youtubeId.trim();
+    const finalId = normalizeYouTubeVideoId(youtubeId);
+    if (!finalId) {
+      setError('Please enter a valid YouTube link or 11-character video ID.');
+      return;
+    }
 
     addCustomSong({
       title,
       artist: artist || 'Unknown Artist',
-      category: category as any,
+      category,
       youtubeId: finalId,
-      lyrics,
     });
 
     onAdded();
@@ -72,7 +74,7 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
 
           <div className="form-group">
             <label>Category / Style</label>
-            <select value={category} onChange={(e: any) => setCategory(e.target.value)}>
+            <select value={category} onChange={(e) => setCategory(e.target.value as MusicStyle)}>
               <option value="Contemporary worship">Contemporary worship</option>
               <option value="Traditional hymn">Traditional hymn</option>
               <option value="Gospel and spiritual">Gospel and spiritual</option>
@@ -81,6 +83,8 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
               <option value="Gregorian chant">Gregorian chant</option>
             </select>
           </div>
+
+          {error && <div className="auth-alert auth-alert--error" role="alert">{error}</div>}
 
           <div className="form-group">
             <div className="form-group__header">
@@ -100,15 +104,7 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
             />
           </div>
 
-          <div className="form-group">
-            <label>Lyrics / Words (Optional)</label>
-            <textarea
-              rows={4}
-              value={lyrics}
-              onChange={(e) => setLyrics(e.target.value)}
-              placeholder="Paste song lyrics here..."
-            />
-          </div>
+          <p className="copyright-note">This app stores the YouTube link, not a copy of the song lyrics. Please choose an authorised upload that the channel allows to be embedded.</p>
 
           <div className="modal-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>

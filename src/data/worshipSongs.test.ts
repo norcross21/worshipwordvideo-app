@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WORSHIP_SONGS } from './worshipSongs';
+import { WORSHIP_SONGS, type WorshipSong } from './worshipSongs';
 import { ADDITIONAL_WORSHIP_SONGS } from './additionalWorshipSongs';
 import { ANCIENT_MODERN_2013 } from './ancientModern2013';
 import {
@@ -9,6 +9,7 @@ import {
   parseHymnNumberSearch,
   songHymnalReferences,
   songMatchesSearch,
+  sortSongResults,
 } from './songLibraryStore';
 import { CCLI_UK_TOP_100 } from './ccliUkTop100';
 import { ARTIST_WORSHIP_SONGS, FEATURED_WORSHIP_ARTISTS } from './artistWorshipSongs';
@@ -26,7 +27,7 @@ import { assessWorshipVideo, titleMatchScore } from './videoQuality';
 describe('Worship Songs Database', () => {
   it('retains the source catalogue while presenting only maintained entries', () => {
     expect(WORSHIP_SONGS.length).toBe(500);
-    expect(getFullSongLibrary().length).toBeGreaterThanOrEqual(1_000);
+    expect(getFullSongLibrary().length).toBeGreaterThanOrEqual(15_000);
     expect(getFullSongLibrary().some((song) => song.title.startsWith('Worship Song Ref #'))).toBe(false);
   });
 
@@ -48,7 +49,7 @@ describe('Worship Songs Database', () => {
 
   it('ships popular songs with playable YouTube links', () => {
     const playable = getFullSongLibrary().filter((song) => song.youtubeId);
-    expect(playable.length).toBeGreaterThanOrEqual(2_300);
+    expect(playable.length).toBeGreaterThanOrEqual(12_000);
     expect(new Set(playable.map((song) => song.youtubeId)).size).toBe(playable.length);
     expect(playable.slice(0, 10).every((song) => normalizeYouTubeVideoId(song.youtubeId))).toBe(true);
     expect(ADDITIONAL_WORSHIP_SONGS).toHaveLength(100);
@@ -177,6 +178,21 @@ describe('Worship Songs Database', () => {
     expect(amMatches.length).toBeGreaterThan(0);
     expect(amMatches.every((song) => songHymnalReferences(song)
       .some((reference) => reference.hymnal === 'AM2013' && reference.number === '55'))).toBe(true);
+  });
+
+  it('ranks exact, playable and reviewed search results first', () => {
+    const candidates: WorshipSong[] = [
+      { id: 'partial', title: 'The Goodness of God Medley', artist: 'Example', category: 'Contemporary Worship', youtubeId: '' },
+      { id: 'exact', title: 'Goodness of God', artist: 'Example', category: 'Contemporary Worship', youtubeId: 'abcdefghijk', catalogueReview: 'Word evidence and embed checked' },
+      { id: 'artist', title: 'Another Song', artist: 'Goodness of God Choir', category: 'Contemporary Worship', youtubeId: 'lmnopqrstuv' },
+    ];
+
+    expect(sortSongResults(candidates, 'goodness of god').map((song) => song.id)).toEqual(['exact', 'partial', 'artist']);
+  });
+
+  it('matches combined song and language words even when metadata order differs', () => {
+    const library = getFullSongLibrary();
+    expect(library.some((song) => songMatchesSearch(song, 'Goodness of God Farsi'))).toBe(true);
   });
 
   it('includes every song in the CCLI UK Top 100 snapshot with a playable video', () => {

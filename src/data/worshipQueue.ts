@@ -1,7 +1,7 @@
 import type { WorshipSong } from './worshipSongs';
 
 export const WORSHIP_QUEUE_LIMIT = 10;
-const WORSHIP_QUEUE_KEY = 'liturgy_worship_video_queue_v1';
+const WORSHIP_QUEUE_KEY_PREFIX = 'worship_word_video_queue_v2';
 
 export interface WorshipQueueItem {
   id: string;
@@ -9,16 +9,52 @@ export interface WorshipQueueItem {
   title: string;
   artist: string;
   youtubeId: string;
+  hasWords?: boolean;
+  startSeconds?: number;
+  endSeconds?: number;
+  durationSeconds?: number;
 }
 
-export function worshipQueueItem(song: Pick<WorshipSong, 'id' | 'title' | 'artist' | 'youtubeId'>): WorshipQueueItem {
+export function worshipQueueItem(song: Pick<WorshipSong, 'id' | 'title' | 'artist' | 'youtubeId' | 'wordsIndicated' | 'durationSeconds'>): WorshipQueueItem {
   return {
     id: `${song.id}-${song.youtubeId}`,
     songId: song.id,
     title: song.title,
     artist: song.artist,
     youtubeId: song.youtubeId,
+    hasWords: song.wordsIndicated,
+    durationSeconds: song.durationSeconds,
   };
+}
+
+/** Accept seconds, m:ss or h:mm:ss. A blank field means no trim. */
+export function parsePlaybackTime(value: string): number | undefined {
+  const input = value.trim();
+  if (!input) return undefined;
+  if (/^\d+$/.test(input)) return Number(input);
+  const parts = input.split(':');
+  if (parts.length < 2 || parts.length > 3 || parts.some((part) => !/^\d+$/.test(part))) return undefined;
+  if (parts.some((part, index) => index > 0 && Number(part) > 59)) return undefined;
+  return parts.reduce((total, part) => total * 60 + Number(part), 0);
+}
+
+export function formatPlaybackTime(seconds?: number): string {
+  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return '';
+  const whole = Math.floor(seconds);
+  const hours = Math.floor(whole / 3600);
+  const minutes = Math.floor((whole % 3600) / 60);
+  const remaining = whole % 60;
+  if (hours) return `${hours}:${String(minutes).padStart(2, '0')}:${String(remaining).padStart(2, '0')}`;
+  return `${minutes}:${String(remaining).padStart(2, '0')}`;
+}
+
+export function playbackTimingError(startSeconds?: number, endSeconds?: number, durationSeconds?: number): string {
+  if (startSeconds != null && startSeconds < 0) return 'Start time cannot be negative.';
+  if (endSeconds != null && endSeconds <= 0) return 'Stop time must be later than zero.';
+  if (startSeconds != null && endSeconds != null && endSeconds <= startSeconds) return 'Stop time must be later than the start time.';
+  if (durationSeconds && startSeconds != null && startSeconds >= durationSeconds) return 'Start time must be before the video ends.';
+  if (durationSeconds && endSeconds != null && endSeconds > durationSeconds + 2) return 'Stop time is beyond the video length.';
+  return '';
 }
 
 export function addToWorshipQueue(queue: WorshipQueueItem[], item: WorshipQueueItem): WorshipQueueItem[] {
@@ -34,18 +70,24 @@ export function moveWorshipQueueItem(queue: WorshipQueueItem[], index: number, d
   return next;
 }
 
-export function getWorshipQueue(): WorshipQueueItem[] {
+function worshipQueueKey(userId: string): string {
+  return `${WORSHIP_QUEUE_KEY_PREFIX}:${userId}`;
+}
+
+export function getWorshipQueue(userId?: string): WorshipQueueItem[] {
+  if (!userId) return [];
   try {
-    const parsed = JSON.parse(localStorage.getItem(WORSHIP_QUEUE_KEY) ?? '[]') as WorshipQueueItem[];
+    const parsed = JSON.parse(localStorage.getItem(worshipQueueKey(userId)) ?? '[]') as WorshipQueueItem[];
     return Array.isArray(parsed) ? parsed.filter((item) => item?.youtubeId && item?.title).slice(0, WORSHIP_QUEUE_LIMIT) : [];
   } catch {
     return [];
   }
 }
 
-export function saveWorshipQueue(queue: WorshipQueueItem[]) {
+export function saveWorshipQueue(queue: WorshipQueueItem[], userId?: string) {
+  if (!userId) return;
   try {
-    localStorage.setItem(WORSHIP_QUEUE_KEY, JSON.stringify(queue.slice(0, WORSHIP_QUEUE_LIMIT)));
+    localStorage.setItem(worshipQueueKey(userId), JSON.stringify(queue.slice(0, WORSHIP_QUEUE_LIMIT)));
   } catch {
     // The queue remains available for this session when storage is unavailable.
   }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, X } from 'lucide-react';
-import { updateSong, songMusicStyle } from '../data/songLibraryStore';
+import { normalizeYouTubeVideoId, updateSong, songMusicStyle } from '../data/songLibraryStore';
 import type { WorshipSong } from '../data/worshipSongs';
 import type { MusicStyle } from '../data/songLibraryStore';
 
@@ -15,21 +15,23 @@ export function EditSongModal({ song, onClose, onUpdated }: EditSongModalProps) 
   const [artist, setArtist] = useState(song.artist);
   const [category, setCategory] = useState<MusicStyle>(songMusicStyle(song));
   const [youtubeId, setYoutubeId] = useState(song.youtubeId);
-  const [lyrics, setLyrics] = useState(song.lyrics || '');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
 
-    const match = youtubeId.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^\s&?#]+)/);
-    const finalId = match ? match[1] : youtubeId.trim();
+    const finalId = youtubeId.trim() ? normalizeYouTubeVideoId(youtubeId) : '';
+    if (finalId === null) {
+      setError('Please enter a valid YouTube link or 11-character video ID.');
+      return;
+    }
 
     const updates = {
       title,
       artist,
-      category: category as any,
+      category,
       youtubeId: finalId,
-      lyrics,
     };
 
     updateSong(song.id, updates);
@@ -72,7 +74,7 @@ export function EditSongModal({ song, onClose, onUpdated }: EditSongModalProps) 
 
           <div className="form-group">
             <label>Category / Style</label>
-            <select value={category} onChange={(e: any) => setCategory(e.target.value)}>
+            <select value={category} onChange={(e) => setCategory(e.target.value as MusicStyle)}>
               <option value="Contemporary worship">Contemporary worship</option>
               <option value="Traditional hymn">Traditional hymn</option>
               <option value="Gospel and spiritual">Gospel and spiritual</option>
@@ -81,6 +83,8 @@ export function EditSongModal({ song, onClose, onUpdated }: EditSongModalProps) 
               <option value="Gregorian chant">Gregorian chant</option>
             </select>
           </div>
+
+          {error && <div className="auth-alert auth-alert--error" role="alert">{error}</div>}
 
           <div className="form-group">
             <div className="form-group__header">
@@ -97,14 +101,7 @@ export function EditSongModal({ song, onClose, onUpdated }: EditSongModalProps) 
             />
           </div>
 
-          <div className="form-group">
-            <label>Lyrics / Words (Optional)</label>
-            <textarea
-              rows={4}
-              value={lyrics}
-              onChange={(e) => setLyrics(e.target.value)}
-            />
-          </div>
+          <p className="copyright-note">Only link to an authorised YouTube upload. Worship Word Video does not copy or host the song lyrics.</p>
 
           <div className="modal-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>

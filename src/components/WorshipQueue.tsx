@@ -1,35 +1,65 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, ListMusic, Play, RotateCcw, SkipBack, SkipForward, Trash2, X, Cloud, Save, LogIn } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Cloud,
+  Info,
+  ListMusic,
+  LogIn,
+  MonitorUp,
+  Play,
+  RotateCcw,
+  Scissors,
+  SkipBack,
+  SkipForward,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { YouTubePlayer } from './YouTubePlayer';
-import { isCatalogueWordVideo } from '../data/videoApproval';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
+import { publishProjectionState } from '../data/projection';
 import {
   WORSHIP_QUEUE_LIMIT,
+  formatPlaybackTime,
   moveWorshipQueueItem,
-  saveWorshipQueue,
+  parsePlaybackTime,
+  playbackTimingError,
   type WorshipQueueItem,
 } from '../data/worshipQueue';
 
 interface WorshipQueueProps {
   queue: WorshipQueueItem[];
   onChange: (queue: WorshipQueueItem[]) => void;
-  approvedVideoIds: ReadonlySet<string>;
   onOpenSavedPlaylists?: () => void;
+  onBrowseSongs?: () => void;
 }
 
-export function WorshipQueue({ queue, onChange, approvedVideoIds, onOpenSavedPlaylists }: WorshipQueueProps) {
+interface ScreenPlacement {
+  screens: Array<{ isPrimary?: boolean; availLeft: number; availTop: number; availWidth: number; availHeight: number }>;
+}
+
+type WindowWithScreenDetails = Window & { getScreenDetails?: () => Promise<ScreenPlacement> };
+
+export function WorshipQueue({ queue, onChange, onOpenSavedPlaylists, onBrowseSongs }: WorshipQueueProps) {
   const { user } = useAuth();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [playbackRevision, setPlaybackRevision] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [timingEditorId, setTimingEditorId] = useState<string | null>(null);
+  const [startDraft, setStartDraft] = useState('');
+  const [endDraft, setEndDraft] = useState('');
+  const [timingError, setTimingError] = useState('');
+  const [projectionMessage, setProjectionMessage] = useState('');
   const playingItem = playingIndex == null ? null : queue[playingIndex] ?? null;
 
   useEffect(() => {
-    saveWorshipQueue(queue);
-    if (playingIndex != null && playingIndex >= queue.length) {
-      setPlayingIndex(queue.length ? queue.length - 1 : null);
-    }
+    if (playingIndex != null && playingIndex >= queue.length) setPlayingIndex(queue.length ? queue.length - 1 : null);
   }, [playingIndex, queue]);
+
+  useEffect(() => {
+    publishProjectionState({ queue, playingIndex, playbackRevision });
+  }, [queue, playingIndex, playbackRevision]);
 
   const update = (next: WorshipQueueItem[]) => onChange(next.slice(0, WORSHIP_QUEUE_LIMIT));
 
@@ -46,54 +76,105 @@ export function WorshipQueue({ queue, onChange, approvedVideoIds, onOpenSavedPla
     }
   };
 
+  const playAt = (index: number) => {
+    if (playingIndex === index) setPlaybackRevision((value) => value + 1);
+    setPlayingIndex(index);
+  };
+
+  const startTimingEdit = (item: WorshipQueueItem) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    setTimingEditorId(item.id);
+    setStartDraft(formatPlaybackTime(item.startSeconds));
+    setEndDraft(formatPlaybackTime(item.endSeconds));
+    setTimingError('');
+  };
+
+  const applyTiming = (item: WorshipQueueItem) => {
+    const startSeconds = parsePlaybackTime(startDraft);
+    const endSeconds = parsePlaybackTime(endDraft);
+    if (startDraft.trim() && startSeconds == null) {
+      setTimingError('Enter the start as seconds or m:ss, for example 26 or 0:26.');
+      return;
+    }
+    if (endDraft.trim() && endSeconds == null) {
+      setTimingError('Enter the stop time as seconds or m:ss, for example 238 or 3:58.');
+      return;
+    }
+    const error = playbackTimingError(startSeconds, endSeconds, item.durationSeconds);
+    if (error) {
+      setTimingError(error);
+      return;
+    }
+    update(queue.map((entry) => entry.id === item.id ? { ...entry, startSeconds, endSeconds } : entry));
+    if (playingItem?.id === item.id) setPlaybackRevision((value) => value + 1);
+    setTimingEditorId(null);
+    setTimingError('');
+  };
+
+  const openProjection = async () => {
+    const nextIndex = playingIndex ?? (queue.length ? 0 : null);
+    if (nextIndex !== playingIndex) setPlayingIndex(nextIndex);
+    publishProjectionState({ queue, playingIndex: nextIndex, playbackRevision: playbackRevision + 1 });
+
+    const url = new URL(window.location.href);
+    url.search = '?projection=1';
+    url.hash = '';
+    const popup = window.open(url.toString(), 'worship-word-video-projection', 'popup=yes,width=1280,height=720');
+    if (!popup) {
+      setProjectionMessage('Your browser blocked the projection window. Allow pop-ups for this site, then try again.');
+      return;
+    }
+    setPlaybackRevision((value) => value + 1);
+    setProjectionMessage('Projection opened. Move it to the church screen and choose Full screen. Your dashboard stays here.');
+
+    const multiScreenWindow = window as WindowWithScreenDetails;
+    if (multiScreenWindow.getScreenDetails) {
+      try {
+        const details = await multiScreenWindow.getScreenDetails();
+        const target = details.screens.find((screen) => !screen.isPrimary);
+        if (target) {
+          popup.moveTo(target.availLeft, target.availTop);
+          popup.resizeTo(target.availWidth, target.availHeight);
+          popup.focus();
+          setProjectionMessage('Projection placed on the second screen. Choose Full screen in that window.');
+        }
+      } catch {
+        popup.focus();
+      }
+    } else {
+      popup.focus();
+    }
+  };
+
   return (
     <section className="worship-queue" aria-labelledby="worship-queue-title">
       <div className="worship-queue__heading">
         <div>
-          <span className="worship-queue__eyebrow"><ListMusic size={16} /> Worship Word Video Playlist</span>
-          <h2 id="worship-queue-title">Service Video Queue ({queue.length}/{WORSHIP_QUEUE_LIMIT})</h2>
+          <span className="worship-queue__eyebrow"><ListMusic size={16} /> Service playlist</span>
+          <h2 id="worship-queue-title">Your service ({queue.length}/{WORSHIP_QUEUE_LIMIT})</h2>
+          <p>Arrange the running order, trim untidy beginnings or endings, then project the clean video window.</p>
         </div>
 
         <div className="worship-queue__heading-actions">
           {user ? (
-            <button
-              type="button"
-              className="worship-queue__btn-cloud"
-              onClick={onOpenSavedPlaylists}
-            >
-              <Cloud size={15} /> Saved Playlists
-            </button>
+            <button type="button" className="worship-queue__btn-cloud" onClick={onOpenSavedPlaylists}><Cloud size={15} /> Saved playlists</button>
           ) : (
-            <button
-              type="button"
-              className="worship-queue__btn-login"
-              onClick={() => setShowAuthModal(true)}
-            >
-              <LogIn size={14} /> Log In to Save Playlists
-            </button>
+            <button type="button" className="worship-queue__btn-login" onClick={() => setShowAuthModal(true)}><LogIn size={14} /> Log in to save</button>
           )}
-
           {queue.length > 0 && (
             <>
-              <button
-                type="button"
-                className="worship-queue__btn-secondary"
-                onClick={() => setPlayingIndex(0)}
-              >
-                <Play size={14} /> Start Singalong
-              </button>
-              <button
-                type="button"
-                className="worship-queue__btn-icon-danger"
-                onClick={clearQueue}
-                title="Clear Playlist"
-              >
-                <Trash2 size={15} />
-              </button>
+              <button type="button" className="worship-queue__btn-project" onClick={() => void openProjection()}><MonitorUp size={15} /> Open projection</button>
+              <button type="button" className="worship-queue__btn-secondary" onClick={() => playAt(0)}><Play size={14} /> Start here</button>
+              <button type="button" className="worship-queue__btn-icon-danger" onClick={clearQueue} title="Clear playlist" aria-label="Clear playlist"><Trash2 size={15} /><span>Clear</span></button>
             </>
           )}
         </div>
       </div>
+
+      {projectionMessage && <div className="projection-message" role="status"><Info size={17} /><span>{projectionMessage}</span><button type="button" onClick={() => setProjectionMessage('')} aria-label="Dismiss projection message"><X size={15} /></button></div>}
 
       {playingItem && (
         <div className="worship-queue__player-card">
@@ -103,45 +184,22 @@ export function WorshipQueue({ queue, onChange, approvedVideoIds, onOpenSavedPla
               <h3>{playingItem.title}</h3>
               <p>{playingItem.artist}</p>
             </div>
-            <button
-              type="button"
-              className="worship-queue__icon-btn"
-              onClick={() => setPlayingIndex(null)}
-              title="Close Player"
-            >
-              <X size={18} />
-            </button>
+            <button type="button" className="worship-queue__icon-btn" onClick={() => setPlayingIndex(null)} title="Close player" aria-label="Close player"><X size={18} /></button>
           </div>
-
           <div className="worship-queue__video-container">
             <YouTubePlayer
+              key={`${playingItem.id}-${playingItem.startSeconds ?? 0}-${playingItem.endSeconds ?? 0}-${playbackRevision}`}
               videoId={playingItem.youtubeId}
               title={`${playingItem.title} - ${playingItem.artist}`}
               autoplay
+              startSeconds={playingItem.startSeconds}
+              endSeconds={playingItem.endSeconds}
             />
           </div>
-
           <div className="worship-queue__player-controls">
-            <button
-              type="button"
-              disabled={playingIndex! <= 0}
-              onClick={() => setPlayingIndex((prev) => (prev != null && prev > 0 ? prev - 1 : prev))}
-            >
-              <SkipBack size={16} /> Previous
-            </button>
-            <button
-              type="button"
-              onClick={() => setPlayingIndex(0)}
-            >
-              <RotateCcw size={16} /> Restart
-            </button>
-            <button
-              type="button"
-              disabled={playingIndex! >= queue.length - 1}
-              onClick={() => setPlayingIndex((prev) => (prev != null && prev < queue.length - 1 ? prev + 1 : prev))}
-            >
-              Next <SkipForward size={16} />
-            </button>
+            <button type="button" disabled={playingIndex! <= 0} onClick={() => setPlayingIndex((previous) => previous != null && previous > 0 ? previous - 1 : previous)}><SkipBack size={16} /> Previous</button>
+            <button type="button" onClick={() => setPlaybackRevision((value) => value + 1)}><RotateCcw size={16} /> Restart video</button>
+            <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => setPlayingIndex((previous) => previous != null && previous < queue.length - 1 ? previous + 1 : previous)}>Next <SkipForward size={16} /></button>
           </div>
         </div>
       )}
@@ -149,72 +207,55 @@ export function WorshipQueue({ queue, onChange, approvedVideoIds, onOpenSavedPla
       {queue.length === 0 ? (
         <div className="worship-queue__empty">
           <ListMusic size={32} />
-          <p>No videos in service playlist yet.</p>
-          <span>Search or browse songs below and click <strong>"+ Add to Playlist"</strong> to build your service playlist (up to {WORSHIP_QUEUE_LIMIT} songs).</span>
+          <p>No videos in your service yet.</p>
+          <span>Choose a song and select <strong>Add to playlist</strong>. You can add up to {WORSHIP_QUEUE_LIMIT} videos.</span>
+          {onBrowseSongs && <button type="button" className="btn-primary" onClick={onBrowseSongs}>Browse songs</button>}
         </div>
       ) : (
         <ol className="worship-queue__list">
           {queue.map((item, index) => {
-            const isWordVideo = isCatalogueWordVideo(item.youtubeId) || approvedVideoIds.has(item.youtubeId);
             const isPlaying = playingIndex === index;
+            const hasTrim = item.startSeconds != null || item.endSeconds != null;
+            const isEditingTiming = timingEditorId === item.id;
             return (
-              <li key={item.id} className={`worship-queue__item ${isPlaying ? 'is-playing' : ''}`}>
+              <li key={item.id} className={`worship-queue__item ${isPlaying ? 'is-playing' : ''} ${isEditingTiming ? 'is-editing-timing' : ''}`}>
                 <div className="worship-queue__item-index">{index + 1}</div>
                 <div className="worship-queue__item-body">
                   <div className="worship-queue__item-title">
                     <strong>{item.title}</strong>
-                    {isWordVideo && (
-                      <span className="badge-verified-words" title="Verified Word / Lyric Video">✓ Verified Words</span>
-                    )}
+                    {item.hasWords === true && <span className="badge-verified-words">✓ Words</span>}
                   </div>
                   <div className="worship-queue__item-sub">{item.artist}</div>
+                  {hasTrim && <div className="worship-queue__trim-summary"><Scissors size={12} /> Play {formatPlaybackTime(item.startSeconds) || 'from start'} to {formatPlaybackTime(item.endSeconds) || 'video end'}</div>}
                 </div>
-
                 <div className="worship-queue__item-actions">
-                  <button
-                    type="button"
-                    className="worship-queue__btn-play"
-                    onClick={() => setPlayingIndex(index)}
-                  >
-                    <Play size={13} /> {isPlaying ? 'Playing' : 'Play'}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={index === 0}
-                    onClick={() => update(moveWorshipQueueItem(queue, index, -1))}
-                    title="Move Up"
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={index === queue.length - 1}
-                    onClick={() => update(moveWorshipQueueItem(queue, index, 1))}
-                    title="Move Down"
-                  >
-                    <ArrowDown size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="worship-queue__btn-remove"
-                    onClick={() => removeAt(index)}
-                    title="Remove from Queue"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <button type="button" className="worship-queue__btn-play" onClick={() => playAt(index)}><Play size={13} /> {isPlaying ? 'Restart' : 'Play'}</button>
+                  {user && <button type="button" className={`worship-queue__btn-trim ${hasTrim ? 'has-trim' : ''}`} onClick={() => isEditingTiming ? setTimingEditorId(null) : startTimingEdit(item)} title="Set clean start and stop times"><Scissors size={14} /><span>Trim</span></button>}
+                  <button type="button" disabled={index === 0} onClick={() => update(moveWorshipQueueItem(queue, index, -1))} title="Move up" aria-label={`Move ${item.title} up`}><ArrowUp size={14} /></button>
+                  <button type="button" disabled={index === queue.length - 1} onClick={() => update(moveWorshipQueueItem(queue, index, 1))} title="Move down" aria-label={`Move ${item.title} down`}><ArrowDown size={14} /></button>
+                  <button type="button" className="worship-queue__btn-remove" onClick={() => removeAt(index)} title="Remove" aria-label={`Remove ${item.title}`}><Trash2 size={14} /></button>
                 </div>
+                {isEditingTiming && (
+                  <div className="queue-timing-editor">
+                    <div className="queue-timing-editor__heading"><Scissors size={15} /><strong>Clean playback</strong><span>Skip silence, speaking or an untidy ending.</span></div>
+                    <label>Start at<input value={startDraft} onChange={(event) => setStartDraft(event.target.value)} placeholder="0:26" inputMode="numeric" /></label>
+                    <label>Stop at<input value={endDraft} onChange={(event) => setEndDraft(event.target.value)} placeholder={item.durationSeconds ? formatPlaybackTime(item.durationSeconds) : '3:58'} inputMode="numeric" /></label>
+                    <div className="queue-timing-editor__actions">
+                      <button type="button" className="btn-primary-sm" onClick={() => applyTiming(item)}>Apply</button>
+                      <button type="button" className="btn-link" onClick={() => { setStartDraft(''); setEndDraft(''); setTimingError(''); }}>Clear fields</button>
+                      <button type="button" className="btn-link" onClick={() => setTimingEditorId(null)}>Cancel</button>
+                    </div>
+                    {timingError && <p className="queue-timing-editor__error" role="alert">{timingError}</p>}
+                    <small>Use seconds or m:ss. YouTube may begin up to about two seconds before the exact point.</small>
+                  </div>
+                )}
               </li>
             );
           })}
         </ol>
       )}
 
-      {showAuthModal && (
-        <AuthModal
-          initialTab="signin"
-          onClose={() => setShowAuthModal(false)}
-        />
-      )}
+      {showAuthModal && <AuthModal initialTab="signin" onClose={() => setShowAuthModal(false)} />}
     </section>
   );
 }

@@ -24,6 +24,9 @@ describe('worship video approval', () => {
   it('recognises explicit word-video metadata without guessing from ordinary music titles', () => {
     expect(videoTitleIndicatesWords('Amazing Grace (Official Lyric Video)')).toBe(true);
     expect(videoTitleIndicatesWords('Salve Regina - Latin/English Text')).toBe(true);
+    expect(videoTitleIndicatesWords('Bondade de Deus — com letra e tradução')).toBe(true);
+    expect(videoTitleIndicatesWords('La bonté de Dieu — paroles')).toBe(true);
+    expect(videoTitleIndicatesWords('神的良善榮美 官方歌詞影片')).toBe(true);
     expect(videoTitleIndicatesWords('Great Is Thy Faithfulness (Official Music Video)')).toBe(false);
   });
 

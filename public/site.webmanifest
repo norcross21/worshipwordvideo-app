@@ -1,0 +1,13 @@
+{
+  "name": "Worship Word Video",
+  "short_name": "Worship Video",
+  "description": "Free worship and hymn word-video finder and church service playlist planner.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf8",
+  "theme_color": "#112d79",
+  "icons": [
+    { "src": "/worship-word-video-logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

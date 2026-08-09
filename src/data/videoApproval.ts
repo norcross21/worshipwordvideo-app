@@ -1,4 +1,6 @@
-import { WORSHIP_VIDEO_AUDIT } from './worshipVideoAudit';
+import { MODERN_WORD_VIDEO_IDS } from './modernWordWorshipSongs';
+import { EXPANDED_WORD_VIDEO_IDS } from './expandedWordWorshipSongs';
+import { RESEARCHED_WORD_VIDEO_IDS as NEW_RESEARCHED_WORD_VIDEO_IDS } from './researchedWordWorshipSongs';
 
 const APPROVED_VIDEOS_KEY = 'liturgy_approved_worship_videos_v1';
 const VIDEO_WORDS_KEY = 'liturgy_worship_video_words_v1';
@@ -16,15 +18,15 @@ const RESEARCHED_WORD_VIDEO_IDS = [
 
 /** True only where the uploader explicitly describes visible lyrics, words or subtitles. */
 export function videoTitleIndicatesWords(title: string): boolean {
-  return /\b(?:lyrics?|lyric video|with words|words on screen|sing[ -]?along|subtitles?|latin\/english text|congregational words)\b/i.test(title);
+  return /\b(?:lyrics?|lyric video|with words|words on screen|sing[ -]?along|subtitles?|latin\/english text|congregational words|con letras?|com letras?|paroles|lirik|versuri|napisy)\b|legendad[ao]|subtitulado|sous[- ]?titres?|слова|текст|субтит|كلمات|ترجمة|زیر.?نویس|ترجمه|متن سرود|歌詞|歌词|字幕|가사|자막|lời bài hát|phụ đề/iu.test(title);
 }
 
 /** Audited videos whose metadata explicitly identifies visible words. */
 export const CATALOGUE_WORD_VIDEO_IDS = new Set([
   ...RESEARCHED_WORD_VIDEO_IDS,
-  ...Object.entries(WORSHIP_VIDEO_AUDIT)
-    .filter(([, audit]) => audit.available && audit.embeddable !== false && videoTitleIndicatesWords(audit.title ?? ''))
-    .map(([id]) => id),
+  ...MODERN_WORD_VIDEO_IDS,
+  ...EXPANDED_WORD_VIDEO_IDS,
+  ...NEW_RESEARCHED_WORD_VIDEO_IDS,
 ]);
 
 export function getApprovedWorshipVideos(): Set<string> {

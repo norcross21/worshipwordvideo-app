@@ -7,9 +7,9 @@ describe('Supabase Auth & Cloud Playlist Integration', () => {
     expect(supabase).not.toBeNull();
   });
 
-  it('should support local guest queue fallback when unauthenticated', () => {
+  it('keeps the playlist empty until a member is identified', () => {
     const queue = getWorshipQueue();
-    expect(Array.isArray(queue)).toBe(true);
+    expect(queue).toEqual([]);
 
     const item = worshipQueueItem({
       id: 'test-1',
@@ -19,7 +19,7 @@ describe('Supabase Auth & Cloud Playlist Integration', () => {
     });
 
     const nextQueue = addToWorshipQueue(queue, item);
-    expect(nextQueue.length).toBeGreaterThan(0);
+    expect(nextQueue).toHaveLength(1);
     expect(nextQueue[0].title).toBe('Amazing Grace');
   });
 });

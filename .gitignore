@@ -10,7 +10,22 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+*.tsbuildinfo
 *.local
+
+# Generated SEO landing pages and discovery files (rebuilt by npm run build)
+public/languages/
+public/arrangements/
+public/guides/
+public/sitemap.xml
+public/robots.txt
+public/seo-urls.json
+public/feed.xml
+public/llms.txt
+public/indexnow-key.txt
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +38,7 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Supabase CLI local state
+supabase/.temp
+.env*

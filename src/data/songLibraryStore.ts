@@ -12,7 +12,11 @@ import { CLASSIC_HYMNAL_VIDEOS } from './classicHymnalVideos';
 import { CHURCH_ESSENTIAL_SONGS } from './churchEssentialSongs';
 import { GREGORIAN_CHANTS } from './gregorianChants';
 import { EASTERN_CHRISTIAN_WORD_VIDEOS } from './easternChristianVideos';
+import { INTERNATIONAL_WORSHIP_SONGS, LANGUAGE_FILTERS } from './internationalWorshipSongs';
 import { WORSHIP_WORD_VIDEO_REPLACEMENTS } from './worshipWordVideoReplacements';
+import { enrichSongPresentation, inferLanguagePresentation, inferWorshipArrangement } from './songPresentation';
+
+export { LANGUAGE_FILTERS };
 
 const CUSTOM_SONGS_KEY = 'liturgy_custom_worship_songs';
 const SONG_OVERRIDES_KEY = 'liturgy_worship_song_overrides';
@@ -101,6 +105,7 @@ export function songTraditions(song: WorshipSong): string[] {
 
 export function songMusicStyle(song: WorshipSong): MusicStyle {
   const identity = `${song.artist} ${song.title} ${song.tune ?? ''}`.toLowerCase();
+  if (MUSIC_STYLES.includes(song.category as MusicStyle)) return song.category as MusicStyle;
   if (identity.includes('gregorian')) return 'Gregorian chant';
   if (/orthodox|byzantine|coptic|syriac|ethiopian/.test(identity)) return 'Eastern Christian chant';
   if (identity.includes('taize')) return 'Simple song and chant';
@@ -201,6 +206,7 @@ function buildMaintainedCatalogue(): WorshipSong[] {
     ...BROAD_ARTIST_WORSHIP_SONGS,
     ...CHURCH_ESSENTIAL_SONGS,
     ...EASTERN_CHRISTIAN_WORD_VIDEOS,
+    ...INTERNATIONAL_WORSHIP_SONGS,
   ];
   const baseTitles = new Set(curatedBase.map((song) => exactTitleKey(song.title)));
   const curatedCore: WorshipSong[] = [
@@ -335,7 +341,7 @@ export function songHymnalReferences(song: WorshipSong): HymnalReference[] {
 }
 
 export function songMatchesSearch(song: WorshipSong, rawQuery: string, hymnal?: HymnalCode): boolean {
-  const query = rawQuery.trim().toLowerCase();
+  const query = normaliseSearchText(rawQuery);
   if (!query) return true;
   const numberSearch = parseHymnNumberSearch(rawQuery);
   const targetHymnal = numberSearch?.hymnal ?? hymnal;
@@ -345,12 +351,120 @@ export function songMatchesSearch(song: WorshipSong, rawQuery: string, hymnal?: 
   if (numberSearch) {
     return references.some((reference) => reference.number.toLowerCase() === numberSearch.number);
   }
-  return song.title.toLowerCase().includes(query)
-    || song.artist.toLowerCase().includes(query)
-    || song.tune?.toLowerCase().includes(query)
+  const index = songSearchIndex(song);
+  const queryTokens = query.split(' ').filter(Boolean);
+  return index.searchable.includes(query)
+    || (queryTokens.length > 1 && queryTokens.every((token) => index.searchable.includes(token)))
     || references.some((reference) => reference.number.toLowerCase().includes(query))
     || references.some((reference) => reference.tune?.toLowerCase().includes(query))
     || references.some((reference) => `${reference.shortName} ${reference.number}`.toLowerCase().includes(query));
+}
+
+function normaliseSearchText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+interface SongSearchIndex {
+  title: string;
+  englishTitle: string;
+  artist: string;
+  aliases: string[];
+  searchable: string;
+}
+
+const SONG_SEARCH_INDEX = new WeakMap<WorshipSong, SongSearchIndex>();
+const SONG_USEFULNESS_SCORE = new WeakMap<WorshipSong, number>();
+
+function songSearchIndex(song: WorshipSong): SongSearchIndex {
+  const cached = SONG_SEARCH_INDEX.get(song);
+  if (cached) return cached;
+
+  const aliases = (song.searchAliases ?? []).map(normaliseSearchText);
+  const index: SongSearchIndex = {
+    title: normaliseSearchText(song.title),
+    englishTitle: normaliseSearchText(song.englishTitle ?? ''),
+    artist: normaliseSearchText(song.artist),
+    aliases,
+    searchable: normaliseSearchText([
+      song.title,
+      song.englishTitle,
+      song.transliteration,
+      song.artist,
+      song.tune,
+      song.language,
+      song.region,
+      inferWorshipArrangement(song),
+      inferLanguagePresentation(song),
+      ...(song.searchAliases ?? []),
+    ].filter(Boolean).join(' ')),
+  };
+  SONG_SEARCH_INDEX.set(song, index);
+  return index;
+}
+
+function catalogueUsefulnessScore(song: WorshipSong): number {
+  const cached = SONG_USEFULNESS_SCORE.get(song);
+  if (cached != null) return cached;
+  let score = 0;
+  if (song.id.startsWith('custom-ws-')) score += 2_000;
+  if (song.youtubeId) score += 800;
+  if (song.ccliUkRank != null) score += 2_000 + (101 - song.ccliUkRank) * 10;
+  if (song.catalogueReview) score += 500;
+  if (song.wordEvidence) score += 150;
+  if (song.viewCountAtReview) score += Math.min(300, Math.log10(song.viewCountAtReview + 1) * 50);
+  SONG_USEFULNESS_SCORE.set(song, score);
+  return score;
+}
+
+function searchRelevanceScore(song: WorshipSong, rawQuery: string): number {
+  const query = normaliseSearchText(rawQuery);
+  if (!query) return 0;
+
+  const { title, englishTitle, artist, aliases, searchable } = songSearchIndex(song);
+  let titleScore = 0;
+  let englishTitleScore = 0;
+  let aliasScore = 0;
+  let artistScore = 0;
+
+  if (title === query) titleScore = 20_000;
+  else if (title.startsWith(query)) titleScore = 12_000;
+  else if (title.includes(query)) titleScore = 8_000;
+
+  if (englishTitle === query) englishTitleScore = 18_000;
+  else if (englishTitle.startsWith(query)) englishTitleScore = 10_000;
+  else if (englishTitle.includes(query)) englishTitleScore = 7_000;
+
+  if (aliases.some((alias) => alias === query)) aliasScore = 9_000;
+  else if (aliases.some((alias) => alias.includes(query))) aliasScore = 5_000;
+  if (artist === query) artistScore = 4_000;
+  else if (artist.includes(query)) artistScore = 2_000;
+  let score = Math.max(titleScore, englishTitleScore, aliasScore, artistScore);
+
+  const matchedTokens = query.split(' ').filter((token) => searchable.includes(token)).length;
+  score += matchedTokens * 250;
+  return score;
+}
+
+/** Rank exact matches and usable, reviewed videos ahead of weaker catalogue hits. */
+export function sortSongResults(songs: WorshipSong[], rawQuery = ''): WorshipSong[] {
+  return songs
+    .map((song, originalIndex) => ({
+      song,
+      originalIndex,
+      score: searchRelevanceScore(song, rawQuery) + catalogueUsefulnessScore(song),
+    }))
+    .sort((left, right) =>
+      right.score - left.score
+      || left.song.title.localeCompare(right.song.title, undefined, { sensitivity: 'base' })
+      || left.originalIndex - right.originalIndex)
+    .map(({ song }) => song);
 }
 
 export function getFullSongLibrary(): WorshipSong[] {
@@ -371,7 +485,7 @@ export function getFullSongLibrary(): WorshipSong[] {
     return song;
   });
 
-  return [...mappedDefaults, ...custom];
+  return [...mappedDefaults, ...custom].map(enrichSongPresentation);
 }
 
 export function addCustomSong(song: Omit<WorshipSong, 'id'>): WorshipSong {

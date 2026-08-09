@@ -1,10 +1,46 @@
 import type { ClassicHymnalCode } from './classicHymnalCollections';
 
+export type WorshipArrangement =
+  | 'Contemporary worship'
+  | 'Live worship'
+  | 'Choir / choral'
+  | 'Gospel'
+  | 'Country / bluegrass'
+  | 'Acoustic / unplugged'
+  | 'Traditional hymn'
+  | 'Children / family'
+  | 'A cappella'
+  | 'Orchestral / instrumental'
+  | 'Chant / liturgical'
+  | 'Arrangement not stated';
+
+export type LanguagePresentation =
+  | 'English vocal with English words'
+  | 'English vocal with translated subtitles'
+  | 'Native-language vocal with English subtitles'
+  | 'Native-language vocal with native words'
+  | 'Bilingual vocal or subtitles'
+  | 'Words or subtitles indicated';
+
 export interface WorshipSong {
   id: string;
   title: string;
   artist: string;
-  category: 'Traditional Hymn' | 'Contemporary Worship' | 'Sung Liturgy' | 'Hymnal Index';
+  category:
+    | 'Traditional Hymn'
+    | 'Contemporary Worship'
+    | 'Sung Liturgy'
+    | 'Hymnal Index'
+    | 'Traditional hymn'
+    | 'Contemporary worship'
+    | 'Sung liturgy'
+    | 'Hymn-book index'
+    | 'Gospel and spiritual'
+    | 'Children and family'
+    | 'Simple song and chant'
+    | 'Gregorian chant'
+    | 'Eastern Christian chant'
+    | 'Metrical psalm';
   youtubeId: string;
   lyrics?: string;
   hymnal?: 'AM2013';
@@ -15,6 +51,51 @@ export interface WorshipSong {
   hymnalReferences?: HymnalReference[];
   /** Rank in the current CCLI UK Top 100 snapshot, where applicable. */
   ccliUkRank?: number;
+  /** Primary language of the sung words (English when omitted). */
+  language?: string;
+  /** ISO 639-1 language code where one exists. */
+  languageCode?: string;
+  /** Country or wider region associated with this version. */
+  region?: string;
+  /** Alternative scripts, transliterations and familiar search terms. */
+  searchAliases?: string[];
+  /** Channel or ministry responsible for the linked upload. */
+  sourceChannel?: string;
+  /** Plain-English title or meaning, when verified from the source or translation. */
+  englishTitle?: string;
+  /** Latin-script reading of the Farsi title, where available. */
+  transliteration?: string;
+  /** Distinguishes a sung-language version from a translation/subtitle aid. */
+  versionType?:
+    | 'Farsi vocal'
+    | 'Farsi translation / subtitles'
+    | 'Familiar-song language version'
+    | 'Modern word / subtitle video'
+    | 'Lyrics / subtitles indicated'
+    | 'Native-language worship'
+    | 'Original';
+  /** How this catalogue link was checked; this is not a linguistic endorsement. */
+  catalogueReview?: 'Metadata and embed checked' | 'Word evidence and embed checked' | 'Word evidence and metadata checked';
+  /** Evidence phrase found in the uploader's own title, such as lyrics or subtitles. */
+  wordEvidence?: string;
+  /** Date on which the exact YouTube link and metadata were last checked. */
+  qualityCheckedOn?: string;
+  /** YouTube duration captured during the latest catalogue review. */
+  durationSeconds?: number;
+  /** Public view count captured during research; it will naturally change. */
+  viewCountAtReview?: number;
+  /** Session-facing flag copied into a service playlist after catalogue checks. */
+  wordsIndicated?: boolean;
+  /** Musical treatment stated by the uploader or conservatively inferred from metadata. */
+  arrangement?: WorshipArrangement;
+  /** What a worshipper can expect to hear and read in this exact video. */
+  languagePresentation?: LanguagePresentation;
+  /** Sung language where the uploader identifies it separately from subtitles. */
+  vocalLanguage?: string;
+  /** Subtitle/word language where the uploader identifies it separately from the vocal. */
+  subtitleLanguage?: string;
+  /** Whether a presentation label is directly stated or conservatively inferred. */
+  metadataConfidence?: 'Uploader-stated' | 'Catalogue-inferred';
 }
 
 export type HymnalCode = 'AM2013' | ClassicHymnalCode;
