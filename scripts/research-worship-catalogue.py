@@ -16,8 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "src" / "data"
 OUTPUT = DATA_DIR / "researchedWordWorshipVideos.json"
-TARGET = 2400
-RESULTS_PER_QUERY = 45
+TARGET = 5700
+RESULTS_PER_QUERY = 50
 
 LANGUAGES = [
     ("English", "en", "United Kingdom / international"),
@@ -90,6 +90,20 @@ LANGUAGES = [
     ("Lithuanian", "lt", "Lithuania"),
     ("Latvian", "lv", "Latvia"),
     ("Estonian", "et", "Estonia"),
+    ("Latin", "la", "International / liturgical"),
+    ("Khmer", "km", "Cambodia"),
+    ("Lao", "lo", "Laos"),
+    ("Burmese / Myanmar", "my", "Myanmar / diaspora"),
+    ("Kurdish", "ku", "Kurdistan / diaspora"),
+    ("Dari", "prs", "Afghanistan / diaspora"),
+    ("Pashto", "ps", "Afghanistan / Pakistan / diaspora"),
+    ("Lingala", "ln", "Central Africa / diaspora"),
+    ("Luganda", "lg", "Uganda"),
+    ("Twi", "tw", "Ghana / diaspora"),
+    ("Shona", "sn", "Zimbabwe / diaspora"),
+    ("Kinyarwanda", "rw", "Rwanda / diaspora"),
+    ("Ndebele", "nd", "Southern Africa"),
+    ("Sesotho", "st", "Southern Africa"),
 ]
 
 WORD_PATTERNS = [
@@ -108,15 +122,22 @@ REJECT = re.compile(
     r"reaction|tutorial|lesson|how to play|instrumental tutorial|shorts?\b|nightcore|sped up|slowed|"
     r"worship mix|prayer mix|medley|top \d+|best \d+|sermon|debate|podcast|interview|bible study|"
     r"documentary|apologetics|q\s*&\s*a|questions? and answers?|lecture|baptism testimony|christian testimony|"
-    r"news report|worship tutorial|how to play",
+    r"news report|worship tutorial|how to play|spoken word|devotional|meditation|affirmation|"
+    r"prayer for|scripture reading|psalm \d+ reading|behind the scenes|teaser|trailer|episode|vlog|"
+    r"birthday song|national anthem|school song|military hymn|the marines.? hymn|hymn for the weekend|"
+    r"jingle bells|rudolph|frosty|santa|holly jolly|let it snow|bhakti|shiva|krishna|quran|nasheed|"
+    r"bollywood|romantic song|love song|movie soundtrack|film song|god gave me you|there you.ll be|"
+    r"jesus,? take the wheel|something in the water|god.s country|praise jah in the moonlight|"
+    r"praise to the man|500 miles|rahman baba|sacred madness|allah loves praise|am i god|"
+    r"church of almighty god|全能神教会|全能神教會",
     re.I,
 )
 
 CHRISTIAN_SIGNAL = re.compile(
-    r"jesus|yeshua|yesu|yeshu|christ|christian|god|lord|yahweh|adonai|holy spirit|holy ghost|worship|"
+    r"\b(?:jesus|yeshua|yesu|yeshu|christ|christian|god|lord|yahweh|adonai|holy spirit|holy ghost|worship|"
     r"gospel|praise|hymn|psalm|faith|grace|cross|church|ministry|maranatha|bethel|hillsong|elevation|"
     r"dios|cristo|alabanza|adoraci[oó]n|iglesia|deus|louvor|adora[cç][aã]o|igreja|dieu|j[eé]sus|"
-    r"louange|[eé]glise|gott|christus|lobpreis|anbetung|kirche|dio|ges[uù]|lode|chiesa|"
+    r"louange|[eé]glise|gott|christus|lobpreis|anbetung|kirche|dio|ges[uù]|lode|chiesa)\b|"
     r"бог|иисус|господ|христ|поклон|хвал|церк|مسیح|عیسی|پرستش|سرود|المسيح|يسوع|الرب|ترنيمة|عبادة|"
     r"예수|하나님|주님|찬양|교회|敬拜|赞美|讚美|耶稣|耶穌|上帝|礼拝|賛美|イエス|"
     r"ch[uú]a|th[aá]nh ca|tin l[aà]nh|tuhan|pujian|penyembahan|rohani|mungu|ibada|sifa|ọlọrun|olodumare",

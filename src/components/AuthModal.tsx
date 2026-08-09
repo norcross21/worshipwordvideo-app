@@ -117,7 +117,7 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
         if (signUpError) {
           setError(signUpError.message);
         } else if (needsEmailVerification) {
-          setSuccessMessage('Registration received. Check your email and select the confirmation link before signing in.');
+          setSuccessMessage('Confirmation email sent. Check your Inbox, Spam or Junk folder, then select the confirmation link before signing in.');
         } else {
           setSuccessMessage('Account created. Your service playlist tools are now ready.');
           window.setTimeout(onClose, 1400);
@@ -140,7 +140,7 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
     const { error: resendError } = await resendConfirmation(email.trim().toLowerCase());
     setLoading(false);
     if (resendError) setError(resendError.message);
-    else setSuccessMessage('A fresh confirmation email has been requested.');
+    else setSuccessMessage('A fresh confirmation email has been sent. Check your Inbox, Spam or Junk folder.');
   };
 
   const title = tab === 'signin'

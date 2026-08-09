@@ -14,6 +14,7 @@ export interface VideoQualityAssessment {
 
 const NON_WORSHIP_PROGRAMME = /\b(?:sermons?|debates?|podcasts?|interviews?|bible stud(?:y|ies)|documentar(?:y|ies)|apologetics|q\s*&\s*a|questions? and answers?|lectures?|baptism testimon(?:y|ies)|christian testimon(?:y|ies)|news reports?|worship tutorials?|how to play)\b/i;
 const FALSE_POSITIVE_TITLE = /\btalk talk\s*[-–—]\s*it'?s my life\b/i;
+const NON_WORSHIP_WORD_VIDEO = /\b(?:scripture reading|psalm \d+ reading|spoken word|devotional|meditation|affirmation|prayer for|birthday song|national anthem|school song|military hymn|the marines.? hymn|hymn for the weekend|jingle bells|rudolph|frosty|santa|holly jolly|let it snow|bhakti|shiva|krishna|quran|nasheed|bollywood|romantic song|love song|movie soundtrack|film song|god gave me you|there you.ll be|jesus,? take the wheel|something in the water|god.s country|praise jah in the moonlight|praise to the man|500 miles|rahman baba|sacred madness|allah loves praise|am i god|church of almighty god)\b|全能神教会|全能神教會/i;
 
 /**
  * The public catalogue only contains playable, service-length worship videos.
@@ -27,7 +28,7 @@ export function isUsableWorshipVideoListing(song: WorshipSong): boolean {
   if (audit && (!audit.available || audit.embeddable === false)) return false;
 
   const metadata = [song.title, song.artist, song.sourceChannel, audit?.title, audit?.channel].filter(Boolean).join(' ');
-  if (NON_WORSHIP_PROGRAMME.test(metadata) || FALSE_POSITIVE_TITLE.test(metadata)) return false;
+  if (NON_WORSHIP_PROGRAMME.test(metadata) || NON_WORSHIP_WORD_VIDEO.test(metadata) || FALSE_POSITIVE_TITLE.test(metadata)) return false;
   if (song.language === 'French' && /\baustin french\b/i.test(metadata)) return false;
   if (/\bpreaching\b/i.test(metadata) && !/\b(?:song|hymn|lyrics?|worship music)\b/i.test(metadata)) return false;
   if (/\bconference\s*20\d{2}\b/i.test(metadata) && !/\b(?:song|hymn|lyrics?|worship|praise)\b/i.test(metadata)) return false;

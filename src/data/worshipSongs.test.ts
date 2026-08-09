@@ -28,7 +28,7 @@ describe('Worship Songs Database', () => {
   it('retains the source catalogue while presenting only maintained entries', () => {
     expect(WORSHIP_SONGS.length).toBe(500);
     const library = getFullSongLibrary();
-    expect(library.length).toBeGreaterThanOrEqual(11_000);
+    expect(library.length).toBeGreaterThanOrEqual(15_000);
     expect(library.every((song) => normalizeYouTubeVideoId(song.youtubeId))).toBe(true);
     expect(library.some((song) => song.title.startsWith('Worship Song Ref #'))).toBe(false);
   });
@@ -51,7 +51,7 @@ describe('Worship Songs Database', () => {
 
   it('ships popular songs with playable YouTube links', () => {
     const playable = getFullSongLibrary().filter((song) => song.youtubeId);
-    expect(playable.length).toBeGreaterThanOrEqual(11_000);
+    expect(playable.length).toBeGreaterThanOrEqual(15_000);
     expect(new Set(playable.map((song) => song.youtubeId)).size).toBe(playable.length);
     expect(playable.slice(0, 10).every((song) => normalizeYouTubeVideoId(song.youtubeId))).toBe(true);
     expect(ADDITIONAL_WORSHIP_SONGS).toHaveLength(100);

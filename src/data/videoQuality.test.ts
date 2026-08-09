@@ -54,5 +54,21 @@ describe('video quality helpers', () => {
       youtubeId: 'mnopqrstuvw',
       wordsIndicated: true,
     })).toBe(false);
+    expect(isUsableWorshipVideoListing({
+      id: 'secular-title',
+      title: 'God Gave Me You (Lyrics)',
+      artist: 'Country lyrics channel',
+      category: 'Contemporary Worship',
+      youtubeId: 'qrstuvwxyz0',
+      wordsIndicated: true,
+    })).toBe(false);
+    expect(isUsableWorshipVideoListing({
+      id: 'non-christian-title',
+      title: 'Allah Loves Praise with Lyrics',
+      artist: 'Religious music channel',
+      category: 'Contemporary Worship',
+      youtubeId: 'rstuvwxyz01',
+      wordsIndicated: true,
+    })).toBe(false);
   });
 });

@@ -26,7 +26,7 @@ SPEC.loader.exec_module(research)
 
 API = "https://inv.zoomerville.com/api/v1/search"
 OUTPUT = ROOT / "src" / "data" / "researchedWordWorshipVideos.json"
-TARGET = 2400
+TARGET = 5700
 SSL_CONTEXT = ssl._create_unverified_context()
 
 

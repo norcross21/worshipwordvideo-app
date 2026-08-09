@@ -20,13 +20,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "src" / "data" / "researchedWordWorshipVideos.json"
-TARGET = 2400
+TARGET = 5700
 SOURCE_PATHS = [
     Path("/tmp/modern-word-video-deep-candidates.json"),
     Path("/tmp/modern-word-video-candidates.json"),
     Path("/tmp/expanded-familiar-video-candidates-english-deep.json"),
     Path("/tmp/global-word-video-candidates.json"),
     Path("/tmp/global-word-video-candidates-pass2.json"),
+    Path("/tmp/global-word-video-shortlist.json"),
 ]
 
 SPEC = importlib.util.spec_from_file_location("catalogue_research", ROOT / "scripts" / "research-worship-catalogue.py")

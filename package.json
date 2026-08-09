@@ -16,6 +16,8 @@
     "test": "vitest run",
     "catalogue:research": "python3 scripts/research-worship-catalogue.py",
     "catalogue:research:fallback": "python3 scripts/research-invidious-catalogue.py",
+    "catalogue:research:channels": "python3 scripts/research-trusted-channels.py",
+    "catalogue:import:channels": "python3 scripts/import-trusted-channel-candidates.py",
     "catalogue:import-research": "python3 scripts/import-research-candidates.py",
     "catalogue:report": "vite-node scripts/catalogue-report.ts"
   },
