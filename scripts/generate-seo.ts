@@ -270,7 +270,11 @@ async function removeStaleGeneratedDirectories(parent: string, expectedNames: Se
 async function generate(): Promise<void> {
   const playableSongs = getFullSongLibrary().filter((song) => Boolean(song.youtubeId));
   const uniquePlayableVideos = new Set(playableSongs.map((song) => song.youtubeId)).size;
-  const languageLabelCount = new Set(playableSongs.map((song) => song.language ?? 'English')).size;
+  const namedLanguageCount = new Set(
+    playableSongs
+      .map((song) => song.language ?? 'English')
+      .filter((language) => language !== 'Language not stated'),
+  ).size;
   const languageGroups = new Map<string, WorshipSong[]>();
   const arrangementGroups = new Map<string, WorshipSong[]>();
   for (const song of playableSongs) {
@@ -332,7 +336,7 @@ async function generate(): Promise<void> {
   await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\n\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'seo-urls.json'), `${JSON.stringify(urls, null, 2)}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'indexnow-key.txt'), `${INDEXNOW_KEY}\n`, 'utf8');
-  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nCanonical site: ${SITE}/\nCatalogue: ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos at the latest catalogue build.\nLanguages: ${languageLabelCount} language labels, with dedicated public collection pages for languages having at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos.\nFeatures: public song, artist, language and hymn-number search; presentation and arrangement labels; member service playlists; per-video start/stop timing; clean second-screen projection.\nCopyright: the site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube.\nContact: stephen@kairoshousing.org.uk\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
+  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nCanonical site: ${SITE}/\nCatalogue: ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos at the latest catalogue build.\nLanguages: ${namedLanguageCount} named languages, with dedicated public collection pages for languages having at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos. Entries whose public metadata does not safely identify a language remain unclassified rather than being guessed.\nFeatures: public song, artist, language and hymn-number search; presentation and arrangement labels; member service playlists; per-video start/stop timing; clean second-screen projection.\nCopyright: the site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube.\nContact: stephen@kairoshousing.org.uk\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
 
   const feedItems = GUIDE_PAGES.map((page) => `<item><title>${escapeHtml(page.title)}</title><link>${canonicalUrl(page.path)}</link><guid>${canonicalUrl(page.path)}</guid><description>${escapeHtml(page.description)}</description><pubDate>Sun, 09 Aug 2026 00:00:00 GMT</pubDate></item>`).join('');
   await writeFile(resolve(PUBLIC_DIR, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Worship Word Video Guides</title><link>${SITE}/guides/</link><description>Practical worship video guidance for churches.</description><language>en-gb</language>${feedItems}</channel></rss>`, 'utf8');
