@@ -1558,6 +1558,10 @@ body:has(.modal-backdrop) {
 }
 
 .modal-card--donate-rich {
+  --color-brand-navy: #0f256e;
+  --color-brand-teal: #0d9488;
+  --color-brand-teal-dark: #0f766e;
+  --color-bg-main: #faf8f5;
   max-width: 480px;
   max-height: 90vh;
   display: flex;

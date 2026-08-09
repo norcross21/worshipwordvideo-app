@@ -139,7 +139,7 @@ function CharitySection() {
     <h3>Charity donation statement</h3>
     <p>Worship Word Video is currently provided without charge. Donations are entirely optional and do not unlock features, improve search placement or affect account access.</p>
     <p>The donation link goes to <strong>Kairos Housing, registered charity 1198820</strong>, using its internal donation page at <strong>operations.kairoshousing.org.uk/donate</strong>. Worship Word Video does not collect card or bank details and does not process the payment; the donation system's terms, privacy practices, fees and Gift Aid arrangements apply.</p>
-    <p>The app provides one optional Support Kairos link. It opens Kairos Housing’s own secure donation page in a separate tab and does not interrupt catalogue browsing.</p>
+    <p>Guests may see one optional donation invitation per browser visit. Closing it sets a session-only browser flag so it does not reopen during that visit. Signed-in users are not shown the automatic invitation.</p>
     <p>Kairos Housing being the donation beneficiary does not, by itself, mean that Kairos Housing owns, publishes, endorses or accepts responsibility for every catalogue entry or third-party video in this app.</p>
     <p>Before donating, check that the destination page names Kairos Housing and uses the expected secure address. Kairos Housing’s work is guided by the commitment <strong>Rebuilding lives with dignity</strong>. Donation questions should be directed through the charity's official website.</p>
     <div className="legal-links">

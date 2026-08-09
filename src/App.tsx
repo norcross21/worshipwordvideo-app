@@ -13,6 +13,7 @@ import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 const SongLibraryDashboard = lazy(() => import('./components/SongLibraryDashboard').then((module) => ({ default: module.SongLibraryDashboard })));
 const WorshipQueue = lazy(() => import('./components/WorshipQueue').then((module) => ({ default: module.WorshipQueue })));
 const SavedPlaylistsModal = lazy(() => import('./components/SavedPlaylistsModal').then((module) => ({ default: module.SavedPlaylistsModal })));
+const DonateModal = lazy(() => import('./components/DonateModal').then((module) => ({ default: module.DonateModal })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then((module) => ({ default: module.AdminDashboard })));
 const AuthModal = lazy(() => import('./components/AuthModal').then((module) => ({ default: module.AuthModal })));
 const AccountModal = lazy(() => import('./components/AccountModal').then((module) => ({ default: module.AccountModal })));
@@ -28,6 +29,7 @@ function MainApp() {
   const [queueOwnerId, setQueueOwnerId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState('');
   const [showSavedPlaylistsModal, setShowSavedPlaylistsModal] = useState(false);
+  const [showDonateModal, setShowDonateModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(() =>
     new URLSearchParams(window.location.search).get('legal') === '1'
   );
@@ -67,6 +69,44 @@ function MainApp() {
     setShowAccountModal(true);
   }, [authModalTab, profile, profileLoading, user]);
 
+  useEffect(() => {
+    if (authLoading || user) return;
+
+    let cancelled = false;
+    let timer = 0;
+    const promptWasSeen = () => {
+      try {
+        return sessionStorage.getItem('worship_donation_prompt_seen') === 'yes';
+      } catch {
+        return false;
+      }
+    };
+    const openWhenInterfaceIsSettled = () => {
+      if (cancelled || promptWasSeen()) return;
+      if (document.querySelector('[role="dialog"]')) {
+        timer = window.setTimeout(openWhenInterfaceIsSettled, 1500);
+        return;
+      }
+      setShowDonateModal(true);
+    };
+
+    // Let the catalogue settle and never stack this invitation over another dialog.
+    timer = window.setTimeout(openWhenInterfaceIsSettled, 1800);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [authLoading, user]);
+
+  const closeDonateModal = () => {
+    try {
+      sessionStorage.setItem('worship_donation_prompt_seen', 'yes');
+    } catch {
+      // Closing the modal must always work, even in strict privacy modes.
+    }
+    setShowDonateModal(false);
+  };
+
   const handleAddToPlaylist = (song: WorshipSong) => {
     if (!user) {
       setAuthModalTab('signup');
@@ -103,6 +143,7 @@ function MainApp() {
         onOpenSavedPlaylists={() => setShowSavedPlaylistsModal(true)}
         onOpenAuth={setAuthModalTab}
         onOpenAccount={() => setShowAccountModal(true)}
+        onOpenDonate={() => setShowDonateModal(true)}
       />
 
       {!authLoading && !user && (
@@ -164,6 +205,12 @@ function MainApp() {
       {showAccountModal && user && (
         <Suspense fallback={null}>
           <AccountModal onClose={() => setShowAccountModal(false)} />
+        </Suspense>
+      )}
+
+      {showDonateModal && (
+        <Suspense fallback={null}>
+          <DonateModal onClose={closeDonateModal} />
         </Suspense>
       )}
 
