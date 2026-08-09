@@ -183,7 +183,7 @@ export function AdminDashboard() {
           <span className="eyebrow"><MailPlus size={14} /> Account invitation</span>
           <h3 id="admin-invite-title">Invite a member</h3>
           <p>The person receives a secure link to set their own password. They must then accept the account terms and make their own optional Kairos email choice.</p>
-          <span className="admin-invite__delivery-note">Invitation delivery requires the approved Resend account and secure server settings. If it is not active yet, the send button will explain what remains.</span>
+          <span className="admin-invite__delivery-note">Invitations are sent securely through the Worship Word Video account email service. This facility is for expected, individual invitations only.</span>
         </div>
         <form className="admin-invite__form" onSubmit={inviteMember}>
           <div className="admin-invite__fields">
