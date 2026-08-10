@@ -23,12 +23,13 @@ export type WindowWithScreenDetails = Window & {
   getScreenDetails?: () => Promise<ProjectionScreenDetails>;
 };
 
-export type ProjectionCommandType = 'start' | 'closed';
+export type ProjectionCommandType = 'start' | 'closed' | 'ended';
 
 export interface ProjectionCommand {
   id: string;
   type: ProjectionCommandType;
   launchId: string;
+  itemId?: string;
   issuedAt: number;
 }
 
@@ -127,11 +128,12 @@ export function subscribeToProjectionState(onState: (state: ProjectionState) => 
   };
 }
 
-export function publishProjectionCommand(type: ProjectionCommandType, launchId: string): ProjectionCommand {
+export function publishProjectionCommand(type: ProjectionCommandType, launchId: string, itemId?: string): ProjectionCommand {
   const command: ProjectionCommand = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     type,
     launchId,
+    itemId,
     issuedAt: Date.now(),
   };
   try {

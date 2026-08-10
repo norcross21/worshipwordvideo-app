@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -34,6 +34,7 @@ import {
   WORSHIP_QUEUE_LIMIT,
   formatPlaybackTime,
   moveWorshipQueueItem,
+  nextWorshipQueueIndex,
   parsePlaybackTime,
   playbackTimingError,
   type WorshipQueueItem,
@@ -69,9 +70,29 @@ export function WorshipQueue({
   const [projectionMessage, setProjectionMessage] = useState('');
   const [showProjectionGuide, setShowProjectionGuide] = useState(false);
   const [projectionActive, setProjectionActive] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(false);
   const projectionWindowRef = useRef<Window | null>(null);
   const projectionLaunchIdRef = useRef('');
   const playingItem = !activeService || playingIndex == null ? null : queue[playingIndex] ?? null;
+
+  const handleVideoEnded = useCallback((endedItemId?: string) => {
+    if (!autoAdvance || playingIndex == null) return;
+    if (endedItemId && endedItemId !== playingItem?.id) return;
+    const nextIndex = nextWorshipQueueIndex(playingIndex, queue.length);
+    if (nextIndex == null) {
+      setPlayingIndex(null);
+      setAutoAdvance(false);
+      setProjectionMessage('Service complete. Auto-next has switched itself off.');
+      return;
+    }
+    setPlayingIndex(nextIndex);
+    setPlaybackRevision((value) => value + 1);
+    setProjectionMessage(`Auto-next: starting ${queue[nextIndex].title}.`);
+  }, [autoAdvance, playingIndex, playingItem?.id, queue]);
+
+  useEffect(() => {
+    setAutoAdvance(false);
+  }, [activeService?.id]);
 
   useEffect(() => {
     if (playingIndex != null && playingIndex >= queue.length) setPlayingIndex(queue.length ? queue.length - 1 : null);
@@ -93,10 +114,12 @@ export function WorshipQueue({
     if (command.type === 'closed') {
       setProjectionActive(false);
       setPlayingIndex(null);
+      setAutoAdvance(false);
       setShowProjectionGuide(false);
       setProjectionMessage('The church projection window was closed.');
     }
-  }), [queue.length]);
+    if (command.type === 'ended') handleVideoEnded(command.itemId);
+  }), [handleVideoEnded, queue.length]);
 
   const update = (next: WorshipQueueItem[]) => onChange(next.slice(0, WORSHIP_QUEUE_LIMIT));
 
@@ -110,6 +133,7 @@ export function WorshipQueue({
     if (window.confirm('Clear all songs from current service playlist?')) {
       update([]);
       setPlayingIndex(null);
+      setAutoAdvance(false);
     }
   };
 
@@ -229,6 +253,14 @@ export function WorshipQueue({
     setProjectionMessage('Service started on the projection screen. Use Previous and Next here while the congregation sees only the video.');
   };
 
+  const toggleAutoAdvance = () => {
+    const next = !autoAdvance;
+    setAutoAdvance(next);
+    setProjectionMessage(next
+      ? 'Auto-next is on. Each finished video will start the next one automatically.'
+      : 'Auto-next is off. Videos will stop until you choose Next.');
+  };
+
   return (
     <section className="worship-queue" aria-labelledby="worship-queue-title">
       <div className="worship-queue__heading">
@@ -257,6 +289,18 @@ export function WorshipQueue({
 
       {projectionMessage && <div className="projection-message" role="status"><Info size={17} /><span>{projectionMessage}</span><button type="button" onClick={() => setProjectionMessage('')} aria-label="Dismiss projection message"><X size={15} /></button></div>}
 
+      {activeService && queue.length > 1 && (
+        <div className={`worship-queue__auto-next ${autoAdvance ? 'is-on' : ''}`}>
+          <div>
+            <span><SkipForward size={15} /> Automatic next video</span>
+            <small>{autoAdvance ? 'On — the next video starts when the current video finishes.' : 'Off by default — turn it on when you want uninterrupted playback.'}</small>
+          </div>
+          <button type="button" aria-pressed={autoAdvance} onClick={toggleAutoAdvance}>
+            {autoAdvance ? 'Auto-next on' : 'Turn on auto-next'}
+          </button>
+        </div>
+      )}
+
       {playingItem && !projectionActive && (
         <div className="worship-queue__player-card">
           <div className="worship-queue__player-header">
@@ -275,6 +319,7 @@ export function WorshipQueue({
               autoplay
               startSeconds={playingItem.startSeconds}
               endSeconds={playingItem.endSeconds}
+              onEnded={() => handleVideoEnded(playingItem.id)}
             />
           </div>
           <div className="worship-queue__player-controls">
@@ -287,7 +332,7 @@ export function WorshipQueue({
 
       {playingItem && projectionActive && (
         <div className="projection-controller" role="region" aria-label="Private projection controls">
-          <div className="projection-controller__status"><span>LIVE ON CHURCH SCREEN</span><strong>{playingItem.title}</strong><small>{playingItem.artist}</small></div>
+          <div className="projection-controller__status"><span>LIVE ON CHURCH SCREEN{autoAdvance ? ' · AUTO-NEXT ON' : ''}</span><strong>{playingItem.title}</strong><small>{playingItem.artist}</small></div>
           <div className="projection-controller__controls">
             <button type="button" disabled={playingIndex! <= 0} onClick={() => setPlayingIndex((previous) => previous != null && previous > 0 ? previous - 1 : previous)}><SkipBack size={16} /> Previous</button>
             <button type="button" onClick={() => setPlaybackRevision((value) => value + 1)}><RotateCcw size={16} /> Restart</button>
@@ -297,6 +342,7 @@ export function WorshipQueue({
               projectionWindowRef.current = null;
               setProjectionActive(false);
               setPlayingIndex(null);
+              setAutoAdvance(false);
               setProjectionMessage('Projection stopped.');
             }}><X size={16} /> Stop projection</button>
           </div>

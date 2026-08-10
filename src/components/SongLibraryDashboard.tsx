@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { startTransition, useDeferredValue, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   Search,
   ArrowLeft,
@@ -14,7 +14,9 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import {
-  getFullSongLibrary,
+  loadRuntimeSongLibrary,
+  languageFiltersForSongs,
+  getApprovedRuntimeVideos,
   songMatchesSearch,
   songHymnalReferences,
   songMusicStyle,
@@ -22,8 +24,7 @@ import {
   type MusicStyle,
   HYMNAL_COLLECTION_OPTIONS,
   MUSIC_STYLES,
-  LANGUAGE_FILTERS,
-} from '../data/songLibraryStore';
+} from '../data/songLibraryRuntime';
 import type { WorshipSong } from '../data/worshipSongs';
 import {
   LANGUAGE_PRESENTATIONS,
@@ -32,10 +33,6 @@ import {
   inferWorshipArrangement,
   shortPresentationLabel,
 } from '../data/songPresentation';
-import {
-  getApprovedWorshipVideos,
-  isCatalogueWordVideo,
-} from '../data/videoApproval';
 import { inferWorshipSeasons, WORSHIP_SEASONS, type WorshipSeason } from '../data/songSeason';
 import { YouTubePlayer } from './YouTubePlayer';
 import { youtubeWatchUrl } from '../data/youtube';
@@ -49,11 +46,7 @@ interface SongLibraryDashboardProps {
   onOpenServiceManager?: () => void;
 }
 
-const initialSongLibrary = getFullSongLibrary();
 const seasonsBySongId = new Map<string, WorshipSeason[]>();
-const initialFeaturedSong = initialSongLibrary.find((song) => song.ccliUkRank === 1)
-  ?? initialSongLibrary.find((song) => Boolean(song.youtubeId))
-  ?? null;
 const MOBILE_CATALOGUE_QUERY = '(max-width: 900px)';
 
 function seasonsForSong(song: WorshipSong): WorshipSeason[] {
@@ -70,7 +63,7 @@ function initialQueryParameter(name: string): string {
 
 const initialSearchQuery = initialQueryParameter('q');
 const requestedLanguage = initialQueryParameter('language');
-const initialLanguage = LANGUAGE_FILTERS.includes(requestedLanguage) ? requestedLanguage : 'all';
+const initialLanguage = requestedLanguage || 'all';
 const requestedSeason = initialQueryParameter('season');
 const initialSeason = WORSHIP_SEASONS.includes(requestedSeason as WorshipSeason) ? requestedSeason as WorshipSeason : 'all';
 const requestedArrangement = initialQueryParameter('arrangement');
@@ -85,7 +78,10 @@ export function SongLibraryDashboard({
   activeServiceTitle = null,
   onOpenServiceManager,
 }: SongLibraryDashboardProps) {
-  const songs = initialSongLibrary;
+  const [songs, setSongs] = useState<WorshipSong[]>([]);
+  const [catalogueLoading, setCatalogueLoading] = useState(true);
+  const [catalogueError, setCatalogueError] = useState('');
+  const [catalogueReloadToken, setCatalogueReloadToken] = useState(0);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'Well-known' | MusicStyle>('All');
   const [selectedHymnal, setSelectedHymnal] = useState('all');
@@ -99,12 +95,13 @@ export function SongLibraryDashboard({
   const [onlyVerifiedWords, setOnlyVerifiedWords] = useState(initialFilter === 'verified');
   const [onlyCcliTop100, setOnlyCcliTop100] = useState(initialFilter === 'ccli');
   
-  const [selectedSong, setSelectedSong] = useState<WorshipSong | null>(initialFeaturedSong);
-  const [approvedVideoIds] = useState<Set<string>>(getApprovedWorshipVideos);
+  const [selectedSong, setSelectedSong] = useState<WorshipSong | null>(null);
+  const [approvedVideoIds] = useState<Set<string>>(getApprovedRuntimeVideos);
   const [visibleSongCount, setVisibleSongCount] = useState(50);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
+  const languageFilters = useMemo(() => languageFiltersForSongs(songs), [songs]);
   const advancedFilterCount = Number(selectedSeason !== 'all')
     + Number(selectedCategory !== 'All')
     + Number(selectedArrangement !== 'all')
@@ -126,6 +123,26 @@ export function SongLibraryDashboard({
       setOnlyVerifiedWords(false);
     }
   }, [initialFilter]);
+
+  useEffect(() => {
+    let active = true;
+    setCatalogueLoading(true);
+    setCatalogueError('');
+    void loadRuntimeSongLibrary()
+      .then((library) => {
+        if (!active) return;
+        startTransition(() => {
+          setSongs(library);
+          setCatalogueLoading(false);
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setCatalogueLoading(false);
+        setCatalogueError('The worship catalogue could not be loaded. Check your connection and try again.');
+      });
+    return () => { active = false; };
+  }, [catalogueReloadToken]);
 
   const showSong = (song: WorshipSong) => {
     setSelectedSong(song);
@@ -156,7 +173,7 @@ export function SongLibraryDashboard({
       // 2. Music Style / Category
       if (selectedCategory !== 'All') {
         const style = songMusicStyle(song);
-        if (selectedCategory === 'Well-known' && !isCatalogueWordVideo(song.youtubeId)) {
+        if (selectedCategory === 'Well-known' && song.wordsIndicated !== true) {
           return false;
         } else if (selectedCategory !== 'Well-known' && style !== selectedCategory) {
           return false;
@@ -184,7 +201,7 @@ export function SongLibraryDashboard({
       // 5. Videos whose uploader identifies lyrics, words or subtitles
       if (onlyVerifiedWords) {
         const isApproved = approvedVideoIds.has(song.youtubeId);
-        const isWordVideo = isCatalogueWordVideo(song.youtubeId) || isApproved;
+        const isWordVideo = song.wordsIndicated === true || isApproved;
         if (!isWordVideo) return false;
       }
 
@@ -197,7 +214,7 @@ export function SongLibraryDashboard({
     setVisibleSongCount(50);
     setMobileDetailOpen(false);
     setSelectedSong(firstPlayableSong(filteredSongs));
-  }, [deferredSearchQuery, selectedCategory, selectedHymnal, selectedLanguage, selectedSeason, selectedArrangement, selectedPresentation, onlyCcliTop100, onlyVerifiedWords]);
+  }, [filteredSongs]);
 
   const selectedHymnalReferences = useMemo(
     () => selectedSong ? songHymnalReferences(selectedSong) : [],
@@ -250,7 +267,7 @@ export function SongLibraryDashboard({
             <span className="sr-only">Language</span>
             <select value={selectedLanguage} onChange={(event) => setSelectedLanguage(event.target.value)} aria-label="Filter by language">
               <option value="all">All languages</option>
-              {LANGUAGE_FILTERS.map((language) => <option key={language} value={language}>{language}</option>)}
+              {languageFilters.map((language) => <option key={language} value={language}>{language}</option>)}
             </select>
           </label>
           <button type="button" className="btn-secondary" aria-expanded={showAdvancedFilters} onClick={() => setShowAdvancedFilters((value) => !value)}>
@@ -326,11 +343,19 @@ export function SongLibraryDashboard({
         <div className="song-list-panel">
           <div className="song-list-panel__header">
             <h3>Results</h3>
-            <span className="song-count-badge" aria-live="polite">{isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()} <span className="song-count-label">songs</span></>}</span>
+            <span className="song-count-badge" aria-live="polite">{catalogueLoading ? 'Loading…' : isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()} <span className="song-count-label">songs</span></>}</span>
           </div>
 
           <div className="song-list-panel__scroll">
-            {filteredSongs.length === 0 ? (
+            {catalogueLoading ? (
+              <div className="catalogue-loading-state" role="status"><span aria-hidden="true" /><strong>Loading the worship catalogue…</strong><small>The playlist and account controls remain ready while the finder opens.</small></div>
+            ) : catalogueError ? (
+              <div className="empty-search-state" role="alert">
+                <Music size={32} />
+                <p>{catalogueError}</p>
+                <button type="button" className="btn-secondary" onClick={() => setCatalogueReloadToken((value) => value + 1)}>Try again</button>
+              </div>
+            ) : filteredSongs.length === 0 ? (
               <div className="empty-search-state">
                 <Music size={32} />
                 <p>No songs match your criteria.</p>
@@ -343,7 +368,7 @@ export function SongLibraryDashboard({
               {filteredSongs.slice(0, visibleSongCount).map((song) => {
                 const isSelected = selectedSong?.id === song.id;
                 const hymnalRefs = songHymnalReferences(song);
-                const isWordVideo = isCatalogueWordVideo(song.youtubeId) || approvedVideoIds.has(song.youtubeId);
+                const isWordVideo = song.wordsIndicated === true || approvedVideoIds.has(song.youtubeId);
 
                 return (
                   <button
@@ -425,7 +450,7 @@ export function SongLibraryDashboard({
                     className="btn-add-playlist"
                     onClick={() => onAddToPlaylist({
                       ...selectedSong,
-                      wordsIndicated: selectedSong.wordsIndicated || isCatalogueWordVideo(selectedSong.youtubeId) || approvedVideoIds.has(selectedSong.youtubeId),
+                      wordsIndicated: selectedSong.wordsIndicated || approvedVideoIds.has(selectedSong.youtubeId),
                     })}
                   >
                     <ListPlus size={16} /> {playlistEnabled

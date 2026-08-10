@@ -14,6 +14,7 @@ export function ProjectionScreen() {
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [starting, setStarting] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
+  const [serviceStarted, setServiceStarted] = useState(() => readProjectionState().playingIndex != null);
   const autoAttemptedRef = useRef(false);
   const parameters = new URLSearchParams(window.location.search);
   const launchId = parameters.get('launch') ?? '';
@@ -28,6 +29,7 @@ export function ProjectionScreen() {
       playbackRevision: projection.playbackRevision + 1,
     });
     setProjection(next);
+    setServiceStarted(true);
     publishProjectionCommand('start', launchId);
   }, [launchId, projection]);
 
@@ -75,6 +77,9 @@ export function ProjectionScreen() {
     document.title = item ? `${item.title} · Projection` : 'Worship projection';
   }, [item?.title]);
   useEffect(() => {
+    if (item) setServiceStarted(true);
+  }, [item]);
+  useEffect(() => {
     if (autoAttemptedRef.current || item) return;
     autoAttemptedRef.current = true;
     void enterFullscreen(true).then((entered) => {
@@ -99,6 +104,7 @@ export function ProjectionScreen() {
             startSeconds={item.startSeconds}
             endSeconds={item.endSeconds}
             className="projection-screen__player"
+            onEnded={() => publishProjectionCommand('ended', launchId, item.id)}
           />
           <div className="projection-screen__caption">
             <strong>{item.title}</strong>
@@ -108,16 +114,18 @@ export function ProjectionScreen() {
       ) : (
         <div className="projection-screen__waiting">
           <MonitorUp size={52} />
-          <h1>Church screen ready</h1>
-          <p>{wasPlaced
-            ? 'One final confirmation keeps the browser secure. The service starts immediately after this screen enters full screen.'
-            : 'Place this clean window on the church display if needed. The service starts immediately after full screen opens.'}</p>
-          {!isFullscreen && (
+          <h1>{serviceStarted ? 'Service complete' : 'Church screen ready'}</h1>
+          <p>{serviceStarted
+            ? 'The final worship video has finished. The service controls remain private on the main computer.'
+            : wasPlaced
+              ? 'One final confirmation keeps the browser secure. The service starts immediately after this screen enters full screen.'
+              : 'Place this clean window on the church display if needed. The service starts immediately after full screen opens.'}</p>
+          {!serviceStarted && !isFullscreen && (
             <button type="button" autoFocus className="projection-screen__fullscreen-primary" onClick={() => void enterFullscreenAndStart()} disabled={starting}>
               <Maximize2 size={22} /> {starting ? 'Starting presentation…' : 'Full screen and start'}
             </button>
           )}
-          <small>Press Enter to use the highlighted button.</small>
+          {!serviceStarted && <small>Press Enter to use the highlighted button.</small>}
           {fullscreenError && <div className="projection-screen__error" role="alert">{fullscreenError}</div>}
         </div>
       )}

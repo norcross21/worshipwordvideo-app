@@ -10,6 +10,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+public/catalogue/worship-songs.json
 dist
 dist-ssr
 *.tsbuildinfo

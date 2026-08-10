@@ -1331,6 +1331,27 @@ body:has(.modal-backdrop) {
   max-width: 340px;
 }
 
+.catalogue-loading-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 2.5rem 1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.catalogue-loading-state > span {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #d6e5e3;
+  border-top-color: #087e76;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.catalogue-loading-state strong { color: #183c61; font-size: 0.85rem; }
+.catalogue-loading-state small { max-width: 270px; font-size: 0.7rem; line-height: 1.45; }
+
 /* Worship Queue View */
 .worship-queue {
   background: var(--color-bg-card);
@@ -2391,6 +2412,31 @@ button {
   border: 0;
 }
 
+.youtube-player__loading,
+.youtube-player__notice {
+  position: absolute;
+  z-index: 2;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  color: #edf7ff;
+  background: rgb(5 24 43 / 88%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+}
+
+.youtube-player__loading {
+  right: auto;
+  left: 50%;
+  bottom: 50%;
+  transform: translate(-50%, 50%);
+  white-space: nowrap;
+}
+
 .video-fallback-link {
   display: inline-flex;
   align-items: center;
@@ -3208,6 +3254,44 @@ button {
 .projection-message span { flex: 1; }
 .projection-message button { display: grid; place-items: center; padding: 0.25rem; border: 0; color: inherit; background: transparent; cursor: pointer; }
 
+.worship-queue__auto-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #d5dfeb;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.worship-queue__auto-next.is-on {
+  border-color: #7fc7bd;
+  background: #eefaf7;
+}
+
+.worship-queue__auto-next > div { display: grid; min-width: 0; gap: 0.2rem; }
+.worship-queue__auto-next span { display: inline-flex; align-items: center; gap: 0.4rem; color: #183c61; font-size: 0.8rem; font-weight: 850; }
+.worship-queue__auto-next small { color: #63788e; font-size: 0.7rem; line-height: 1.4; }
+.worship-queue__auto-next button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #9eb2c6;
+  border-radius: 8px;
+  color: #173d65;
+  background: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+.worship-queue__auto-next.is-on button { border-color: #087e76; color: #fff; background: #087e76; }
+.worship-queue__auto-next button:focus-visible { outline: 3px solid rgb(8 126 118 / 24%); outline-offset: 2px; }
+
 .worship-queue__item.is-editing-timing { flex-wrap: wrap; }
 .worship-queue__trim-summary { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.35rem; color: #087e76; font-size: 0.72rem; font-weight: 700; }
 .worship-queue__item-actions button span { display: inline; }
@@ -3287,6 +3371,8 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   .admin-status-filter select { width: 100%; }
   .admin-tools__count { padding-inline: 0.15rem; }
   .projection-screen__tools { opacity: 1; }
+  .worship-queue__auto-next { align-items: stretch; flex-direction: column; gap: 0.65rem; }
+  .worship-queue__auto-next button { width: 100%; min-height: 44px; }
 }
 
 /* Helpful, crawlable discovery content below the finder. */

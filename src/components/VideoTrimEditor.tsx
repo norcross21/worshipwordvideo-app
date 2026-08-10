@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Crosshair, Pause, Play, RotateCcw, RotateCw, Scissors } from 'lucide-react';
 import { formatPlaybackTime, parsePlaybackTime, playbackTimingError } from '../data/worshipQueue';
+import {
+  loadYouTubeIframeApi,
+  safeYouTubePlayerValue,
+  type YouTubePlayerInstance,
+} from '../lib/youtubeIframeApi';
 import { YouTubePlayer } from './YouTubePlayer';
 
 interface VideoTrimEditorProps {
@@ -12,77 +17,6 @@ interface VideoTrimEditorProps {
   durationSeconds?: number;
   onStartChange: (value: string) => void;
   onEndChange: (value: string) => void;
-}
-
-interface YouTubePlayerInstance {
-  destroy: () => void;
-  getCurrentTime: () => number;
-  getDuration: () => number;
-  pauseVideo: () => void;
-  playVideo: () => void;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-}
-
-interface YouTubePlayerEvent {
-  target: YouTubePlayerInstance;
-}
-
-interface YouTubePlayerOptions {
-  videoId: string;
-  host?: string;
-  playerVars: Record<string, string | number>;
-  events: {
-    onReady: (event: YouTubePlayerEvent) => void;
-    onError: () => void;
-  };
-}
-
-interface YouTubeIframeApi {
-  Player: new (element: HTMLElement, options: YouTubePlayerOptions) => YouTubePlayerInstance;
-}
-
-declare global {
-  interface Window {
-    YT?: YouTubeIframeApi;
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
-
-let youtubeIframeApiPromise: Promise<YouTubeIframeApi> | null = null;
-
-function loadYouTubeIframeApi() {
-  if (window.YT?.Player) return Promise.resolve(window.YT);
-  if (youtubeIframeApiPromise) return youtubeIframeApiPromise;
-
-  youtubeIframeApiPromise = new Promise<YouTubeIframeApi>((resolve, reject) => {
-    const previousReadyHandler = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      previousReadyHandler?.();
-      if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error('YouTube player controls did not become available.'));
-    };
-
-    let script = document.querySelector<HTMLScriptElement>('script[data-worship-youtube-api]');
-    if (!script) {
-      script = document.createElement('script');
-      script.src = 'https://www.youtube.com/iframe_api';
-      script.async = true;
-      script.dataset.worshipYoutubeApi = 'true';
-      document.head.appendChild(script);
-    }
-    script.addEventListener('error', () => reject(new Error('The interactive video controls could not be loaded.')), { once: true });
-  });
-
-  return youtubeIframeApiPromise;
-}
-
-function safePlayerValue(read: () => number, fallback = 0) {
-  try {
-    const value = read();
-    return Number.isFinite(value) && value >= 0 ? value : fallback;
-  } catch {
-    return fallback;
-  }
 }
 
 export function VideoTrimEditor({
@@ -137,22 +71,22 @@ export function VideoTrimEditor({
             onReady: (event) => {
               if (disposed) return;
               playerRef.current = event.target;
-              const detectedDuration = safePlayerValue(() => event.target.getDuration(), durationSeconds ?? 0);
+              const detectedDuration = safeYouTubePlayerValue(() => event.target.getDuration(), durationSeconds ?? 0);
               setVideoDuration(detectedDuration);
-              setCurrentSeconds(safePlayerValue(() => event.target.getCurrentTime(), initialStartSeconds ?? 0));
+              setCurrentSeconds(safeYouTubePlayerValue(() => event.target.getCurrentTime(), initialStartSeconds ?? 0));
               setReady(true);
               window.clearTimeout(loadingTimeout);
               durationNoticeTimer = window.setTimeout(() => {
-                if (safePlayerValue(() => event.target.getDuration(), 0) <= 0) {
+                if (safeYouTubePlayerValue(() => event.target.getDuration(), 0) <= 0) {
                   setPreviewMessage('This upload is not exposing its timeline here. Try another video or enter exact times in the boxes.');
                 }
               }, 2200);
               positionTimer = window.setInterval(() => {
                 const activePlayer = playerRef.current;
                 if (!activePlayer) return;
-                const nextPosition = safePlayerValue(() => activePlayer.getCurrentTime());
+                const nextPosition = safeYouTubePlayerValue(() => activePlayer.getCurrentTime());
                 setCurrentSeconds(nextPosition);
-                const nextDuration = safePlayerValue(() => activePlayer.getDuration(), 0);
+                const nextDuration = safeYouTubePlayerValue(() => activePlayer.getDuration(), 0);
                 if (nextDuration > 0) setVideoDuration((current) => Math.abs(current - nextDuration) > 0.5 ? nextDuration : current);
                 const previewEnd = previewEndRef.current;
                 if (previewEnd != null && nextPosition >= previewEnd) {
@@ -207,7 +141,7 @@ export function VideoTrimEditor({
   const captureMarker = (kind: 'start' | 'end') => {
     const player = playerRef.current;
     if (!player) return;
-    const seconds = Math.floor(safePlayerValue(() => player.getCurrentTime()));
+    const seconds = Math.floor(safeYouTubePlayerValue(() => player.getCurrentTime()));
     if (kind === 'start') onStartChange(formatPlaybackTime(seconds));
     else onEndChange(formatPlaybackTime(seconds));
     setPreviewMessage(`${kind === 'start' ? 'Start' : 'Finish'} marker set at ${formatPlaybackTime(seconds)}.`);
@@ -216,7 +150,7 @@ export function VideoTrimEditor({
   const nudge = (seconds: number) => {
     const player = playerRef.current;
     if (!player) return;
-    const current = safePlayerValue(() => player.getCurrentTime());
+    const current = safeYouTubePlayerValue(() => player.getCurrentTime());
     seekTo(Math.min(duration || Number.POSITIVE_INFINITY, Math.max(0, current + seconds)));
   };
 

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run seo:generate && vite",
     "seo:generate": "vite-node scripts/generate-seo.ts",
     "seo:submit:indexnow": "node scripts/submit-indexnow.mjs",
     "email:configure": "node scripts/configure-supabase-email.mjs",

@@ -3,6 +3,7 @@ import {
   addToWorshipQueue,
   formatPlaybackTime,
   moveWorshipQueueItem,
+  nextWorshipQueueIndex,
   parsePlaybackTime,
   playbackTimingError,
   type WorshipQueueItem,
@@ -40,5 +41,12 @@ describe('worship queue', () => {
     expect(playbackTimingError(26, 20, 240)).toContain('later than the start');
     expect(playbackTimingError(26, 260, 240)).toContain('beyond');
     expect(playbackTimingError(26, 220, 240)).toBe('');
+  });
+
+  it('advances through a service and stops cleanly after the final video', () => {
+    expect(nextWorshipQueueIndex(0, 3)).toBe(1);
+    expect(nextWorshipQueueIndex(1, 3)).toBe(2);
+    expect(nextWorshipQueueIndex(2, 3)).toBeNull();
+    expect(nextWorshipQueueIndex(null, 3)).toBeNull();
   });
 });

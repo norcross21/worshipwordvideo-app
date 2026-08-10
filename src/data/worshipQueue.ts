@@ -71,6 +71,12 @@ export function moveWorshipQueueItem(queue: WorshipQueueItem[], index: number, d
   return next;
 }
 
+/** Return the next playable position, or null when the service has finished. */
+export function nextWorshipQueueIndex(currentIndex: number | null, queueLength: number): number | null {
+  if (currentIndex == null || currentIndex < 0 || queueLength <= 0) return null;
+  return currentIndex + 1 < queueLength ? currentIndex + 1 : null;
+}
+
 function worshipQueueKey(userId: string): string {
   return `${WORSHIP_QUEUE_KEY_PREFIX}:${userId}`;
 }
