@@ -1,4 +1,5 @@
 import { getFullSongLibrary } from '../src/data/songLibraryStore';
+import { WORSHIP_SEASONS, inferWorshipSeasons } from '../src/data/songSeason';
 import { inferLanguagePresentation, inferWorshipArrangement } from '../src/data/songPresentation';
 
 const library = getFullSongLibrary();
@@ -28,6 +29,10 @@ const summary = {
   videosByLanguage: countBy(playable, (song) => song.language ?? 'English'),
   arrangements: countBy(playable, inferWorshipArrangement),
   presentations: countBy(playable, inferLanguagePresentation),
+  seasons: Object.fromEntries(WORSHIP_SEASONS.map((season) => [
+    season,
+    playable.filter((song) => inferWorshipSeasons(song).includes(season)).length,
+  ])),
 };
 
 console.log(JSON.stringify(summary, null, 2));

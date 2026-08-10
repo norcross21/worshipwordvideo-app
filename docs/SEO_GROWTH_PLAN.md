@@ -9,6 +9,13 @@ Last updated: 10 August 2026
 - Google's displayed home-page result is stale and still mentions 15,000 videos and 85 languages. The previous source metadata also lagged behind at 25,000 videos and 87 languages. The page now uses durable wording—tens of thousands of videos and more than 100 named languages—so future catalogue growth will not make the search result inaccurate again.
 - Exact query impressions, clicks, click-through rate and average position must be read from the verified Google Search Console property. Public checks are useful evidence, but they are not a substitute for Search Console's measurements.
 
+## Bing and other discovery systems
+
+- The site exposes a valid XML sitemap in `robots.txt`, a public IndexNow ownership key and a bulk IndexNow submission tool.
+- IndexNow notifications sent to its shared endpoint are distributed among participating search engines. They notify search engines that a URL changed, but do not guarantee crawling, indexing or ranking.
+- Bing's public results presented an automated-traffic challenge during the 10 August check, so no unsupported public ranking claim is recorded here. Exact Bing indexing, search-query and AI-answer visibility should be measured in the verified Bing Webmaster Tools property.
+- The site's structured summaries, distinct collection pages and `llms.txt` help automated discovery systems understand what the service does. These are clarity measures, not a promise of inclusion in an AI answer.
+
 ## Search intent and page map
 
 Use one strong page for each distinct church need. Do not create near-duplicate pages for spelling variations.
@@ -17,10 +24,10 @@ Use one strong page for each distinct church need. Do not create near-duplicate 
 | --- | --- | --- |
 | Main service | worship word lyrics; worship lyric videos for churches; worship songs with words | Home page and `/guides/worship-word-lyrics/` |
 | English churches | English worship songs with lyrics; church worship videos with words; hymns with lyrics | English language and arrangement collections |
-| Churches without musicians | worship videos for churches without musicians; YouTube worship for small churches | Home page and worship-word-lyrics guide |
-| Multilingual worship | multilingual worship songs with subtitles; translated worship songs; native-language worship videos with English subtitles | Language index and multilingual guide |
+| Churches without musicians | worship videos for churches without musicians; YouTube worship for small churches | Dedicated churches-without-musicians guide |
+| Multilingual worship | multilingual worship songs with subtitles; translated worship songs; native-language worship videos with English subtitles | Language, presentation-format and multilingual-guide pages |
 | Service preparation | church worship playlist; worship video start and stop times; church projection screen | Member features and second-screen guide |
-| Styles and seasons | contemporary worship lyric videos; gospel songs with lyrics; choir worship videos; Christmas or Easter worship songs | Arrangement pages and in-app seasonal filters |
+| Styles and seasons | contemporary worship lyric videos; gospel songs with lyrics; choir worship videos; Christmas or Easter worship songs | Arrangement and church-season collection pages |
 
 The exact phrase “worship word lyrics” is now present in the home-page title, main heading, explanatory copy, site-name structured data and a substantial dedicated guide. Related phrases appear only where they accurately describe visible content.
 
@@ -29,9 +36,11 @@ The exact phrase “worship word lyrics” is now present in the home-page title
 - Descriptive home-page title, meta description, canonical URL, robots directives and large social share card.
 - Schema.org `WebSite`, `Organization`, `WebApplication`, `CollectionPage`, `ItemList`, `BreadcrumbList`, `Article` and `HowTo` structured data where those types describe visible page content.
 - Useful initial HTML before the React application loads, so crawlers that do not execute JavaScript can still understand the service and follow its main links.
-- Substantial language collection pages generated from the current catalogue. Very small or unidentified language groups are not published as SEO pages.
+- 98 substantial language collection pages generated from the current catalogue. Very small or unidentified language groups are not published as SEO pages.
 - 11 worship-arrangement pages covering contemporary, gospel, choir, traditional hymn, live, acoustic and other useful styles.
-- Four original church guides covering worship word lyrics, video selection, multilingual worship and second-screen projection.
+- Six church-season pages for Advent, Christmas, Lent and Holy Week, Easter, Pentecost, Harvest and Thanksgiving.
+- Six lyrics-and-subtitle-format pages that clearly distinguish English words, translated subtitles, native-language words, English subtitles and bilingual videos.
+- Five original church guides covering worship word lyrics, churches without musicians, video selection, multilingual worship and second-screen projection.
 - XML sitemap, `robots.txt`, RSS feed, OpenSearch description, web app manifest and an explanatory `llms.txt` file.
 - IndexNow integration for Bing and participating search engines.
 - Crawlable internal links from the application footer and a small discovery section below the finder.
@@ -58,6 +67,7 @@ Ongoing actions:
 1. Open [Bing Webmaster Tools](https://www.bing.com/webmasters/).
 2. Import the verified site from Google Search Console or complete Bing's verification.
 3. Confirm the sitemap and IndexNow submissions are being received.
+4. Review **Search Performance**, **Site Explorer**, **URL Inspection**, **Recommendations** and the **AI Performance** preview each month.
 
 ### 3. Earn relevant links
 

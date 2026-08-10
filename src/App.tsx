@@ -480,6 +480,8 @@ function MainApp() {
           <p className="app-footer__sub">The catalogue is currently available without charge. Videos are provided by YouTube and remain subject to YouTube's own terms.</p>
           <div className="app-footer__legal-links">
             <a href="/languages/">Languages</a>
+            <a href="/formats/">Lyrics & subtitles</a>
+            <a href="/seasons/">Church seasons</a>
             <a href="/arrangements/">Worship styles</a>
             <a href="/guides/">Church guides</a>
             <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy & Copyright</button>

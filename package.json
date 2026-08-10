@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "npm run seo:generate && vite",
     "seo:generate": "vite-node scripts/generate-seo.ts",
+    "seo:validate": "vite-node scripts/validate-seo.ts",
     "seo:submit:indexnow": "node scripts/submit-indexnow.mjs",
     "email:configure": "node scripts/configure-supabase-email.mjs",
     "email:configure:templates": "node scripts/configure-supabase-email.mjs --templates-only",
     "email:configure:apply": "node scripts/configure-supabase-email.mjs --apply",
-    "build": "npm run seo:generate && tsc -b && vite build",
+    "build": "npm run seo:generate && npm run seo:validate && tsc -b && vite build",
     "lint": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",

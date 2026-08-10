@@ -19,6 +19,8 @@ dist-ssr
 # Generated SEO landing pages and discovery files (rebuilt by npm run build)
 public/languages/
 public/arrangements/
+public/seasons/
+public/formats/
 public/guides/
 public/sitemap.xml
 public/robots.txt

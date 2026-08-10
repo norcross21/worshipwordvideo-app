@@ -1,6 +1,6 @@
 # Worship Word Video: Genuine Link Plan
 
-Last updated: 9 August 2026
+Last updated: 10 August 2026
 
 The aim is to earn useful, relevant recommendations from churches and refugee-support networks. Do not buy links, submit to bulk directories or exchange links purely for ranking.
 
@@ -49,6 +49,8 @@ Main site: https://www.worshipwordvideo.org/
 
 Language collections: https://www.worshipwordvideo.org/languages/
 
+Churches without musicians: https://www.worshipwordvideo.org/guides/worship-videos-for-churches-without-musicians/
+
 Thank you,
 
 Stephen Norcross
@@ -66,3 +68,15 @@ Worship Word Video is a free finder for churches looking for YouTube worship and
 - Do not submit the same text to large numbers of sites.
 - Recheck live links and descriptions every six months.
 - Treat referral traffic, returning churches and catalogue feedback as more important than raw link count.
+
+## 6. Match each recommendation to the most useful page
+
+| Audience or article | Best page to recommend |
+| --- | --- |
+| Churches without a regular worship band | `https://www.worshipwordvideo.org/guides/worship-videos-for-churches-without-musicians/` |
+| Multilingual, refugee-welcoming or international churches | `https://www.worshipwordvideo.org/languages/` |
+| Churches looking for translated words or English subtitles | `https://www.worshipwordvideo.org/formats/` |
+| Advent, Christmas, Lent, Easter, Pentecost or Harvest planning | `https://www.worshipwordvideo.org/seasons/` |
+| General worship lyrics and word-video searches | `https://www.worshipwordvideo.org/guides/worship-word-lyrics/` |
+
+Use the page that genuinely answers the referring site's topic. Relevant deep links are more useful to readers than sending every recommendation to the homepage.

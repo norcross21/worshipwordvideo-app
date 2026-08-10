@@ -1,8 +1,9 @@
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { getFullSongLibrary } from '../src/data/songLibraryStore';
-import { inferLanguagePresentation, inferWorshipArrangement } from '../src/data/songPresentation';
-import type { WorshipSong } from '../src/data/worshipSongs';
+import { inferWorshipSeasons, WORSHIP_SEASONS, type WorshipSeason } from '../src/data/songSeason';
+import { LANGUAGE_PRESENTATIONS, inferLanguagePresentation, inferWorshipArrangement } from '../src/data/songPresentation';
+import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs';
 
 const SITE = 'https://www.worshipwordvideo.org';
 const PUBLIC_DIR = resolve(process.cwd(), 'public');
@@ -17,7 +18,59 @@ interface SeoPage {
   description: string;
   body: string;
   schema: Record<string, unknown> | Array<Record<string, unknown>>;
+  openGraphType?: 'website' | 'article';
 }
+
+const PRESENTATION_PAGE_DETAILS: Record<LanguagePresentation, {
+  slug: string;
+  title: string;
+  heading: string;
+  description: string;
+  explanation: string;
+}> = {
+  'English vocal with English words': {
+    slug: 'english-worship-videos-with-lyrics',
+    title: 'English Worship Videos with Lyrics | Church Finder',
+    heading: 'English worship videos with lyrics and words',
+    description: 'Find English worship songs and hymns with on-screen lyrics or words for church services, playlists and second-screen projection.',
+    explanation: 'The singing and the displayed words are both in English, making these videos a practical starting point for English-speaking congregations.',
+  },
+  'English vocal with translated subtitles': {
+    slug: 'english-worship-translated-subtitles',
+    title: 'English Worship Songs with Translated Subtitles',
+    heading: 'English worship songs with translated subtitles',
+    description: 'Find English-language worship videos with translated subtitles for multilingual churches and congregations where English is a second language.',
+    explanation: 'The vocal is in English while the visible subtitles provide another language, helping multilingual congregations follow the meaning of a familiar recording.',
+  },
+  'Native-language vocal with English subtitles': {
+    slug: 'native-worship-english-subtitles',
+    title: 'Native-Language Worship with English Subtitles',
+    heading: 'Native-language worship videos with English subtitles',
+    description: 'Find native-language Christian worship songs with English subtitles for international and multilingual church services.',
+    explanation: 'The song is sung in a language other than English and the video identifies English subtitles, helping English-speaking worshippers understand a native-language performance.',
+  },
+  'Native-language vocal with native words': {
+    slug: 'native-language-worship-with-lyrics',
+    title: 'Native-Language Worship Videos with Lyrics & Words',
+    heading: 'Native-language worship videos with lyrics and words',
+    description: 'Explore Christian worship songs sung with on-screen words in their native language for international churches and language-speaking congregations.',
+    explanation: 'The vocal and the visible words are in the same native language, supporting congregational singing for fluent speakers.',
+  },
+  'Bilingual vocal or subtitles': {
+    slug: 'bilingual-worship-videos',
+    title: 'Bilingual Worship Videos with Lyrics or Subtitles',
+    heading: 'Bilingual worship videos with lyrics or subtitles',
+    description: 'Find bilingual Christian worship videos that combine two languages in the vocal, lyrics or subtitles for multilingual church services.',
+    explanation: 'These videos indicate two languages in the vocal or on-screen presentation and can help a mixed-language congregation participate together.',
+  },
+  'Words or subtitles indicated': {
+    slug: 'worship-videos-with-words-or-subtitles',
+    title: 'Worship Videos with Words or Subtitles | Church Finder',
+    heading: 'Worship videos with words or subtitles',
+    description: 'Search worship and hymn videos whose uploaders indicate lyrics, words or subtitles, with tools for church playlists and projection.',
+    explanation: 'The public uploader information indicates words or subtitles, but does not state enough detail for a more specific language-presentation label.',
+  },
+};
 
 function escapeHtml(value: string): string {
   return value
@@ -53,6 +106,18 @@ function countBy(songs: WorshipSong[], getValue: (song: WorshipSong) => string):
     counts.set(value, (counts.get(value) ?? 0) + 1);
   }
   return [...counts.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
+}
+
+function breadcrumbSchema(items: Array<{ name: string; path: string }>): Record<string, unknown> {
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: canonicalUrl(item.path),
+    })),
+  };
 }
 
 function pageShell(page: SeoPage): string {
@@ -95,11 +160,12 @@ function pageShell(page: SeoPage): string {
   <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="/seo-pages.css">
   <meta property="og:site_name" content="Worship Word Video">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="${page.openGraphType ?? 'website'}">
   <meta property="og:locale" content="en_GB">
   <meta property="og:title" content="${escapeHtml(page.title)}">
   <meta property="og:description" content="${escapeHtml(page.description)}">
   <meta property="og:url" content="${url}">
+${page.openGraphType === 'article' ? `  <meta property="article:modified_time" content="${LAST_MODIFIED}">` : ''}
   <meta property="og:image" content="${SITE}/og-cover.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -117,7 +183,7 @@ function pageShell(page: SeoPage): string {
   </header>
   <main>${page.body}</main>
   <footer class="seo-footer">
-    <nav aria-label="Useful links"><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/languages/">Languages</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
+    <nav aria-label="Useful links"><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
     <p>Worship Word Video is a free directory and playlist-planning tool. Videos remain hosted by YouTube and subject to the uploader's and YouTube's terms. Always preview a video and confirm church licensing before public use.</p>
     <p><a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a></p>
   </footer>
@@ -176,7 +242,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
 
   return {
     path: `/languages/${slug}/`,
-    title: `${language} Worship Videos with Lyrics & Words | Free Church Finder`,
+    title: `${language} Worship Songs with Lyrics | Church Videos`,
     description,
     body,
     schema: [
@@ -212,6 +278,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
 
 function arrangementPage(arrangement: string, songs: WorshipSong[]): SeoPage {
   const slug = slugify(arrangement);
+  const titleLabel = arrangement.replace(/\s+worship$/i, '');
   const languages = countBy(songs, (song) => song.language ?? 'English');
   const count = songs.length;
   const query = new URLSearchParams({ arrangement });
@@ -223,18 +290,119 @@ function arrangementPage(arrangement: string, songs: WorshipSong[]): SeoPage {
   <section class="seo-section"><h2>Examples in this collection</h2><ul class="seo-song-list">${songRows(songs)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Search the full ${escapeHtml(arrangement.toLowerCase())} collection →</a></p></section>`;
   return {
     path: `/arrangements/${slug}/`,
-    title: `${arrangement} Worship Videos with Words | Worship Word Video`,
+    title: `${titleLabel} Worship Videos with Lyrics | Churches`,
     description,
     body,
-    schema: {
-      '@type': 'CollectionPage',
-      '@id': `${SITE}/arrangements/${slug}/#page`,
-      url: `${SITE}/arrangements/${slug}/`,
-      name: `${arrangement} worship videos with words`,
-      description,
-      isPartOf: { '@id': `${SITE}/#website` },
-      inLanguage: 'en-GB',
-    },
+    schema: [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${SITE}/arrangements/${slug}/#page`,
+        url: `${SITE}/arrangements/${slug}/`,
+        name: `${arrangement} worship videos with words`,
+        description,
+        isPartOf: { '@id': `${SITE}/#website` },
+        inLanguage: 'en-GB',
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Worship styles', path: '/arrangements/' },
+        { name: arrangement, path: `/arrangements/${slug}/` },
+      ]),
+    ],
+  };
+}
+
+function seasonPage(season: WorshipSeason, songs: WorshipSong[]): SeoPage {
+  const slug = slugify(season);
+  const count = songs.length;
+  const languages = countBy(songs, (song) => song.language ?? 'English');
+  const arrangements = countBy(songs, inferWorshipArrangement);
+  const query = new URLSearchParams({ season });
+  const title = `${season} Worship Songs with Lyrics | Churches`;
+  const description = `Find ${count.toLocaleString('en-GB')} ${season} worship songs and hymns with on-screen lyrics, words or subtitles for church services and projection.`;
+  const examples = songs.slice(0, 18);
+  const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/seasons/">Church seasons</a><span>›</span><span>${escapeHtml(season)}</span></nav>
+  <article class="seo-hero"><p class="seo-eyebrow">Seasonal church worship</p><h1>${escapeHtml(season)} worship songs with lyrics and words</h1><p class="seo-lead">Explore ${count.toLocaleString('en-GB')} playable worship and hymn videos associated with ${escapeHtml(season)}, with on-screen lyrics, words or subtitles indicated in the catalogue.</p><div class="seo-actions"><a class="seo-button" href="/?${query.toString()}#main-content">Search ${escapeHtml(season)} videos</a><a class="seo-button seo-button--quiet" href="/guides/church-youtube-lyric-videos/">Preview checklist</a></div></article>
+  <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable videos</span></div><div><strong>${languages.length}</strong><span>language labels</span></div><div><strong>${arrangements.length}</strong><span>musical arrangements</span></div></section>
+  <section class="seo-section"><h2>Plan ${escapeHtml(season)} worship</h2><p>Use this collection to begin a service plan, then preview the exact recording for theology, verse order, key, tempo, audio quality and readable word timing. Seasonal labels are inferred conservatively from song titles, familiar hymn names and public catalogue metadata.</p><p>The collection includes ${escapeHtml(formatList(arrangements, 5))}. Languages represented include ${escapeHtml(formatList(languages, 6))}.</p></section>
+  <section class="seo-section"><h2>Example ${escapeHtml(season)} worship lyric videos</h2><ul class="seo-song-list">${songRows(examples)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Open the complete ${escapeHtml(season)} collection →</a></p></section>
+  <section class="seo-section seo-help"><h2>Prepare it for church</h2><ol><li>Preview the complete video and check the visible words.</li><li>Confirm that the arrangement and language suit your congregation.</li><li>Members can save the running order and tidy any silent beginning or ending.</li><li>Rehearse the service using the same internet connection and projection screen.</li></ol></section>`;
+  return {
+    path: `/seasons/${slug}/`,
+    title,
+    description,
+    body,
+    schema: [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${SITE}/seasons/${slug}/#page`,
+        url: `${SITE}/seasons/${slug}/`,
+        name: `${season} worship songs with lyrics and words`,
+        description,
+        isPartOf: { '@id': `${SITE}/#website` },
+        inLanguage: 'en-GB',
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: count,
+          itemListElement: examples.map((song, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: song.englishTitle ? `${song.title} (${song.englishTitle})` : song.title,
+          })),
+        },
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Church seasons', path: '/seasons/' },
+        { name: season, path: `/seasons/${slug}/` },
+      ]),
+    ],
+  };
+}
+
+function presentationPage(presentation: LanguagePresentation, songs: WorshipSong[]): SeoPage {
+  const details = PRESENTATION_PAGE_DETAILS[presentation];
+  const count = songs.length;
+  const languages = countBy(songs, (song) => song.language ?? 'English');
+  const arrangements = countBy(songs, inferWorshipArrangement);
+  const query = new URLSearchParams({ presentation });
+  const examples = songs.slice(0, 18);
+  const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/formats/">Lyrics & subtitle formats</a><span>›</span><span>${escapeHtml(presentation)}</span></nav>
+  <article class="seo-hero"><p class="seo-eyebrow">Words and language format</p><h1>${escapeHtml(details.heading)}</h1><p class="seo-lead">${escapeHtml(details.explanation)} Search ${count.toLocaleString('en-GB')} playable catalogue entries in this format.</p><div class="seo-actions"><a class="seo-button" href="/?${query.toString()}#main-content">Search this format</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Multilingual worship guide</a></div></article>
+  <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable videos</span></div><div><strong>${languages.length}</strong><span>language labels</span></div><div><strong>${arrangements.length}</strong><span>musical arrangements</span></div></section>
+  <section class="seo-section"><h2>What this format label means</h2><p>${escapeHtml(details.explanation)} Labels are based on public uploader wording and conservative catalogue checks. Preview the exact video and ask a fluent speaker to review translated words before using it in public worship.</p><p>Languages represented include ${escapeHtml(formatList(languages, 8))}. Common arrangements include ${escapeHtml(formatList(arrangements, 5))}.</p></section>
+  <section class="seo-section"><h2>Example worship videos in this format</h2><ul class="seo-song-list">${songRows(examples)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Search all ${count.toLocaleString('en-GB')} matching videos →</a></p></section>
+  <section class="seo-section seo-help"><h2>Check before your service</h2><p>Catalogue wording helps narrow a large YouTube search, but it is not a guarantee of translation accuracy, theology, video availability or permission for public use. Watch the complete upload and confirm the licences needed by your church.</p></section>`;
+  return {
+    path: `/formats/${details.slug}/`,
+    title: details.title,
+    description: details.description,
+    body,
+    schema: [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${SITE}/formats/${details.slug}/#page`,
+        url: `${SITE}/formats/${details.slug}/`,
+        name: details.heading,
+        description: details.description,
+        isPartOf: { '@id': `${SITE}/#website` },
+        inLanguage: 'en-GB',
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: count,
+          itemListElement: examples.map((song, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: song.englishTitle ? `${song.title} (${song.englishTitle})` : song.title,
+          })),
+        },
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Lyrics and subtitle formats', path: '/formats/' },
+        { name: presentation, path: `/formats/${details.slug}/` },
+      ]),
+    ],
   };
 }
 
@@ -243,6 +411,7 @@ const GUIDE_PAGES: SeoPage[] = [
     path: '/guides/worship-word-lyrics/',
     title: 'Worship Word Lyrics Videos for Churches | Free Finder',
     description: 'Find worship word lyrics videos, hymns with lyrics and multilingual worship songs with subtitles for church services, playlists and projection.',
+    openGraphType: 'article',
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/guides/">Guides</a><span>›</span><span>Worship word lyrics</span></nav><article class="seo-hero"><p class="seo-eyebrow">Church worship video finder</p><h1>Find worship word lyrics videos for church services</h1><p class="seo-lead">Search public YouTube worship videos that show the words people need to sing. The catalogue brings together English worship songs, traditional hymns and multilingual videos with on-screen lyrics or subtitles, without copying or republishing the lyrics.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search worship videos</a><a class="seo-button seo-button--quiet" href="/languages/english/">Browse English worship videos</a></div></article><section class="seo-section"><h2>What are worship word lyrics videos?</h2><p>Church leaders use several names for the same practical resource: worship lyric videos, worship songs with words, YouTube worship videos with lyrics and church sing-along videos. Worship Word Video helps people find the original public uploads and compare whether an uploader identifies on-screen words, native-language lyrics, English subtitles or a bilingual presentation.</p><p>This is especially useful for churches without musicians every week, small congregations and service leaders who would otherwise spend hours opening unrelated YouTube results.</p></section><section class="seo-section"><h2>Search by song, hymn, language or worship style</h2><div class="seo-card-grid"><a class="seo-card" href="/arrangements/contemporary-worship/"><strong>Contemporary worship lyric videos</strong><span>Modern worship songs and familiar church music with words.</span></a><a class="seo-card" href="/arrangements/traditional-hymn/"><strong>Traditional hymns with lyrics</strong><span>Classic hymn videos prepared for congregational singing.</span></a><a class="seo-card" href="/arrangements/gospel/"><strong>Gospel worship videos</strong><span>Gospel praise and worship arrangements with words indicated.</span></a><a class="seo-card" href="/languages/"><strong>Multilingual worship songs</strong><span>Native words, English translations, subtitles and bilingual formats.</span></a></div></section><section class="seo-section"><h2>Prepare the video for a church service</h2><ol><li>Search the song title, artist, hymn number or language.</li><li>Preview the exact YouTube upload and check every visible word, verse and subtitle.</li><li>Choose an arrangement, key and tempo that your congregation can sing.</li><li>Members can place videos in a saved service order and set clean start or stop points.</li><li>Use the separate projection screen so the congregation sees the video while the operator keeps the controls.</li></ol><p><a class="seo-text-link" href="/guides/church-youtube-lyric-videos/">Read the accuracy, suitability and church-licensing checklist →</a></p></section><section class="seo-section"><h2>English and multilingual worship</h2><p>The finder supports English-speaking churches as well as international congregations and churches where English is a second language. Presentation labels help distinguish native-language vocals with native words, English vocals with translated subtitles, native vocals with English subtitles and bilingual versions where the public uploader information supports that description.</p><p>Always ask a fluent speaker or trusted church leader to review translated words and theology before public use. A catalogue label helps narrow the search; it is not a linguistic or theological endorsement.</p><p><a class="seo-text-link" href="/guides/multilingual-worship/">Plan a clear, welcoming multilingual service →</a></p></section><section class="seo-section"><h2>Copyright and video availability</h2><p>Worship Word Video is a search and playlist-planning directory. It does not host recordings, download videos or reproduce song lyrics. Videos remain on YouTube and may be changed, restricted or removed by their uploaders. Churches should preview each video and confirm the music, words, performance, projection and streaming permissions needed for their own service.</p></section>`,
     schema: [
       {
@@ -268,25 +437,63 @@ const GUIDE_PAGES: SeoPage[] = [
     ],
   },
   {
+    path: '/guides/worship-videos-for-churches-without-musicians/',
+    title: 'Worship Videos for Churches Without Musicians | Guide',
+    description: 'A practical guide to finding worship lyric videos, building a service playlist and projecting words when a church has no musicians available.',
+    openGraphType: 'article',
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/guides/">Guides</a><span>›</span><span>Churches without musicians</span></nav><article class="seo-hero"><p class="seo-eyebrow">Practical help for local churches</p><h1>Worship videos for churches without musicians</h1><p class="seo-lead">A small church, midweek gathering or occasional service can still help people sing together when no pianist, organist or worship band is available. A carefully checked worship lyric video provides the music and the words in one simple resource.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Find a worship video</a><a class="seo-button seo-button--quiet" href="/guides/worship-word-lyrics/">Worship lyrics guide</a></div></article><section class="seo-section"><h2>A simple service workflow</h2><ol><li>Choose familiar songs that fit the congregation, theme and season.</li><li>Find videos with clear on-screen words and an arrangement people can comfortably sing.</li><li>Watch every video completely, checking spelling, verse order, theology, audio and distracting introductions.</li><li>Create a named service playlist, place songs in running order and set any useful start or stop points.</li><li>Connect the church display in extended-screen mode and rehearse the complete service.</li></ol></section><section class="seo-section"><h2>Choose congregational versions</h2><p>A polished performance video is not always easy for a congregation to follow. Prefer a steady tempo, singable key, clear lead vocal and predictable structure. Look for uploader wording such as “official lyric video”, “with lyrics”, “with words”, “karaoke” or “sing along”, but treat these as clues rather than guarantees.</p><div class="seo-card-grid"><a class="seo-card" href="/formats/english-worship-videos-with-lyrics/"><strong>English worship videos with lyrics</strong><span>English vocals and on-screen English words.</span></a><a class="seo-card" href="/arrangements/traditional-hymn/"><strong>Traditional hymns with words</strong><span>Familiar hymns and congregational arrangements.</span></a><a class="seo-card" href="/seasons/"><strong>Church-season worship</strong><span>Advent, Christmas, Lent, Easter and more.</span></a></div></section><section class="seo-section"><h2>Make projection reliable</h2><p>Use the separate church-screen window so the congregation sees only the video while the operator keeps the playlist controls. Turn off notifications, connect power and sound, use wired internet where practical and test autoplay behaviour. Keep a simple backup because a third-party YouTube upload can be changed or removed.</p><p><a class="seo-text-link" href="/guides/second-screen-church-projection/">Follow the second-screen projection guide →</a></p></section><section class="seo-section"><h2>Words, copyright and permissions</h2><p>Worship Word Video links to public YouTube uploads; it does not copy song lyrics or host recordings. The presence of a video on YouTube does not by itself grant every permission a church may need. Confirm the music, performance, projection, recording and streaming licences relevant to your country and service.</p><p><a class="seo-text-link" href="/guides/church-youtube-lyric-videos/">Use the complete video-selection and licensing checklist →</a></p></section>`,
+    schema: [
+      {
+        '@type': 'Article',
+        '@id': `${SITE}/guides/worship-videos-for-churches-without-musicians/#article`,
+        headline: 'Worship videos for churches without musicians',
+        description: 'A practical workflow for finding, checking, arranging and projecting worship lyric videos when a church has no musicians available.',
+        mainEntityOfPage: `${SITE}/guides/worship-videos-for-churches-without-musicians/`,
+        datePublished: LAST_MODIFIED,
+        dateModified: LAST_MODIFIED,
+        image: `${SITE}/og-cover.png`,
+        author: { '@id': `${SITE}/#organization` },
+        publisher: { '@id': `${SITE}/#organization` },
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Guides', path: '/guides/' },
+        { name: 'Churches without musicians', path: '/guides/worship-videos-for-churches-without-musicians/' },
+      ]),
+    ],
+  },
+  {
     path: '/guides/church-youtube-lyric-videos/',
     title: 'How to Choose YouTube Lyric Videos for Church Worship',
     description: 'A practical checklist for choosing clear, suitable and legally responsible YouTube worship videos with words for a church service.',
+    openGraphType: 'article',
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/guides/">Guides</a><span>›</span><span>Choosing word videos</span></nav><article class="seo-hero"><p class="seo-eyebrow">Practical church guide</p><h1>How to choose YouTube lyric videos for church worship</h1><p class="seo-lead">A clear on-screen-words video can help a congregation sing, but the title “lyrics” alone does not guarantee accuracy, suitability or permission for public use.</p><a class="seo-button" href="/#main-content">Open the free video finder</a></article><section class="seo-section"><h2>A five-point preview check</h2><ol><li><strong>Words:</strong> watch the whole video and check spelling, verse order and theological suitability.</li><li><strong>Audio:</strong> confirm the key, tempo, arrangement and recording quality work for congregational singing.</li><li><strong>Presentation:</strong> look for readable contrast, sensible timing and no distracting introductions, adverts or end screens.</li><li><strong>Language:</strong> for translations, ask a fluent speaker or trusted church leader to review both meaning and theology.</li><li><strong>Permissions:</strong> confirm the licences and permissions appropriate to your church, country, stream and venue.</li></ol></section><section class="seo-section"><h2>Prepare a clean service playlist</h2><p>Add chosen videos in service order. Use the start and stop fields to remove silence or spoken sections, then rehearse the whole sequence on the actual church internet connection and projection equipment. YouTube timing starts near a video keyframe, so allow a small margin rather than relying on frame-perfect cuts.</p><p>Keep a backup plan. Third-party uploads can be removed, made private, geo-blocked or interrupted by platform changes.</p></section><section class="seo-section"><h2>What Worship Word Video does</h2><p>The finder indexes public YouTube links and useful metadata; it does not host recordings or reproduce song lyrics. It provides search, playlist planning, timing and a clean second-screen projection window. The church remains responsible for previewing content and meeting its licensing duties.</p></section>`,
-    schema: { '@type': 'Article', headline: 'How to choose YouTube lyric videos for church worship', dateModified: LAST_MODIFIED, author: { '@type': 'Organization', name: 'Worship Word Video' }, publisher: { '@type': 'Organization', name: 'Worship Word Video' } },
+    schema: [
+      { '@type': 'Article', '@id': `${SITE}/guides/church-youtube-lyric-videos/#article`, headline: 'How to choose YouTube lyric videos for church worship', mainEntityOfPage: `${SITE}/guides/church-youtube-lyric-videos/`, datePublished: '2026-08-09', dateModified: LAST_MODIFIED, image: `${SITE}/og-cover.png`, author: { '@id': `${SITE}/#organization` }, publisher: { '@id': `${SITE}/#organization` } },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Choosing word videos', path: '/guides/church-youtube-lyric-videos/' }]),
+    ],
   },
   {
     path: '/guides/multilingual-worship/',
     title: 'Planning Multilingual Worship with Lyrics and Subtitles',
     description: 'Practical guidance for finding, checking and presenting worship songs in Farsi, Urdu, Portuguese, African and other languages.',
+    openGraphType: 'article',
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/guides/">Guides</a><span>›</span><span>Multilingual worship</span></nav><article class="seo-hero"><p class="seo-eyebrow">Inclusive worship guide</p><h1>Planning multilingual worship with lyrics and subtitles</h1><p class="seo-lead">Multilingual worship is strongest when people can understand what they hear, read and sing—not simply when another language appears on screen.</p><a class="seo-button" href="/languages/">Explore language collections</a></article><section class="seo-section"><h2>Choose the right presentation format</h2><p>An English vocal with translated subtitles helps readers follow meaning while hearing a familiar recording. A native-language vocal with English subtitles helps an English-speaking congregation understand a local-language performance. Native vocals with native words support confident singing for fluent speakers. Bilingual videos can help a mixed congregation participate together.</p><p>Worship Word Video labels these formats separately where uploader metadata supports the distinction, so leaders can filter before previewing.</p></section><section class="seo-section"><h2>Review with people, not just software</h2><ol><li>Ask a fluent speaker to verify the visible words and natural phrasing.</li><li>Ask a trusted church leader to review theology and cultural context.</li><li>Check whether the song is a translation, adaptation or different composition with a similar title.</li><li>Rehearse transitions and explain unfamiliar language briefly and respectfully.</li></ol></section><section class="seo-section"><h2>Make participation easy</h2><p>Introduce one clear congregational response, chorus or repeated line rather than overwhelming people. Use readable subtitles, explain which language will be sung and make the English meaning available where helpful. Preview the exact video because public metadata can be incomplete or mistaken.</p></section>`,
-    schema: { '@type': 'Article', headline: 'Planning multilingual worship with lyrics and subtitles', dateModified: LAST_MODIFIED, author: { '@type': 'Organization', name: 'Worship Word Video' }, publisher: { '@type': 'Organization', name: 'Worship Word Video' } },
+    schema: [
+      { '@type': 'Article', '@id': `${SITE}/guides/multilingual-worship/#article`, headline: 'Planning multilingual worship with lyrics and subtitles', mainEntityOfPage: `${SITE}/guides/multilingual-worship/`, datePublished: '2026-08-09', dateModified: LAST_MODIFIED, image: `${SITE}/og-cover.png`, author: { '@id': `${SITE}/#organization` }, publisher: { '@id': `${SITE}/#organization` } },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Multilingual worship', path: '/guides/multilingual-worship/' }]),
+    ],
   },
   {
     path: '/guides/second-screen-church-projection/',
     title: 'Simple Second-Screen YouTube Projection for Churches',
     description: 'How to run a church worship playlist on a projector or second monitor while keeping the control dashboard private.',
+    openGraphType: 'article',
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/guides/">Guides</a><span>›</span><span>Second-screen projection</span></nav><article class="seo-hero"><p class="seo-eyebrow">Church technology guide</p><h1>Simple second-screen YouTube projection for churches</h1><p class="seo-lead">Keep service controls on the operator's laptop while the congregation sees only the worship video.</p><a class="seo-button" href="/#main-content">Build a service playlist</a></article><section class="seo-section"><h2>Basic setup</h2><ol><li>Connect the projector, television or second monitor and choose “Extend”, not “Mirror”, in Windows or macOS display settings.</li><li>Build the service playlist and set any start or stop points.</li><li>Select <strong>Present on second screen</strong>, confirm the display is connected and let the app create a separate clean presentation window.</li><li>On the church screen, select <strong>Full screen and start</strong> or press Enter. Where screen placement is supported, the app puts this window on the second display automatically.</li></ol></section><section class="seo-section"><h2>During the service</h2><p>Previous, Restart, Next and Stop remain private on the operator's dashboard. Optional <strong>Auto-next</strong> can start each following video when the current one finishes; it is deliberately off by default.</p></section><section class="seo-section"><h2>Before the service</h2><p>Test sound routing, screen resolution, Wi-Fi, autoplay behaviour and every video. Keep the laptop connected to power and turn off notifications. A wired network connection is preferable where available.</p><p>The projection window synchronises the selected playlist item and its start/stop timing with the dashboard. If the browser cannot place windows automatically, only the small clean presentation window needs to be moved to the church display before full screen is selected.</p></section>`,
-    schema: { '@type': 'HowTo', name: 'Simple second-screen YouTube projection for churches', description: 'Open a clean church projection window while keeping playlist controls private.', step: ['Connect and extend the second display', 'Build the service playlist', 'Open the clean church-screen window', 'Confirm full screen and start the service'].map((text, index) => ({ '@type': 'HowToStep', position: index + 1, text })) },
+    schema: [
+      { '@type': 'HowTo', '@id': `${SITE}/guides/second-screen-church-projection/#howto`, name: 'Simple second-screen YouTube projection for churches', description: 'Open a clean church projection window while keeping playlist controls private.', image: `${SITE}/og-cover.png`, step: ['Connect and extend the second display', 'Build the service playlist', 'Open the clean church-screen window', 'Confirm full screen and start the service'].map((text, index) => ({ '@type': 'HowToStep', position: index + 1, text })) },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Second-screen projection', path: '/guides/second-screen-church-projection/' }]),
+    ],
   },
 ];
 
@@ -351,12 +558,25 @@ async function generate(): Promise<void> {
     .sort((left, right) => right[1].length - left[1].length || left[0].localeCompare(right[0]));
   const arrangementPages = arrangements.map(([arrangement, songs]) => arrangementPage(arrangement, songs));
 
+  const seasons = WORSHIP_SEASONS
+    .map((season) => [season, playableSongs.filter((song) => inferWorshipSeasons(song).includes(season))] as const)
+    .filter(([, songs]) => songs.length >= 3);
+  const seasonPages = seasons.map(([season, songs]) => seasonPage(season, songs));
+
+  const presentations = LANGUAGE_PRESENTATIONS
+    .map((presentation) => [presentation, playableSongs.filter((song) => inferLanguagePresentation(song) === presentation)] as const)
+    .filter(([, songs]) => songs.length >= 3);
+  const presentationPages = presentations.map(([presentation, songs]) => presentationPage(presentation, songs));
+
   const languageIndex: SeoPage = {
     path: '/languages/',
     title: 'Worship Videos by Language | International Church Finder',
     description: `Explore worship and hymn videos with words across ${languagePages.length} substantial language collections for international and multilingual churches.`,
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Languages</span></nav><article class="seo-hero"><p class="seo-eyebrow">International worship</p><h1>Worship videos by language</h1><p class="seo-lead">Browse ${languagePages.length} language collections with playable Christian worship and hymn videos. Each page explains the available vocal, lyrics and subtitle formats and links into the free filtered finder.</p><a class="seo-button" href="/#main-content">Search the complete catalogue</a></article><section class="seo-section"><div class="seo-card-grid">${languages.map(([language, songs]) => `<a class="seo-card" href="/languages/${slugify(language)}/"><strong>${escapeHtml(language)}</strong><span>${songs.length.toLocaleString('en-GB')} playable videos</span></a>`).join('')}</div></section>`,
-    schema: { '@type': 'CollectionPage', name: 'Worship videos by language', url: `${SITE}/languages/`, mainEntity: { '@type': 'ItemList', numberOfItems: languagePages.length, itemListElement: languagePages.map((page, index) => ({ '@type': 'ListItem', position: index + 1, url: canonicalUrl(page.path), name: page.title })) } },
+    schema: [
+      { '@type': 'CollectionPage', name: 'Worship videos by language', url: `${SITE}/languages/`, mainEntity: { '@type': 'ItemList', numberOfItems: languagePages.length, itemListElement: languagePages.map((page, index) => ({ '@type': 'ListItem', position: index + 1, url: canonicalUrl(page.path), name: page.title })) } },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Languages', path: '/languages/' }]),
+    ],
   };
 
   const arrangementIndex: SeoPage = {
@@ -364,7 +584,32 @@ async function generate(): Promise<void> {
     title: 'Worship Videos by Style | Contemporary, Gospel, Choir & Hymns',
     description: 'Browse worship videos with words by musical style, including contemporary worship, gospel, choir, traditional hymns, acoustic and live versions.',
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Worship styles</span></nav><article class="seo-hero"><p class="seo-eyebrow">Find the right arrangement</p><h1>Worship videos by musical style</h1><p class="seo-lead">Choose the sound and presentation that fits your congregation, then preview the exact video before adding it to a service playlist.</p></article><section class="seo-section"><div class="seo-card-grid">${arrangements.map(([arrangement, songs]) => `<a class="seo-card" href="/arrangements/${slugify(arrangement)}/"><strong>${escapeHtml(arrangement)}</strong><span>${songs.length.toLocaleString('en-GB')} playable videos</span></a>`).join('')}</div></section>`,
-    schema: { '@type': 'CollectionPage', name: 'Worship videos by musical style', url: `${SITE}/arrangements/` },
+    schema: [
+      { '@type': 'CollectionPage', name: 'Worship videos by musical style', url: `${SITE}/arrangements/` },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Worship styles', path: '/arrangements/' }]),
+    ],
+  };
+
+  const seasonIndex: SeoPage = {
+    path: '/seasons/',
+    title: 'Church Season Worship Videos | Christmas, Easter & More',
+    description: 'Browse worship songs and hymns with lyrics for Advent, Christmas, Lent and Holy Week, Easter, Pentecost, Harvest and Thanksgiving.',
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Church seasons</span></nav><article class="seo-hero"><p class="seo-eyebrow">Seasonal worship planning</p><h1>Worship videos for the church year</h1><p class="seo-lead">Find playable worship songs and hymns with words for Advent, Christmas, Lent and Holy Week, Easter, Pentecost, Harvest and Thanksgiving. Open any collection directly in the finder, then preview the exact video before church use.</p></article><section class="seo-section"><div class="seo-card-grid">${seasons.map(([season, songs]) => `<a class="seo-card" href="/seasons/${slugify(season)}/"><strong>${escapeHtml(season)}</strong><span>${songs.length.toLocaleString('en-GB')} playable videos with words or subtitles</span></a>`).join('')}</div></section><section class="seo-section seo-help"><h2>Use seasonal labels carefully</h2><p>Seasonal matches come from song titles, familiar hymn names and public catalogue metadata. Review every choice for the readings, theology and tradition of your own church service.</p></section>`,
+    schema: [
+      { '@type': 'CollectionPage', name: 'Worship videos for the church year', url: `${SITE}/seasons/`, mainEntity: { '@type': 'ItemList', numberOfItems: seasonPages.length, itemListElement: seasonPages.map((page, index) => ({ '@type': 'ListItem', position: index + 1, url: canonicalUrl(page.path), name: page.title })) } },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Church seasons', path: '/seasons/' }]),
+    ],
+  };
+
+  const presentationIndex: SeoPage = {
+    path: '/formats/',
+    title: 'Worship Videos by Lyrics & Subtitle Format | Churches',
+    description: 'Browse worship videos by vocal, lyrics and subtitle format, including English words, translated subtitles, native-language words and bilingual videos.',
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Lyrics & subtitle formats</span></nav><article class="seo-hero"><p class="seo-eyebrow">Know what people will hear and read</p><h1>Worship videos by lyrics and subtitle format</h1><p class="seo-lead">Choose whether your congregation needs English words, translated subtitles, a native-language vocal with English subtitles, native-language words or a bilingual presentation.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search the complete catalogue</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div></article><section class="seo-section"><div class="seo-card-grid">${presentations.map(([presentation, songs]) => { const details = PRESENTATION_PAGE_DETAILS[presentation]; return `<a class="seo-card" href="/formats/${details.slug}/"><strong>${escapeHtml(details.heading)}</strong><span>${songs.length.toLocaleString('en-GB')} playable videos</span></a>`; }).join('')}</div></section><section class="seo-section seo-help"><h2>What the labels can and cannot tell you</h2><p>Labels are based on public uploader metadata and conservative catalogue checks. They make searching faster, but they do not replace a complete preview or review by a fluent speaker and trusted church leader.</p></section>`,
+    schema: [
+      { '@type': 'CollectionPage', name: 'Worship videos by lyrics and subtitle format', url: `${SITE}/formats/`, mainEntity: { '@type': 'ItemList', numberOfItems: presentationPages.length, itemListElement: presentationPages.map((page, index) => ({ '@type': 'ListItem', position: index + 1, url: canonicalUrl(page.path), name: page.title })) } },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Lyrics and subtitle formats', path: '/formats/' }]),
+    ],
   };
 
   const guideIndex: SeoPage = {
@@ -372,16 +617,34 @@ async function generate(): Promise<void> {
     title: 'Practical Worship Video Guides for Churches',
     description: 'Free practical guides for selecting worship word videos, planning multilingual services and using a second church projection screen.',
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Guides</span></nav><article class="seo-hero"><p class="seo-eyebrow">Church worship resources</p><h1>Practical worship video guides</h1><p class="seo-lead">Short, responsible guidance for choosing videos, welcoming multilingual congregations and running a clean projection screen.</p></article><section class="seo-section"><div class="seo-card-grid">${GUIDE_PAGES.map((page) => `<a class="seo-card" href="${page.path}"><strong>${escapeHtml(page.title)}</strong><span>${escapeHtml(page.description)}</span></a>`).join('')}</div></section>`,
-    schema: { '@type': 'CollectionPage', name: 'Practical worship video guides for churches', url: `${SITE}/guides/` },
+    schema: [
+      { '@type': 'CollectionPage', name: 'Practical worship video guides for churches', url: `${SITE}/guides/` },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Guides', path: '/guides/' }]),
+    ],
   };
 
-  const pages = [languageIndex, ...languagePages, arrangementIndex, ...arrangementPages, guideIndex, ...GUIDE_PAGES];
+  const pages = [
+    languageIndex,
+    ...languagePages,
+    arrangementIndex,
+    ...arrangementPages,
+    seasonIndex,
+    ...seasonPages,
+    presentationIndex,
+    ...presentationPages,
+    guideIndex,
+    ...GUIDE_PAGES,
+  ];
   await Promise.all([
     removeStaleGeneratedDirectories('languages', new Set(languagePages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('arrangements', new Set(arrangementPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
+    removeStaleGeneratedDirectories('seasons', new Set(seasonPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
+    removeStaleGeneratedDirectories('formats', new Set(presentationPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('guides', new Set(GUIDE_PAGES.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeDuplicateIndexFiles('languages'),
     removeDuplicateIndexFiles('arrangements'),
+    removeDuplicateIndexFiles('seasons'),
+    removeDuplicateIndexFiles('formats'),
     removeDuplicateIndexFiles('guides'),
   ]);
   await Promise.all(pages.map(writePage));
@@ -392,12 +655,12 @@ async function generate(): Promise<void> {
   await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\n\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'seo-urls.json'), `${JSON.stringify(urls, null, 2)}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'indexnow-key.txt'), `${INDEXNOW_KEY}\n`, 'utf8');
-  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nCanonical site: ${SITE}/\nCatalogue: ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos at the latest catalogue build.\nLanguages: ${namedLanguageCount} named languages, with dedicated public collection pages for languages having at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos. Entries whose public metadata does not safely identify a language remain unclassified rather than being guessed.\nFeatures: public song, artist, language and hymn-number search; presentation and arrangement labels; member service playlists; optional automatic next-video playback; per-video start/stop timing; clean second-screen projection.\nCopyright: the site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube.\nContact: stephen@kairoshousing.org.uk\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
+  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nCanonical site: ${SITE}/\nCatalogue: ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos at the latest catalogue build.\nLanguages: ${namedLanguageCount} named languages, with dedicated public collection pages for languages having at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos. Entries whose public metadata does not safely identify a language remain unclassified rather than being guessed.\nFeatures: public song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; optional automatic next-video playback; per-video start/stop timing; clean second-screen projection.\n\n## Important public collections\n\n- Worship word lyrics guide: ${SITE}/guides/worship-word-lyrics/\n- Churches without musicians guide: ${SITE}/guides/worship-videos-for-churches-without-musicians/\n- Languages: ${SITE}/languages/\n- Lyrics and subtitle formats: ${SITE}/formats/\n- Church seasons: ${SITE}/seasons/\n- Worship arrangements: ${SITE}/arrangements/\n- Church guides: ${SITE}/guides/\n\nCopyright: the site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use.\nContact: stephen@kairoshousing.org.uk\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
 
   const feedItems = GUIDE_PAGES.map((page) => `<item><title>${escapeHtml(page.title)}</title><link>${canonicalUrl(page.path)}</link><guid>${canonicalUrl(page.path)}</guid><description>${escapeHtml(page.description)}</description><pubDate>${FEED_DATE}</pubDate></item>`).join('');
   await writeFile(resolve(PUBLIC_DIR, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Worship Word Video Guides</title><link>${SITE}/guides/</link><description>Practical worship video guidance for churches.</description><language>en-gb</language>${feedItems}</channel></rss>`, 'utf8');
 
-  console.log(JSON.stringify({ generatedPages: pages.length, languagePages: languagePages.length, arrangementPages: arrangementPages.length, guidePages: GUIDE_PAGES.length, sitemapUrls: urls.length }, null, 2));
+  console.log(JSON.stringify({ generatedPages: pages.length, languagePages: languagePages.length, arrangementPages: arrangementPages.length, seasonPages: seasonPages.length, presentationPages: presentationPages.length, guidePages: GUIDE_PAGES.length, sitemapUrls: urls.length }, null, 2));
 }
 
 await generate();
