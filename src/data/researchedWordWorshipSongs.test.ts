@@ -7,9 +7,9 @@ import {
 
 describe('researched worship word videos', () => {
   it('adds a large, uniquely linked, metadata-checked expansion', () => {
-    expect(RESEARCHED_WORD_COUNTS.total).toBeGreaterThanOrEqual(1_800);
+    expect(RESEARCHED_WORD_COUNTS.total).toBeGreaterThanOrEqual(25_000);
     expect(RESEARCHED_WORD_VIDEO_IDS.size).toBe(RESEARCHED_WORD_WORSHIP_SONGS.length);
-    expect(RESEARCHED_WORD_COUNTS.languages).toBeGreaterThanOrEqual(45);
+    expect(RESEARCHED_WORD_COUNTS.languages).toBeGreaterThanOrEqual(100);
   });
 
   it('retains exact source evidence and clear format labels', () => {
@@ -18,7 +18,10 @@ describe('researched worship word videos', () => {
       expect(song.title.trim().length).toBeGreaterThan(3);
       expect(song.sourceChannel?.trim().length).toBeGreaterThan(0);
       expect(song.wordEvidence?.trim().length).toBeGreaterThan(2);
-      expect(song.qualityCheckedOn).toBe('2026-08-09');
+      expect(song.qualityCheckedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const reviewedAt = Date.parse(`${song.qualityCheckedOn}T00:00:00Z`);
+      expect(Number.isNaN(reviewedAt)).toBe(false);
+      expect(reviewedAt).toBeLessThanOrEqual(Date.now());
       expect(song.arrangement).toBeTruthy();
       expect(song.languagePresentation).toBeTruthy();
     }

@@ -2,7 +2,7 @@
 """Import the best unused videos from prior deep-research candidate caches.
 
 Only exact video IDs, uploader metadata and catalogue labels are retained. Each
-selected link is rechecked against YouTube oEmbed; no media or lyrics are copied.
+selected link is rechecked in YouTube's embedded player; no media or lyrics are copied.
 """
 
 from __future__ import annotations
@@ -12,7 +12,6 @@ import json
 import math
 import re
 import ssl
-import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import Counter, defaultdict
@@ -21,7 +20,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "src" / "data" / "researchedWordWorshipVideos.json"
-TARGET = 15650
 SOURCE_PATHS = [
     Path("/tmp/modern-word-video-deep-candidates.json"),
     Path("/tmp/modern-word-video-candidates.json"),
@@ -29,10 +27,15 @@ SOURCE_PATHS = [
     Path("/tmp/global-word-video-candidates.json"),
     Path("/tmp/global-word-video-candidates-pass2.json"),
     Path("/tmp/global-word-video-shortlist.json"),
+    Path("/tmp/wwv-expanded-search-candidates.json"),
+    Path("/tmp/wwv-channel-feed-candidates.json"),
+    Path("/tmp/wwv-channel-html-candidates.json"),
+    Path("/tmp/wwv-search-html-candidates.json"),
 ]
 CHANNEL_PAGE_SOURCE_PATHS = [
     Path("/tmp/wwv-channel-page-videos.json"),
     Path("/tmp/wwv-channel-page-videos-more.json"),
+    Path("/tmp/wwv-expanded-channel-candidates.json"),
 ]
 MIN_CHANNEL_PAGE_VIEWS = 100
 
@@ -59,6 +62,7 @@ SPEC = importlib.util.spec_from_file_location("catalogue_research", ROOT / "scri
 assert SPEC and SPEC.loader
 research = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(research)
+TARGET = research.TARGET
 SSL_CONTEXT = ssl._create_unverified_context()
 
 
@@ -69,16 +73,33 @@ def cached_candidates(path: Path) -> list[dict]:
     return data.get("candidates", []) if isinstance(data, dict) else data
 
 
-def youtube_metadata(video_id: str) -> dict | None:
-    params = urllib.parse.urlencode({"url": f"https://www.youtube.com/watch?v={video_id}", "format": "json"})
+def youtube_embed_metadata(video_id: str) -> dict | None:
     request = urllib.request.Request(
-        f"https://www.youtube.com/oembed?{params}",
-        headers={"User-Agent": "WorshipWordVideoCatalogueResearch/1.0"},
+        f"https://www.youtube.com/embed/{video_id}",
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; WorshipWordVideoCatalogueResearch/1.0)",
+            "Referer": "https://www.worshipwordvideo.org/",
+        },
     )
     try:
         with urllib.request.urlopen(request, timeout=15, context=SSL_CONTEXT) as response:
-            result = json.load(response)
-            return result if result.get("title") and result.get("author_name") else None
+            page = response.read().decode("utf-8", "ignore")
+        match = re.search(r'"embedded_player_response":"((?:\\.|[^"\\])*)"', page)
+        if not match:
+            return None
+        player = json.loads(json.loads(f'"{match.group(1)}"'))
+        status = player.get("previewPlayabilityStatus") or {}
+        if status.get("status") != "OK" or status.get("playableInEmbed") is not True:
+            return None
+        preview = (player.get("embedPreview") or {}).get("thumbnailPreviewRenderer") or {}
+        title_runs = (preview.get("title") or {}).get("runs") or []
+        details = (preview.get("videoDetails") or {}).get("embeddedPlayerOverlayVideoDetailsRenderer") or {}
+        expanded = (details.get("expandedRenderer") or {}).get("embeddedPlayerOverlayVideoDetailsExpandedRenderer") or {}
+        channel_runs = (expanded.get("title") or {}).get("runs") or []
+        title = "".join(str(run.get("text") or "") for run in title_runs).strip()
+        channel = "".join(str(run.get("text") or "") for run in channel_runs).strip()
+        duration = int(preview.get("videoDurationSeconds") or 0)
+        return {"title": title, "author_name": channel, "durationSeconds": duration} if title and channel else None
     except Exception:
         return None
 
@@ -134,13 +155,25 @@ def supported_familiar_title(source_title: str, familiar_title: str | None) -> s
     return familiar_title if tokens and matched / len(tokens) >= 0.6 else None
 
 
+def explicitly_named_language(title: str) -> tuple[str, str, str] | None:
+    lowered = title.lower()
+    matches: list[tuple[str, str, str]] = []
+    for language, code, region in research.LANGUAGES:
+        if language == "English":
+            continue
+        aliases = [part.strip().lower() for part in language.split("/")]
+        if any(re.search(rf"\b{re.escape(alias)}\b", lowered) for alias in aliases):
+            matches.append((language, code, region))
+    return matches[0] if len(matches) == 1 else None
+
+
 def main() -> None:
     existing_source_ids = research.existing_video_ids()
     base_rows = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else []
     base_rows = [
         row for row in base_rows
         if research.word_evidence(str(row[1]))
-        and research.is_quality_row(str(row[1]), str(row[2]), str(row[3]), str(row[4]))
+        and research.is_existing_quality_row(str(row[1]), str(row[2]), str(row[3]), str(row[4]))
     ][:TARGET]
     for row in base_rows:
         if str(row[3]) == "Language not stated":
@@ -176,9 +209,8 @@ def main() -> None:
                 or not channel
                 or research.REJECT.search(title)
                 or not research.is_quality_row(title, channel, str(item.get("language") or ""), str(item.get("languageCode") or ""))
-                or not duration
-                or duration < 75
-                or duration > 900
+                or (duration and (duration < 75 or duration > 900))
+                or (source_kind == "channel-page" and not duration)
                 or (source_kind == "channel-page" and views < MIN_CHANNEL_PAGE_VIEWS)
             ):
                 continue
@@ -216,8 +248,8 @@ def main() -> None:
     # Check extra candidates so transient metadata failures do not prevent the target.
     check_pool = candidates[: max(2400, TARGET - len(base_rows) + 3000)]
     metadata_by_id: dict[str, dict] = {}
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        futures = {pool.submit(youtube_metadata, str(item["youtubeId"])): item for item in check_pool}
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        futures = {pool.submit(youtube_embed_metadata, str(item["youtubeId"])): item for item in check_pool}
         for future in as_completed(futures):
             metadata = future.result()
             if metadata:
@@ -228,6 +260,19 @@ def main() -> None:
     for item in check_pool:
         video_id = str(item["youtubeId"])
         if video_id not in metadata_by_id:
+            continue
+        metadata = metadata_by_id[video_id]
+        verified_duration = int(metadata.get("durationSeconds") or 0)
+        if verified_duration < 75 or verified_duration > 900:
+            continue
+        verified_title = str(metadata.get("title") or "").strip()
+        verified_channel = str(metadata.get("author_name") or "").strip()
+        requested_language = str(item.get("language") or "Language not stated")
+        requested_code = str(item.get("languageCode") or "und")
+        if (
+            not research.word_evidence(verified_title)
+            or not research.is_quality_row(verified_title, verified_channel, requested_language, requested_code)
+        ):
             continue
         language = str(item.get("language") or "Language not stated")
         buckets.setdefault(language, []).append(item)
@@ -256,25 +301,38 @@ def main() -> None:
         code = str(item.get("languageCode") or "und")
         region = str(item.get("region") or "International / verify before use")
         channel_default = defaults.get(channel)
-        stated_language = requested_language != "Language not stated" and (
-            research.has_language_signal(title, channel, requested_language, code)
-            or (item.get("sourceKind") == "channel-page" and channel_default == (requested_language, code, region))
-        )
-        language = requested_language if stated_language else "Language not stated"
-        evidence = research.word_evidence(title) or str(item["wordEvidence"])
+        named_language = explicitly_named_language(title)
+        if named_language:
+            language, code, region = named_language
+            stated_language = True
+        else:
+            stated_language = requested_language != "Language not stated" and (
+                research.has_language_signal(title, channel, requested_language, code)
+                or (item.get("sourceKind") == "channel-page" and channel_default == (requested_language, code, region))
+            )
+            language = requested_language if stated_language else "Language not stated"
+            if not stated_language:
+                code = "und"
+                region = "International / verify before use"
+        evidence = research.word_evidence(title)
+        if not evidence:
+            continue
         familiar_title = supported_familiar_title(title, str(item.get("englishTitle") or item.get("title") or "").strip() or None)
         views = int(item.get("viewCountAtReview") or item.get("viewCount") or 0)
+        verified_duration = int(metadata.get("durationSeconds") or item["durationSeconds"])
+        if verified_duration < 75 or verified_duration > 900:
+            continue
         rows.append([
             video_id,
             title,
             channel,
             language,
-            code if stated_language else "und",
-            region if stated_language else "International / verify before use",
+            code,
+            region,
             research.arrangement(title, channel),
-            research.presentation(title, requested_language) if stated_language else "Words or subtitles indicated",
+            research.presentation(title, language) if stated_language else "Words or subtitles indicated",
             evidence,
-            int(item["durationSeconds"]),
+            verified_duration,
             research.date.today().isoformat(),
             familiar_title,
             views,

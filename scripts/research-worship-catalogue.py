@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "src" / "data"
 OUTPUT = DATA_DIR / "researchedWordWorshipVideos.json"
-TARGET = 15650
+TARGET = 25750
 RESULTS_PER_QUERY = 50
 
 LANGUAGES = [
@@ -104,6 +104,40 @@ LANGUAGES = [
     ("Kinyarwanda", "rw", "Rwanda / diaspora"),
     ("Ndebele", "nd", "Southern Africa"),
     ("Sesotho", "st", "Southern Africa"),
+    ("Setswana", "tn", "Botswana / Southern Africa"),
+    ("Chichewa", "ny", "Malawi / Southern Africa"),
+    ("Kirundi", "rn", "Burundi / diaspora"),
+    ("Akan", "ak", "Ghana / diaspora"),
+    ("Ewe", "ee", "Ghana / Togo / diaspora"),
+    ("Ga", "gaa", "Ghana / diaspora"),
+    ("Wolof", "wo", "Senegal / West Africa"),
+    ("Catalan", "ca", "Catalonia / diaspora"),
+    ("Basque", "eu", "Basque Country / diaspora"),
+    ("Galician", "gl", "Galicia / diaspora"),
+    ("Welsh", "cy", "Wales"),
+    ("Irish", "ga", "Ireland"),
+    ("Bosnian", "bs", "Bosnia and Herzegovina / diaspora"),
+    ("Slovenian", "sl", "Slovenia"),
+    ("Macedonian", "mk", "North Macedonia / diaspora"),
+    ("Azerbaijani", "az", "Azerbaijan / diaspora"),
+    ("Kazakh", "kk", "Kazakhstan / diaspora"),
+    ("Uzbek", "uz", "Uzbekistan / diaspora"),
+    ("Kyrgyz", "ky", "Kyrgyzstan / diaspora"),
+    ("Tajik", "tg", "Tajikistan / diaspora"),
+    ("Turkmen", "tk", "Turkmenistan / diaspora"),
+    ("Mongolian", "mn", "Mongolia / diaspora"),
+    ("Assyrian / Aramaic", "syr", "Middle East / diaspora"),
+    ("Odia", "or", "India"),
+    ("Assamese", "as", "India"),
+    ("Konkani", "kok", "India"),
+    ("Mizo", "lus", "India / Myanmar / diaspora"),
+    ("Khasi", "kha", "India / Bangladesh"),
+    ("Javanese", "jv", "Indonesia"),
+    ("Sundanese", "su", "Indonesia"),
+    ("Batak", "bbc", "Indonesia"),
+    ("Hmong", "hmn", "Southeast Asia / diaspora"),
+    ("Tok Pisin", "tpi", "Papua New Guinea"),
+    ("Quechua", "qu", "Andes / Latin America"),
 ]
 
 WORD_PATTERNS = [
@@ -118,7 +152,12 @@ WORD_PATTERNS = [
     ("local-language words", re.compile(
         r"letras?|legendad[oa]|subtitulado|paroles|sous[- ]titres|untertitel|napisy|tekst|"
         r"tradu[cç][aã]o|traducci[oó]n|traduction|текст|слова|ترجمه|زیرنویس|كلمات|مترجم|"
-        r"가사|자막|歌詞|字幕|歌词|lời bài hát",
+        r"가사|자막|歌詞|字幕|歌词|lời bài hát|phụ đề|"
+        r"sözleri|liedtext|liedtekst|dalsz[oö]veg|versuri|stihovi|stihovi|sångtext|sangtekst|"
+        r"στίχοι|מילים|Բառեր|ტექსტი|متن سرود|گیت کے بول|"
+        r"गीत के बोल|लिरिक्स|গানের কথা|লিরিক্স|பாடல் வரிகள்|పాట సాహిత్యం|"
+        r"ഗാനവരികൾ|ಹಾಡಿನ ಸಾಹಿತ್ಯ|गीताचे बोल|ગીતના શબ્દો|गीतको बोल|ගී පද|"
+        r"เนื้อเพลง|lirik|lirieke|mashairi|maneno|lyrics? video",
         re.I,
     )),
 ]
@@ -128,9 +167,10 @@ REJECT = re.compile(
     r"reaction|tutorial|lesson|how to play|instrumental tutorial|shorts?\b|nightcore|sped up|slowed|"
     r"worship mix|prayer mix|medley|top \d+|best \d+|sermon|debate|podcast|interview|bible study|"
     r"documentary|apologetics|q\s*&\s*a|questions? and answers?|lecture|baptism testimony|christian testimony|"
-    r"news report|worship tutorial|how to play|spoken word|devotional|meditation|affirmation|"
+    r"news report|worship tutorial|how to play|spoken word|narration|devotional|meditation|affirmation|"
     r"prayer for|scripture reading|bible reading|psalm \d+ reading|behind the scenes|teaser|trailer|episode|vlog|"
     r"birthday song|national anthem|school song|military hymn|the marines.? hymn|hymn for the weekend|"
+    r"champions league|football anthem|soccer anthem|club anthem|team anthem|sports anthem|"
     r"jingle bells|rudolph|frosty|santa|holly jolly|let it snow|bhakti|shiva|krishna|quran|nasheed|"
     r"bollywood|romantic song|love song|movie soundtrack|film song|god gave me you|there you.ll be|"
     r"jesus,? take the wheel|something in the water|god.s country|praise jah in the moonlight|"
@@ -139,7 +179,9 @@ REJECT = re.compile(
     r"suno(?: ai| music)?|created with ai|ai\s+20\d{2}|lyrics? video ai|lyrics? in (?:the )?description|lyrics? below|audio only|without words|"
     r"lds primary|latter[- ]day saints?|\blds\b|jehovah.?s witnesses?|hindu goddess|buddhist worship|"
     r"long black train|carrie underwood\s*[-–—]\s*church bells|the star\s*[-–—]\s*mariah carey|"
-    r"mariah carey.*the star|celine dion.*(?:wonderful jesus|living god)",
+    r"mariah carey.*the star|celine dion.*(?:wonderful jesus|living god)|romeo santos.*inocente|"
+    r"genghis khan|taylor swift.*love story|march of the templars|"
+    r"vishnu|krishana|hindu temple|\boh buddha\b",
     re.I,
 )
 
@@ -147,7 +189,9 @@ EXCLUDED_CHANNEL = re.compile(
     r"worship jamz|szabo music|worship rehearsal videos|top gospel mix|christian love songs|"
     r"almightygod|almighty god church|ang iglesia ng makapangyarihang diyos|"
     r"ibandla likankulunkulu usomandla|god.?s words|efy karaoke|islamic naat|buddhist worship|"
-    r"hari priya positivity|divineechoes|modern tunes|ai ncm zone|ai gospel music",
+    r"hari priya positivity|divineechoes|modern tunes|ai ncm zone|ai gospel music|"
+    r"église de dieu tout-puissant|церковь всемогущего бога|sunrise ministry|"
+    r"sportskillers tv|jr videos|ern3sto|^god lyrics$",
     re.I,
 )
 
@@ -177,7 +221,37 @@ CHRISTIAN_SIGNAL = re.compile(
     r"louange|[eé]glise|gott|christus|lobpreis|anbetung|kirche|dio|ges[uù]|lode|chiesa)\b|"
     r"бог|иисус|господ|христ|поклон|хвал|церк|مسیح|عیسی|پرستش|سرود|المسيح|يسوع|الرب|ترنيمة|عبادة|"
     r"예수|하나님|주님|찬양|교회|敬拜|赞美|讚美|耶稣|耶穌|上帝|礼拝|賛美|イエス|"
-    r"ch[uú]a|th[aá]nh ca|tin l[aà]nh|tuhan|pujian|penyembahan|rohani|mungu|ibada|sifa|ọlọrun|olodumare",
+    r"\bch[uú]a\b|th[aá]nh ca|tin l[aà]nh|tuhan|pujian|penyembahan|rohani|mungu|ibada|sifa|ọlọrun|olodumare|"
+    r"यीशु|मसीही|ईसाई|ख्रिस्ती|आराधना|যীশু|খ্রিস্টান|উপাসনা|"
+    r"இயேசு|கிறிஸ்தவ|ஆராதனை|యేసు|క్రైస్తవ|ఆరాధన|യേശു|ക്രിസ്തീയ|ആരാധന|"
+    r"ಕ್ರೈಸ್ತ|ಆರಾಧನೆ|นมัสการ|คริสเตียน|አምልኮ|ክርስቲያን",
+    re.I,
+)
+
+SONG_CONTEXT = re.compile(
+    r"\b(?:song|music|worship|gospel|praise|hymn|psalm|chant|karaoke|choir|lyrics?|sing[ -]?along|"
+    r"louvor|adora[cç][aã]o|louange|cantique|lobpreis|lied|alabanza|adoraci[oó]n|himno|"
+    r"pujian|penyembahan|rohani|th[aá]nh ca|ibada|sifa|letras?|paroles|liedtext|liedtekst|"
+    r"lirik|versuri|napisy|tekst|sözleri)\b|"
+    r"песн|пісн|поклон|хвал|суруд|پرستش|ترنيمة|تسبيح|"
+    r"찬양|예배|가사|자막|敬拜|赞美|讚美|賛美|礼拝|歌詞|歌词|字幕|นมัสการ|เพลง|आराधना|উপাসনা|ஆராதனை|ఆరాధన|ആരാധന",
+    re.I,
+)
+
+SUBTITLE_ONLY_EVIDENCE = re.compile(r"subtitles?|captions?|subtitled|translated|translation", re.I)
+STRONG_MUSIC_CHANNEL = re.compile(
+    r"\b(?:music|worship|songs?|lyrics?|karaoke|hymns?|choir|louange|praise|lobpreis|alabanza|louvor)\b|"
+    r"찬양|敬拜|讚美|赞美|賛美|پرستش|ترنيم",
+    re.I,
+)
+
+AMBIGUOUS_SPOKEN_PROGRAMME = re.compile(
+    r"\b(?:film|testimon(?:y|ies)|gospel video|gospel message|christian message|my story with god)\b",
+    re.I,
+)
+EXPLICIT_MUSIC_TITLE = re.compile(
+    r"\b(?:song|music|hymn|psalm|chant|karaoke|choir|lyrics?|lyric video|sing[ -]?along)\b|"
+    r"песн|пісн|суруд|ترنيمة|تسبيح|찬양|예배|歌詞|歌词|賛美|礼拝|เพลง|आराधना|উপাসনা|ஆராதனை|ఆరాధన|ആരാധന",
     re.I,
 )
 
@@ -195,30 +269,63 @@ LOCAL_LANGUAGE_SIGNALS: dict[str, re.Pattern[str]] = {
     "hu": re.compile(r"magyar|dalsz[oö]veg", re.I),
     "hr": re.compile(r"hrvatsk|tekst", re.I),
     "tr": re.compile(r"t[uü]rk[cç]e|s[oö]zleri|altyaz", re.I),
+    "ar": re.compile(r"عربي|العربية|ترنيمة|تسبيح|يسوع|المسيح", re.I),
+    "fa": re.compile(r"فارسی|پرستش|سرود|عیسی|مسیحی", re.I),
+    "ur": re.compile(r"اردو|مسیحی|گیت|یسوع", re.I),
+    "hi": re.compile(r"हिन्दी|मसीही|आराधना|यीशु", re.I),
+    "mr": re.compile(r"मराठी|ख्रिस्ती|उपासना", re.I),
+    "ne": re.compile(r"नेपाली|ईसाई|आराधना", re.I),
+    "bn": re.compile(r"বাংলা|খ্রিস্টান|উপাসনা|যীশু", re.I),
+    "zh": re.compile(r"中文|国语|國語|普通话|普通話|敬拜|赞美|讚美", re.I),
+    "yue": re.compile(r"粵語|粤语|廣東話|广东话", re.I),
+    "am": re.compile(r"አማርኛ|የአምልኮ|የክርስቲያን", re.I),
+    "ti": re.compile(r"ትግርኛ|መዝሙር", re.I),
     "vi": re.compile(r"ti[eế]ng vi[eệ]t|lời bài hát|phụ đề|th[aá]nh ca", re.I),
     "id": re.compile(r"bahasa indonesia|lirik|rohani|pujian", re.I),
     "ms": re.compile(r"bahasa melayu|lirik", re.I),
     "tl": re.compile(r"tagalog|filipino|awit|papuri", re.I),
     "sw": re.compile(r"kiswahili|swahili|mungu|yesu|ibada|sifa", re.I),
     "af": re.compile(r"afrikaans|lirieke", re.I),
+    "ca": re.compile(r"catal[aà]|lletra|lloan[cç]a", re.I),
+    "eu": re.compile(r"euskara|euskaraz|abesti|gurtza", re.I),
+    "gl": re.compile(r"galego|galega|letra|louvanza", re.I),
+    "cy": re.compile(r"cymraeg|geiriau|addoliad", re.I),
+    "ga": re.compile(r"gaeilge|focail|adhradh", re.I),
+    "bs": re.compile(r"bosansk|tekst pjesme|slavljenje", re.I),
+    "sl": re.compile(r"slovensk|besedilo|slaviln", re.I),
+    "mk": re.compile(r"македонск|христијан", re.I),
+    "az": re.compile(r"azərbaycan|mahnı sözləri|ibadət", re.I),
+    "kk": re.compile(r"қазақ|ән мәтіні|мадақ", re.I),
+    "ky": re.compile(r"кыргыз|сыйынуу|мактоо", re.I),
+    "tg": re.compile(r"тоҷик|суруди масеҳӣ|ибодат", re.I),
+    "uz": re.compile(r"o['‘’]?zbek|qo['‘’]?shiq matni|sajda", re.I),
+    "mn": re.compile(r"монгол|дууны үг|магтаал", re.I),
+    "or": re.compile(r"odia|oriya|ଓଡ଼ିଆ|ଗୀତ", re.I),
+    "as": re.compile(r"assamese|অসমীয়া|গান", re.I),
+    "jv": re.compile(r"jawa|javanese|lagu rohani", re.I),
+    "su": re.compile(r"sunda|sundanese|lagu rohani", re.I),
+    "bbc": re.compile(r"batak|ende rohani", re.I),
+    "tn": re.compile(r"setswana|sefela|difela", re.I),
+    "ny": re.compile(r"chichewa|nyanja|nyimbo", re.I),
+    "rn": re.compile(r"kirundi|indirimbo", re.I),
+    "wo": re.compile(r"wolof|wólof", re.I),
+    "tpi": re.compile(r"tok pisin|lotu song", re.I),
+    "qu": re.compile(r"quechua|kichwa|takiy", re.I),
 }
 
 SCRIPT_SIGNALS: dict[str, re.Pattern[str]] = {
-    "uk": re.compile(r"[А-Яа-яІіЇїЄєҐґ]"), "ru": re.compile(r"[А-Яа-яЁё]"),
-    "bg": re.compile(r"[А-Яа-я]"), "sr": re.compile(r"[А-Яа-яЉљЊњЋћЂђЈј]"),
-    "el": re.compile(r"[Α-ω]"), "ar": re.compile(r"[\u0600-\u06ff]"),
-    "fa": re.compile(r"[\u0600-\u06ff]"), "ur": re.compile(r"[\u0600-\u06ff]"),
-    "pa": re.compile(r"[\u0600-\u06ff\u0a00-\u0a7f]"), "hi": re.compile(r"[\u0900-\u097f]"),
-    "mr": re.compile(r"[\u0900-\u097f]"), "ne": re.compile(r"[\u0900-\u097f]"),
+    "uk": re.compile(r"[ІіЇїЄєҐґ]"),
+    "sr": re.compile(r"[ЉљЊњЋћЂђЈј]"),
+    "el": re.compile(r"[Α-ω]"),
+    "fa": re.compile(r"[پچژگ]"), "ur": re.compile(r"[ٹڈڑںھے]"),
+    "pa": re.compile(r"[\u0a00-\u0a7f]"),
     "bn": re.compile(r"[\u0980-\u09ff]"), "ta": re.compile(r"[\u0b80-\u0bff]"),
     "te": re.compile(r"[\u0c00-\u0c7f]"), "kn": re.compile(r"[\u0c80-\u0cff]"),
     "ml": re.compile(r"[\u0d00-\u0d7f]"), "gu": re.compile(r"[\u0a80-\u0aff]"),
-    "si": re.compile(r"[\u0d80-\u0dff]"), "zh": re.compile(r"[\u3400-\u9fff]"),
-    "yue": re.compile(r"[\u3400-\u9fff]"), "ko": re.compile(r"[\uac00-\ud7af]"),
+    "si": re.compile(r"[\u0d80-\u0dff]"), "ko": re.compile(r"[\uac00-\ud7af]"),
     "ja": re.compile(r"[\u3040-\u30ff]"), "th": re.compile(r"[\u0e00-\u0e7f]"),
     "he": re.compile(r"[\u0590-\u05ff]"), "hy": re.compile(r"[\u0530-\u058f]"),
-    "ka": re.compile(r"[\u10a0-\u10ff]"), "am": re.compile(r"[\u1200-\u137f]"),
-    "ti": re.compile(r"[\u1200-\u137f]"),
+    "ka": re.compile(r"[\u10a0-\u10ff]"), "or": re.compile(r"[\u0b00-\u0b7f]"),
 }
 
 
@@ -289,11 +396,36 @@ def is_quality_row(title: str, channel: str, language: str, code: str) -> bool:
     value = f"{title} {channel}"
     if REJECT.search(value) or EXCLUDED_CHANNEL.search(channel) or SECULAR_FALSE_POSITIVE.search(value):
         return False
+    if not SONG_CONTEXT.search(value):
+        return False
+    if SUBTITLE_ONLY_EVIDENCE.search(title) and not SONG_CONTEXT.search(title) and not STRONG_MUSIC_CHANNEL.search(channel):
+        return False
+    if AMBIGUOUS_SPOKEN_PROGRAMME.search(title) and not EXPLICIT_MUSIC_TITLE.search(title):
+        return False
     if re.search(r"\bpreaching\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship music)\b", value, re.I):
         return False
     if re.search(r"\bconference\s*20\d{2}\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship|praise)\b", value, re.I):
         return False
     if re.search(r"\btalk talk\s*[-–—]\s*it'?s my life\b", value, re.I):
+        return False
+    return bool(CHRISTIAN_SIGNAL.search(value))
+
+
+def is_existing_quality_row(title: str, channel: str, language: str, code: str) -> bool:
+    """Retain earlier reviewed rows while applying the shared hard rejects.
+
+    Older imports include many genuine translations whose title is only a song
+    name plus "translated". New discovery uses the stricter song-context gate,
+    but previously reviewed rows are not discarded solely for terse metadata.
+    """
+    value = f"{title} {channel}"
+    if REJECT.search(value) or EXCLUDED_CHANNEL.search(channel) or SECULAR_FALSE_POSITIVE.search(value):
+        return False
+    if AMBIGUOUS_SPOKEN_PROGRAMME.search(title) and not EXPLICIT_MUSIC_TITLE.search(title):
+        return False
+    if re.search(r"\bpreaching\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship music)\b", value, re.I):
+        return False
+    if re.search(r"\bconference\s*20\d{2}\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship|praise)\b", value, re.I):
         return False
     return bool(CHRISTIAN_SIGNAL.search(value))
 

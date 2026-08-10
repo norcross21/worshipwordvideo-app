@@ -233,7 +233,13 @@ function buildMaintainedCatalogue(): WorshipSong[] {
     const ccliUkRank = matchingRank != null && !claimedChartRanks.has(matchingRank) ? matchingRank : undefined;
     if (ccliUkRank != null) claimedChartRanks.add(ccliUkRank);
     const rankedSong = { ...song, ccliUkRank };
-    const match = hymnalByTitle.get(titleKey(song.title))?.find((hymn) => !claimedNumbers.has(hymn.number));
+    // Discovery videos are useful additional performances, but must not take
+    // ownership of a curated hymnal entry merely because their titles match.
+    // Keeping the identities separate preserves hymn numbers and allows each
+    // researched language/arrangement variant to remain independently useful.
+    const match = song.id.startsWith('researched-words-')
+      ? undefined
+      : hymnalByTitle.get(titleKey(song.title))?.find((hymn) => !claimedNumbers.has(hymn.number));
     if (!match) return rankedSong;
     claimedNumbers.add(match.number);
     return {

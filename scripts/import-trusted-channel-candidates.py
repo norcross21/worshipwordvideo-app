@@ -21,7 +21,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "src" / "data" / "researchedWordWorshipVideos.json"
 SOURCE = Path("/tmp/wwv-trusted-channel-videos.json")
-TARGET = 15650
 MAX_PER_CHANNEL = 400
 MIN_VIEWS = 25
 
@@ -29,6 +28,7 @@ SPEC = importlib.util.spec_from_file_location("catalogue_research", ROOT / "scri
 assert SPEC and SPEC.loader
 research = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(research)
+TARGET = research.TARGET
 
 # Conservative defaults for channels whose catalogue has a clear primary
 # language. Mixed-language channels remain unstated unless the title itself
@@ -118,7 +118,7 @@ def cleaned_base_rows() -> list[list[object]]:
             channel in EXCLUDED_CHANNELS
             or NON_SONG.search(f"{title} {channel}")
             or not research.word_evidence(title)
-            or not research.is_quality_row(title, channel, str(row[3]), str(row[4]))
+            or not research.is_existing_quality_row(title, channel, str(row[3]), str(row[4]))
             or (duration and (duration < 75 or duration > 900))
         ):
             continue

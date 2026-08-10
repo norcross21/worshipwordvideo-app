@@ -102,6 +102,11 @@ describe('video quality helpers', () => {
     ['Ghost - Mary On A Cross (Official Lyric Video)', 'Ghost'],
     ['Christian Nodal - Adiós Amor (Official Lyric Video)', 'ChristianNodalVEVO'],
     ['Morgan Wallen - Man Made A Bar (Lyric Video) ft. Eric Church', 'MorganWallenVEVO'],
+    ['Hymn Legii Warszawa / Anthem Legia Warsaw (with lyrics)', 'Sportskillers TV'],
+    ['In Praise of Genghis Khan - Mongolian Traditional Song with Lyrics', 'Archive channel'],
+    ['Taylor Swift - Love Story (Lyrics)', 'GOD LYRICS'],
+    ['Iranian Lord Vishnu Song - Rama Krishana with lyrics', 'Hindu temple archive'],
+    ['Oh Buddha - The Imperials (Lyrics)', 'Extended Life Worship'],
   ])('rejects secular false matches: %s', (title, artist) => {
     expect(isUsableWorshipVideoListing({
       id: `secular-${artist}`,
@@ -111,5 +116,24 @@ describe('video quality helpers', () => {
       youtubeId: 'vwxyz012345',
       wordsIndicated: true,
     })).toBe(false);
+  });
+
+  it('rejects subtitled spoken programmes while retaining songs named Testimony', () => {
+    expect(isUsableWorshipVideoListing({
+      id: 'spoken-testimony',
+      title: 'God changed my life | Testimony with English subtitles',
+      artist: 'Example church',
+      category: 'Gospel and spiritual',
+      youtubeId: 'xyz01234567',
+      wordsIndicated: true,
+    })).toBe(false);
+    expect(isUsableWorshipVideoListing({
+      id: 'testimony-song',
+      title: 'My Testimony - Elevation Worship (Lyrics)',
+      artist: 'Worship lyrics',
+      category: 'Contemporary Worship',
+      youtubeId: 'yz012345678',
+      wordsIndicated: true,
+    })).toBe(true);
   });
 });
