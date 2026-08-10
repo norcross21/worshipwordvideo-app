@@ -4,6 +4,7 @@ const PROJECTION_STORAGE_KEY = 'worship_word_video_projection_v1';
 const PROJECTION_CHANNEL_NAME = 'worship-word-video-projection';
 const PROJECTION_COMMAND_STORAGE_KEY = 'worship_word_video_projection_command_v1';
 const PROJECTION_COMMAND_CHANNEL_NAME = 'worship-word-video-projection-command';
+export const PROJECTION_WINDOW_NAME = 'worship-word-video-projection';
 
 export interface ProjectionScreenInfo {
   availLeft: number;
@@ -116,12 +117,18 @@ export function publishProjectionState(state: Omit<ProjectionState, 'updatedAt'>
 }
 
 export function subscribeToProjectionState(onState: (state: ProjectionState) => void): () => void {
+  let latestUpdate = readProjectionState().updatedAt;
+  const deliver = (state: ProjectionState) => {
+    if (!state || !Array.isArray(state.queue) || state.updatedAt < latestUpdate) return;
+    latestUpdate = state.updatedAt;
+    onState(state);
+  };
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === PROJECTION_STORAGE_KEY) onState(readProjectionState());
+    if (event.key === PROJECTION_STORAGE_KEY) deliver(readProjectionState());
   };
   window.addEventListener('storage', handleStorage);
   const channel = 'BroadcastChannel' in window ? new BroadcastChannel(PROJECTION_CHANNEL_NAME) : null;
-  if (channel) channel.onmessage = (event: MessageEvent<ProjectionState>) => onState(event.data);
+  if (channel) channel.onmessage = (event: MessageEvent<ProjectionState>) => deliver(event.data);
   return () => {
     window.removeEventListener('storage', handleStorage);
     channel?.close();

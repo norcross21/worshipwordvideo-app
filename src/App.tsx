@@ -16,8 +16,17 @@ import type { WorshipSong } from './data/worshipSongs';
 import { Sparkles } from 'lucide-react';
 import './App.css';
 import { ProjectionScreen } from './components/ProjectionScreen';
+import { ServiceWorkspaceBar } from './components/ServiceWorkspaceBar';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
+import {
+  PROJECTION_WINDOW_NAME,
+  chooseProjectionScreen,
+  projectionPopupFeatures,
+  publishProjectionState,
+  type ProjectionScreenInfo,
+  type WindowWithScreenDetails,
+} from './data/projection';
 
 const SongLibraryDashboard = lazy(() => import('./components/SongLibraryDashboard').then((module) => ({ default: module.SongLibraryDashboard })));
 const WorshipQueue = lazy(() => import('./components/WorshipQueue').then((module) => ({ default: module.WorshipQueue })));
@@ -37,12 +46,14 @@ function MainApp() {
   const [queue, setQueue] = useState<WorshipQueueItem[]>([]);
   const [queueOwnerId, setQueueOwnerId] = useState<string | null>(null);
   const [activeService, setActiveService] = useState<SavedUserPlaylist | null>(null);
+  const [availableServices, setAvailableServices] = useState<SavedUserPlaylist[]>([]);
   const [serviceLoading, setServiceLoading] = useState(false);
   const [serviceSaveState, setServiceSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [pendingPlaylistItem, setPendingPlaylistItem] = useState<WorshipQueueItem | null>(null);
   const lastCloudItemsRef = useRef('');
   const [toastMessage, setToastMessage] = useState('');
   const [showSavedPlaylistsModal, setShowSavedPlaylistsModal] = useState(false);
+  const [serviceModalMode, setServiceModalMode] = useState<'create' | 'manage'>('manage');
   const [showDonateModal, setShowDonateModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(() =>
     new URLSearchParams(window.location.search).get('legal') === '1'
@@ -60,6 +71,7 @@ function MainApp() {
       setQueue([]);
       setQueueOwnerId(null);
       setActiveService(null);
+      setAvailableServices([]);
       setServiceLoading(false);
       setActiveTab('all');
       setShowSavedPlaylistsModal(false);
@@ -72,9 +84,10 @@ function MainApp() {
       setQueueOwnerId(null);
       const localQueue = getWorshipQueue(user.id);
       const activeServiceId = getActiveServiceId(user.id);
-      if (!supabase || !activeServiceId) {
+      if (!supabase) {
         if (!active) return;
         setActiveService(null);
+        setAvailableServices([]);
         setQueue(localQueue);
         lastCloudItemsRef.current = '';
         setQueueOwnerId(user.id);
@@ -85,17 +98,19 @@ function MainApp() {
       const { data, error } = await supabase
         .from('user_playlists')
         .select('id,user_id,title,items,service_date,notes,created_at,updated_at')
-        .eq('id', activeServiceId)
         .eq('user_id', user.id)
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(100);
       if (!active) return;
-      if (error || !data) {
+      const playlists = error || !data ? [] : data as SavedUserPlaylist[];
+      setAvailableServices(playlists);
+      const restored = activeServiceId ? playlists.find((playlist) => playlist.id === activeServiceId) : null;
+      if (!restored) {
         saveActiveServiceId(null, user.id);
         setActiveService(null);
         setQueue(localQueue);
         lastCloudItemsRef.current = '';
       } else {
-        const restored = data as SavedUserPlaylist;
         const items = Array.isArray(restored.items) ? restored.items : [];
         lastCloudItemsRef.current = JSON.stringify(items);
         setActiveService(restored);
@@ -116,7 +131,8 @@ function MainApp() {
   useEffect(() => {
     if (!user || queueOwnerId !== user.id) return;
     setActiveService((current) => current ? { ...current, items: queue } : current);
-  }, [queue, queueOwnerId, user?.id]);
+    setAvailableServices((current) => current.map((service) => service.id === activeService?.id ? { ...service, items: queue } : service));
+  }, [activeService?.id, queue, queueOwnerId, user?.id]);
 
   useEffect(() => {
     const client = supabase;
@@ -137,6 +153,9 @@ function MainApp() {
           }
           lastCloudItemsRef.current = serialisedItems;
           setActiveService((current) => current?.id === activeService.id ? { ...current, items: queue, updated_at: new Date().toISOString() } : current);
+          setAvailableServices((current) => current.map((service) => service.id === activeService.id
+            ? { ...service, items: queue, updated_at: new Date().toISOString() }
+            : service));
           setServiceSaveState('saved');
           window.setTimeout(() => setServiceSaveState('idle'), 1800);
         });
@@ -209,6 +228,7 @@ function MainApp() {
     const item = worshipQueueItem(song);
     if (!activeService) {
       setPendingPlaylistItem(item);
+      setServiceModalMode('manage');
       setShowSavedPlaylistsModal(true);
       setToastMessage('Choose a service or create a new one before adding this video.');
       window.setTimeout(() => setToastMessage(''), 3500);
@@ -242,6 +262,7 @@ function MainApp() {
     const nextService = { ...playlist, items };
     lastCloudItemsRef.current = JSON.stringify(items);
     setActiveService(nextService);
+    setAvailableServices((current) => [nextService, ...current.filter((service) => service.id !== nextService.id)]);
     setQueue(items);
     setQueueOwnerId(user.id);
     saveActiveServiceId(playlist.id, user.id);
@@ -259,11 +280,75 @@ function MainApp() {
   };
 
   const handleServiceDeleted = (serviceId: string) => {
+    setAvailableServices((current) => current.filter((service) => service.id !== serviceId));
     if (activeService?.id !== serviceId) return;
     setActiveService(null);
     setQueue([]);
     lastCloudItemsRef.current = '';
     saveActiveServiceId(null, user?.id);
+  };
+
+  const handlePresentSingleVideo = async (song: WorshipSong) => {
+    if (!user || !song.youtubeId) return;
+    const item = worshipQueueItem(song);
+    const playbackRevision = Date.now();
+    publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision });
+
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('projection', '1');
+    url.searchParams.set('launch', `single-${playbackRevision}`);
+    url.hash = '';
+    const initialPlacement: ProjectionScreenInfo = {
+      availLeft: window.screenX + 40,
+      availTop: window.screenY + 40,
+      availWidth: Math.min(1280, window.screen.availWidth),
+      availHeight: Math.min(720, window.screen.availHeight),
+    };
+    const popup = window.open('', PROJECTION_WINDOW_NAME, projectionPopupFeatures(initialPlacement));
+    if (!popup) {
+      setToastMessage('Your browser blocked the presentation window. Allow pop-ups for this site, then try again.');
+      window.setTimeout(() => setToastMessage(''), 4000);
+      return;
+    }
+
+    let alreadyOpen = false;
+    try {
+      alreadyOpen = new URL(popup.location.href).searchParams.get('projection') === '1';
+    } catch {
+      alreadyOpen = true;
+    }
+
+    if (!alreadyOpen) {
+      try {
+        popup.document.title = 'Preparing church screen…';
+        popup.document.body.style.cssText = 'display:grid;place-items:center;min-height:100vh;margin:0;color:#fff;background:#06162d;font:700 22px system-ui,sans-serif';
+        popup.document.body.textContent = 'Preparing the church screen…';
+      } catch {
+        // The projection URL still loads if the temporary blank window is restricted.
+      }
+      const multiScreenWindow = window as WindowWithScreenDetails;
+      if (multiScreenWindow.getScreenDetails) {
+        try {
+          const details = await multiScreenWindow.getScreenDetails();
+          const target = chooseProjectionScreen(details);
+          if (target) {
+            popup.moveTo(target.availLeft, target.availTop);
+            popup.resizeTo(target.availWidth, target.availHeight);
+            url.searchParams.set('placed', '1');
+          }
+        } catch {
+          // The clean window still opens when automatic screen placement is unavailable.
+        }
+      }
+      popup.location.replace(url.toString());
+    } else {
+      // Re-publish after focusing so an already-open church screen changes immediately.
+      publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision: playbackRevision + 1 });
+    }
+    popup.focus();
+    setToastMessage(`Showing “${song.title}” on the church screen.`);
+    window.setTimeout(() => setToastMessage(''), 3000);
   };
 
   return (
@@ -274,7 +359,10 @@ function MainApp() {
         onSelectTab={setActiveTab}
         playlistCount={queue.length}
         activeServiceTitle={activeService?.title ?? null}
-        onOpenSavedPlaylists={() => setShowSavedPlaylistsModal(true)}
+        onOpenSavedPlaylists={() => {
+          setServiceModalMode('manage');
+          setShowSavedPlaylistsModal(true);
+        }}
         onOpenAuth={setAuthModalTab}
         onOpenAccount={() => setShowAccountModal(true)}
         onOpenDonate={() => setShowDonateModal(true)}
@@ -299,17 +387,39 @@ function MainApp() {
       )}
 
       <main className="app-main" id="main-content">
+        {user && activeTab !== 'admin' && (
+          <ServiceWorkspaceBar
+            services={availableServices}
+            activeService={activeService}
+            loading={serviceLoading}
+            saveState={serviceSaveState}
+            onSelectService={handleActivateService}
+            onCreateService={() => {
+              setPendingPlaylistItem(null);
+              setServiceModalMode('create');
+              setShowSavedPlaylistsModal(true);
+            }}
+            onManageServices={() => {
+              setPendingPlaylistItem(null);
+              setServiceModalMode('manage');
+              setShowSavedPlaylistsModal(true);
+            }}
+          />
+        )}
         <Suspense fallback={<LoadingPanel />}>
           {activeTab === 'admin' ? (
             <AdminDashboard />
           ) : activeTab === 'playlist' ? (
             <WorshipQueue
+              key={activeService?.id ?? 'no-service'}
               queue={queue}
               onChange={setQueue}
               activeService={activeService}
               serviceLoading={serviceLoading}
-              saveState={serviceSaveState}
-              onOpenSavedPlaylists={() => setShowSavedPlaylistsModal(true)}
+              onOpenSavedPlaylists={() => {
+                setServiceModalMode('create');
+                setShowSavedPlaylistsModal(true);
+              }}
               onBrowseSongs={() => setActiveTab('all')}
             />
           ) : (
@@ -318,10 +428,7 @@ function MainApp() {
               onAddToPlaylist={handleAddToPlaylist}
               playlistEnabled={Boolean(user)}
               activeServiceTitle={activeService?.title ?? null}
-              onOpenServiceManager={() => {
-                setPendingPlaylistItem(null);
-                setShowSavedPlaylistsModal(true);
-              }}
+              onPresentVideo={user ? handlePresentSingleVideo : undefined}
             />
           )}
         </Suspense>
@@ -334,6 +441,7 @@ function MainApp() {
             activePlaylistId={activeService?.id ?? null}
             activePlaylist={activeService}
             pendingItem={pendingPlaylistItem}
+            initialMode={serviceModalMode}
             onActivatePlaylist={handleActivateService}
             onPlaylistDeleted={handleServiceDeleted}
             onClose={() => {

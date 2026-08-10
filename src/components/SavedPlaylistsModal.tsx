@@ -20,6 +20,7 @@ interface SavedPlaylistsModalProps {
   activePlaylistId: string | null;
   activePlaylist?: SavedUserPlaylist | null;
   pendingItem?: WorshipQueueItem | null;
+  initialMode?: 'create' | 'manage';
   onActivatePlaylist: (playlist: SavedUserPlaylist) => Promise<void> | void;
   onPlaylistDeleted?: (playlistId: string) => void;
   onClose: () => void;
@@ -186,6 +187,7 @@ export function SavedPlaylistsModal({
   activePlaylistId,
   activePlaylist = null,
   pendingItem = null,
+  initialMode = 'manage',
   onActivatePlaylist,
   onPlaylistDeleted,
   onClose,
@@ -340,7 +342,7 @@ export function SavedPlaylistsModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal-card modal-card--playlists modal-card--service-library"
+        className={`modal-card modal-card--playlists modal-card--service-library is-${initialMode}-mode`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="saved-playlists-title"
@@ -420,6 +422,7 @@ export function SavedPlaylistsModal({
                   <span>Service name</span>
                   <input
                     type="text"
+                    autoFocus={initialMode === 'create'}
                     maxLength={120}
                     placeholder="Sunday morning worship"
                     value={newTitle}

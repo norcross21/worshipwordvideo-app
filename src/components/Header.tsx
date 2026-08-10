@@ -43,8 +43,9 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
               className={`nav-tab nav-tab--playlist ${activeTab === 'playlist' ? 'is-active' : ''}`}
               aria-pressed={activeTab === 'playlist'}
               onClick={() => onSelectTab('playlist')}
+              title={activeServiceTitle ? `Open ${activeServiceTitle}` : 'Open service planning'}
             >
-              <ListMusic size={17} /> <span className="nav-tab__label">{activeServiceTitle || 'New service'}</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
+              <ListMusic size={17} /> <span className="nav-tab__label">Service</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
             </button>
           )}
           {user ? (

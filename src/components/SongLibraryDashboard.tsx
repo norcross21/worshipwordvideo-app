@@ -11,7 +11,8 @@ import {
   Music,
   Globe2,
   CalendarDays,
-  SlidersHorizontal
+  SlidersHorizontal,
+  MonitorUp,
 } from 'lucide-react';
 import {
   loadRuntimeSongLibrary,
@@ -43,7 +44,7 @@ interface SongLibraryDashboardProps {
   onAddToPlaylist: (song: WorshipSong) => void;
   playlistEnabled?: boolean;
   activeServiceTitle?: string | null;
-  onOpenServiceManager?: () => void;
+  onPresentVideo?: (song: WorshipSong) => void;
 }
 
 const seasonsBySongId = new Map<string, WorshipSeason[]>();
@@ -76,7 +77,7 @@ export function SongLibraryDashboard({
   onAddToPlaylist,
   playlistEnabled = false,
   activeServiceTitle = null,
-  onOpenServiceManager,
+  onPresentVideo,
 }: SongLibraryDashboardProps) {
   const [songs, setSongs] = useState<WorshipSong[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
@@ -230,19 +231,6 @@ export function SongLibraryDashboard({
           <p>Search by song, artist, language or hymn number. Choose a video, then add it to your service playlist.</p>
         </div>
       </section>
-
-      {playlistEnabled && (
-        <div className={`active-service-bar ${activeServiceTitle ? 'has-service' : ''}`} role="status">
-          <span className="active-service-bar__icon"><ListPlus size={18} /></span>
-          <div>
-            <strong>{activeServiceTitle ? `Adding videos to “${activeServiceTitle}”` : 'Start by creating a service'}</strong>
-            <span>{activeServiceTitle ? 'Every video you add is saved to this service automatically.' : 'Give the service a name, then choose its worship videos.'}</span>
-          </div>
-          {onOpenServiceManager && (
-            <button type="button" onClick={onOpenServiceManager}>{activeServiceTitle ? 'Switch service' : 'Create service'}</button>
-          )}
-        </div>
-      )}
 
       {/* Top Filter & Toolbar */}
       <div className="music-dashboard__toolbar">
@@ -445,6 +433,18 @@ export function SongLibraryDashboard({
                 </div>
 
                 <div className="song-detail__actions">
+                  {playlistEnabled && onPresentVideo && selectedSong.youtubeId && (
+                    <button
+                      type="button"
+                      className="btn-present-single"
+                      onClick={() => onPresentVideo({
+                        ...selectedSong,
+                        wordsIndicated: selectedSong.wordsIndicated || approvedVideoIds.has(selectedSong.youtubeId),
+                      })}
+                    >
+                      <MonitorUp size={16} /> Send to screen
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn-add-playlist"

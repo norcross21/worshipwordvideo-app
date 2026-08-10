@@ -23,11 +23,12 @@ export function ProjectionScreen() {
 
   const startService = useCallback(() => {
     if (!projection.queue.length) return;
-    const next = publishProjectionState({
-      queue: projection.queue,
+    const next = {
+      ...projection,
       playingIndex: 0,
       playbackRevision: projection.playbackRevision + 1,
-    });
+      updatedAt: Date.now(),
+    };
     setProjection(next);
     setServiceStarted(true);
     publishProjectionCommand('start', launchId);
@@ -63,7 +64,10 @@ export function ProjectionScreen() {
     const previousRobots = robotsMeta?.content;
     robotsMeta?.setAttribute('content', 'noindex, nofollow');
     const updateFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    const announceClose = () => publishProjectionCommand('closed', launchId);
+    const announceClose = () => {
+      publishProjectionState({ queue: [], playingIndex: null, playbackRevision: Date.now() });
+      publishProjectionCommand('closed', launchId);
+    };
     document.addEventListener('fullscreenchange', updateFullscreen);
     window.addEventListener('beforeunload', announceClose);
     return () => {
@@ -88,6 +92,7 @@ export function ProjectionScreen() {
   }, [enterFullscreen, item, startService]);
 
   const closeProjection = () => {
+    publishProjectionState({ queue: [], playingIndex: null, playbackRevision: Date.now() });
     publishProjectionCommand('closed', launchId);
     window.close();
   };

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
-  Cloud,
   Info,
   ListMusic,
   LogIn,
@@ -23,6 +22,7 @@ import { AuthModal } from './AuthModal';
 import { ProjectionSetupGuide, type ProjectionLaunchResult } from './ProjectionSetupGuide';
 import {
   chooseProjectionScreen,
+  PROJECTION_WINDOW_NAME,
   projectionPopupFeatures,
   publishProjectionState,
   subscribeToProjectionCommands,
@@ -45,7 +45,6 @@ interface WorshipQueueProps {
   onChange: (queue: WorshipQueueItem[]) => void;
   activeService: SavedUserPlaylist | null;
   serviceLoading?: boolean;
-  saveState?: 'idle' | 'saving' | 'saved' | 'error';
   onOpenSavedPlaylists?: () => void;
   onBrowseSongs?: () => void;
 }
@@ -55,7 +54,6 @@ export function WorshipQueue({
   onChange,
   activeService,
   serviceLoading = false,
-  saveState = 'idle',
   onOpenSavedPlaylists,
   onBrowseSongs,
 }: WorshipQueueProps) {
@@ -75,20 +73,31 @@ export function WorshipQueue({
   const projectionLaunchIdRef = useRef('');
   const playingItem = !activeService || playingIndex == null ? null : queue[playingIndex] ?? null;
 
+  const selectVideo = useCallback((index: number) => {
+    if (!activeService || !queue[index]) return;
+    const nextRevision = playbackRevision + 1;
+    setPlayingIndex(index);
+    setPlaybackRevision(nextRevision);
+    // Send the choice immediately. The effect below keeps later trims and reorders in sync.
+    publishProjectionState({ queue, playingIndex: index, playbackRevision: nextRevision });
+  }, [activeService, playbackRevision, queue]);
+
   const handleVideoEnded = useCallback((endedItemId?: string) => {
     if (!autoAdvance || playingIndex == null) return;
     if (endedItemId && endedItemId !== playingItem?.id) return;
     const nextIndex = nextWorshipQueueIndex(playingIndex, queue.length);
     if (nextIndex == null) {
       setPlayingIndex(null);
+      const nextRevision = playbackRevision + 1;
+      setPlaybackRevision(nextRevision);
+      publishProjectionState({ queue, playingIndex: null, playbackRevision: nextRevision });
       setAutoAdvance(false);
       setProjectionMessage('Service complete. Auto-next has switched itself off.');
       return;
     }
-    setPlayingIndex(nextIndex);
-    setPlaybackRevision((value) => value + 1);
+    selectVideo(nextIndex);
     setProjectionMessage(`Auto-next: starting ${queue[nextIndex].title}.`);
-  }, [autoAdvance, playingIndex, playingItem?.id, queue]);
+  }, [autoAdvance, playbackRevision, playingIndex, playingItem?.id, queue, selectVideo]);
 
   useEffect(() => {
     setAutoAdvance(false);
@@ -99,15 +108,15 @@ export function WorshipQueue({
   }, [playingIndex, queue]);
 
   useEffect(() => {
-    publishProjectionState({ queue: activeService ? queue : [], playingIndex: activeService ? playingIndex : null, playbackRevision });
+    if (!activeService || playingIndex == null || !queue[playingIndex]) return;
+    publishProjectionState({ queue, playingIndex, playbackRevision });
   }, [activeService?.id, queue, playingIndex, playbackRevision]);
 
   useEffect(() => subscribeToProjectionCommands((command) => {
     if (!command.launchId || command.launchId !== projectionLaunchIdRef.current) return;
     if (command.type === 'start' && queue.length) {
       setProjectionActive(true);
-      setPlayingIndex(0);
-      setPlaybackRevision((value) => value + 1);
+      selectVideo(0);
       setShowProjectionGuide(false);
       setProjectionMessage('Live on the church screen. Use the private controls here to change videos.');
     }
@@ -119,13 +128,16 @@ export function WorshipQueue({
       setProjectionMessage('The church projection window was closed.');
     }
     if (command.type === 'ended') handleVideoEnded(command.itemId);
-  }), [handleVideoEnded, queue.length]);
+  }), [handleVideoEnded, queue.length, selectVideo]);
 
   const update = (next: WorshipQueueItem[]) => onChange(next.slice(0, WORSHIP_QUEUE_LIMIT));
 
   const removeAt = (index: number) => {
     update(queue.filter((_, itemIndex) => itemIndex !== index));
-    if (playingIndex === index) setPlayingIndex(null);
+    if (playingIndex === index) {
+      setPlayingIndex(null);
+      publishProjectionState({ queue: [], playingIndex: null, playbackRevision: playbackRevision + 1 });
+    }
     else if (playingIndex != null && playingIndex > index) setPlayingIndex(playingIndex - 1);
   };
 
@@ -133,13 +145,17 @@ export function WorshipQueue({
     if (window.confirm('Clear all songs from current service playlist?')) {
       update([]);
       setPlayingIndex(null);
+      setPlaybackRevision((value) => value + 1);
+      publishProjectionState({ queue: [], playingIndex: null, playbackRevision: playbackRevision + 1 });
       setAutoAdvance(false);
     }
   };
 
-  const playAt = (index: number) => {
-    if (playingIndex === index) setPlaybackRevision((value) => value + 1);
-    setPlayingIndex(index);
+  const moveAt = (index: number, direction: -1 | 1) => {
+    const destination = index + direction;
+    update(moveWorshipQueueItem(queue, index, direction));
+    if (playingIndex === index) setPlayingIndex(destination);
+    else if (playingIndex === destination) setPlayingIndex(index);
   };
 
   const startTimingEdit = (item: WorshipQueueItem) => {
@@ -194,7 +210,7 @@ export function WorshipQueue({
       availWidth: Math.min(1280, window.screen.availWidth),
       availHeight: Math.min(720, window.screen.availHeight),
     };
-    const popup = window.open('', `worship-word-video-projection-${launchId}`, projectionPopupFeatures(initialPlacement));
+    const popup = window.open('', PROJECTION_WINDOW_NAME, projectionPopupFeatures(initialPlacement));
     if (!popup) {
       projectionLaunchIdRef.current = '';
       setProjectionActive(false);
@@ -248,7 +264,7 @@ export function WorshipQueue({
   const startProjection = () => {
     if (!queue.length) return;
     setProjectionActive(true);
-    playAt(0);
+    selectVideo(0);
     setShowProjectionGuide(false);
     setProjectionMessage('Service started on the projection screen. Use Previous and Next here while the congregation sees only the video.');
   };
@@ -265,22 +281,23 @@ export function WorshipQueue({
     <section className="worship-queue" aria-labelledby="worship-queue-title">
       <div className="worship-queue__heading">
         <div>
-          <span className="worship-queue__eyebrow"><ListMusic size={16} /> {activeService ? 'Active service' : 'Service planning'}</span>
-          <h2 id="worship-queue-title">{serviceLoading ? 'Loading your service…' : activeService?.title || 'Create or choose a service'} {activeService ? `(${queue.length}/${WORSHIP_QUEUE_LIMIT})` : ''}</h2>
-          <p>{activeService ? 'Changes save automatically. Arrange the running order, set clean video timing, then present it.' : 'Start with a named service so every video, trim and running-order change has somewhere to save.'}</p>
-          {activeService && <span className={`service-save-status is-${saveState}`}>{saveState === 'saving' ? 'Saving changes…' : saveState === 'error' ? 'Could not save—check your connection' : saveState === 'saved' ? 'Saved' : 'Saved to your account'}</span>}
+          <span className="worship-queue__eyebrow"><ListMusic size={16} /> Service plan</span>
+          <h2 id="worship-queue-title">{serviceLoading ? 'Loading…' : activeService ? 'Running order' : 'Choose a service'} {activeService ? <span>{queue.length}/{WORSHIP_QUEUE_LIMIT}</span> : null}</h2>
+          <p>{activeService ? 'Select any video to preview it or change the linked church screen.' : 'Use the service selector above, or create a new service.'}</p>
         </div>
 
         <div className="worship-queue__heading-actions">
-          {user ? (
-            <button type="button" className="worship-queue__btn-cloud" onClick={onOpenSavedPlaylists}>{activeService ? <Cloud size={15} /> : <Plus size={15} />} {activeService ? 'Switch or add service' : 'Add service'}</button>
-          ) : (
+          {!user && (
             <button type="button" className="worship-queue__btn-login" onClick={() => setShowAuthModal(true)}><LogIn size={14} /> Log in to save</button>
           )}
           {activeService && queue.length > 0 && (
             <>
-              <button type="button" className="worship-queue__btn-project" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={15} /> Present on second screen</button>
-              <button type="button" className="worship-queue__btn-secondary" onClick={() => playAt(0)}><Play size={14} /> Start here</button>
+              <button type="button" className="worship-queue__btn-project" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={15} /> Present</button>
+              {queue.length > 1 && (
+                <button type="button" className={`worship-queue__auto-next-button ${autoAdvance ? 'is-on' : ''}`} aria-pressed={autoAdvance} onClick={toggleAutoAdvance} title="Choose whether each finished video starts the next one">
+                  <SkipForward size={15} /> Auto-next {autoAdvance ? 'on' : 'off'}
+                </button>
+              )}
               <button type="button" className="worship-queue__btn-icon-danger" onClick={clearQueue} title="Clear playlist" aria-label="Clear playlist"><Trash2 size={15} /><span>Clear</span></button>
             </>
           )}
@@ -288,18 +305,6 @@ export function WorshipQueue({
       </div>
 
       {projectionMessage && <div className="projection-message" role="status"><Info size={17} /><span>{projectionMessage}</span><button type="button" onClick={() => setProjectionMessage('')} aria-label="Dismiss projection message"><X size={15} /></button></div>}
-
-      {activeService && queue.length > 1 && (
-        <div className={`worship-queue__auto-next ${autoAdvance ? 'is-on' : ''}`}>
-          <div>
-            <span><SkipForward size={15} /> Automatic next video</span>
-            <small>{autoAdvance ? 'On — the next video starts when the current video finishes.' : 'Off by default — turn it on when you want uninterrupted playback.'}</small>
-          </div>
-          <button type="button" aria-pressed={autoAdvance} onClick={toggleAutoAdvance}>
-            {autoAdvance ? 'Auto-next on' : 'Turn on auto-next'}
-          </button>
-        </div>
-      )}
 
       {playingItem && !projectionActive && (
         <div className="worship-queue__player-card">
@@ -309,7 +314,11 @@ export function WorshipQueue({
               <h3>{playingItem.title}</h3>
               <p>{playingItem.artist}</p>
             </div>
-            <button type="button" className="worship-queue__icon-btn" onClick={() => setPlayingIndex(null)} title="Close player" aria-label="Close player"><X size={18} /></button>
+            <button type="button" className="worship-queue__icon-btn" onClick={() => {
+              setPlayingIndex(null);
+              setPlaybackRevision((value) => value + 1);
+              publishProjectionState({ queue, playingIndex: null, playbackRevision: playbackRevision + 1 });
+            }} title="Close player" aria-label="Close player"><X size={18} /></button>
           </div>
           <div className="worship-queue__video-container">
             <YouTubePlayer
@@ -323,9 +332,9 @@ export function WorshipQueue({
             />
           </div>
           <div className="worship-queue__player-controls">
-            <button type="button" disabled={playingIndex! <= 0} onClick={() => setPlayingIndex((previous) => previous != null && previous > 0 ? previous - 1 : previous)}><SkipBack size={16} /> Previous</button>
-            <button type="button" onClick={() => setPlaybackRevision((value) => value + 1)}><RotateCcw size={16} /> Restart video</button>
-            <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => setPlayingIndex((previous) => previous != null && previous < queue.length - 1 ? previous + 1 : previous)}>Next <SkipForward size={16} /></button>
+            <button type="button" disabled={playingIndex! <= 0} onClick={() => selectVideo(playingIndex! - 1)}><SkipBack size={16} /> Previous</button>
+            <button type="button" onClick={() => selectVideo(playingIndex!)}><RotateCcw size={16} /> Restart video</button>
+            <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => selectVideo(playingIndex! + 1)}>Next <SkipForward size={16} /></button>
           </div>
         </div>
       )}
@@ -334,15 +343,17 @@ export function WorshipQueue({
         <div className="projection-controller" role="region" aria-label="Private projection controls">
           <div className="projection-controller__status"><span>LIVE ON CHURCH SCREEN{autoAdvance ? ' · AUTO-NEXT ON' : ''}</span><strong>{playingItem.title}</strong><small>{playingItem.artist}</small></div>
           <div className="projection-controller__controls">
-            <button type="button" disabled={playingIndex! <= 0} onClick={() => setPlayingIndex((previous) => previous != null && previous > 0 ? previous - 1 : previous)}><SkipBack size={16} /> Previous</button>
-            <button type="button" onClick={() => setPlaybackRevision((value) => value + 1)}><RotateCcw size={16} /> Restart</button>
-            <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => setPlayingIndex((previous) => previous != null && previous < queue.length - 1 ? previous + 1 : previous)}>Next <SkipForward size={16} /></button>
+            <button type="button" disabled={playingIndex! <= 0} onClick={() => selectVideo(playingIndex! - 1)}><SkipBack size={16} /> Previous</button>
+            <button type="button" onClick={() => selectVideo(playingIndex!)}><RotateCcw size={16} /> Restart</button>
+            <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => selectVideo(playingIndex! + 1)}>Next <SkipForward size={16} /></button>
             <button type="button" className="is-stop" onClick={() => {
               projectionWindowRef.current?.close();
               projectionWindowRef.current = null;
               setProjectionActive(false);
               setPlayingIndex(null);
+              setPlaybackRevision((value) => value + 1);
               setAutoAdvance(false);
+              publishProjectionState({ queue, playingIndex: null, playbackRevision: playbackRevision + 1 });
               setProjectionMessage('Projection stopped.');
             }}><X size={16} /> Stop projection</button>
           </div>
@@ -377,10 +388,10 @@ export function WorshipQueue({
                   {hasTrim && <div className="worship-queue__trim-summary"><Scissors size={12} /> Play {formatPlaybackTime(item.startSeconds) || 'from start'} to {formatPlaybackTime(item.endSeconds) || 'video end'}</div>}
                 </div>
                 <div className="worship-queue__item-actions">
-                  <button type="button" className="worship-queue__btn-play" onClick={() => playAt(index)}><Play size={13} /> {isPlaying ? 'Restart' : 'Play'}</button>
+                  <button type="button" className="worship-queue__btn-play" onClick={() => selectVideo(index)}><Play size={13} /> {isPlaying ? 'Restart' : projectionActive ? 'Show' : 'Play'}</button>
                   {user && <button type="button" className={`worship-queue__btn-trim ${hasTrim ? 'has-trim' : ''}`} onClick={() => isEditingTiming ? setTimingEditorId(null) : startTimingEdit(item)} title="Set clean start and stop times"><Scissors size={14} /><span>Trim</span></button>}
-                  <button type="button" disabled={index === 0} onClick={() => update(moveWorshipQueueItem(queue, index, -1))} title="Move up" aria-label={`Move ${item.title} up`}><ArrowUp size={14} /></button>
-                  <button type="button" disabled={index === queue.length - 1} onClick={() => update(moveWorshipQueueItem(queue, index, 1))} title="Move down" aria-label={`Move ${item.title} down`}><ArrowDown size={14} /></button>
+                  <button type="button" disabled={index === 0} onClick={() => moveAt(index, -1)} title="Move up" aria-label={`Move ${item.title} up`}><ArrowUp size={14} /></button>
+                  <button type="button" disabled={index === queue.length - 1} onClick={() => moveAt(index, 1)} title="Move down" aria-label={`Move ${item.title} down`}><ArrowDown size={14} /></button>
                   <button type="button" className="worship-queue__btn-remove" onClick={() => removeAt(index)} title="Remove" aria-label={`Remove ${item.title}`}><Trash2 size={14} /></button>
                 </div>
                 {isEditingTiming && (
