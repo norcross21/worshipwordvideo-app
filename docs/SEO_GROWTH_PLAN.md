@@ -34,7 +34,7 @@ The exact phrase “worship word lyrics” is now present in the home-page title
 
 ## What is implemented in the site
 
-- 138 validated canonical pages in the current sitemap, each backed by visible catalogue information or original church guidance.
+- 158 validated canonical pages in the current sitemap, each backed by visible catalogue information or original church guidance.
 - Descriptive home-page title, meta description, canonical URL, robots directives and large social share card.
 - Schema.org `WebSite`, `Organization`, `WebApplication`, `CollectionPage`, `ItemList`, `BreadcrumbList`, `Article` and `HowTo` structured data where those types describe visible page content.
 - Useful initial HTML before the React application loads, so crawlers that do not execute JavaScript can still understand the service and follow its main links.
@@ -42,8 +42,10 @@ The exact phrase “worship word lyrics” is now present in the home-page title
 - 11 worship-arrangement pages covering contemporary, gospel, choir, traditional hymn, live, acoustic and other useful styles.
 - Six church-season pages for Advent, Christmas, Lent and Holy Week, Easter, Pentecost, Harvest and Thanksgiving.
 - Six lyrics-and-subtitle-format pages that clearly distinguish English words, translated subtitles, native-language words, English subtitles and bilingual videos.
-- Five curated song-family pages covering Goodness of God, Way Maker, The Blessing, What a Beautiful Name and Oceans across their credible language versions.
-- Five original church guides covering worship word lyrics, churches without musicians, video selection, multilingual worship and second-screen projection.
+- 24 curated song-family pages covering more than 900 named-language word/subtitle videos. They include Goodness of God, Way Maker, The Blessing, Holy Forever, Living Hope, Here I Am to Worship, In Christ Alone and other familiar songs whose catalogue evidence supports at least three named languages.
+- Six original church guides covering worship word lyrics, churches without musicians, video selection, multilingual worship, second-screen projection and a careful fluent-speaker review process.
+- Multilingual song-family counts exclude entries labelled **Language not stated**, rather than presenting an unknown language as a confirmed translation.
+- The public finder now uses maintained YouTube audit titles as word evidence where the short catalogue title omits “lyrics” or “subtitles”. Its **Well-known songs** filter uses chart and multi-hymnal evidence rather than behaving like a duplicate words filter.
 - XML sitemap, `robots.txt`, RSS feed, OpenSearch description, web app manifest and an explanatory `llms.txt` file.
 - IndexNow integration for Bing and participating search engines.
 - Crawlable internal links from the application footer and a small discovery section below the finder.

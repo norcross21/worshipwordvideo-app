@@ -17,14 +17,14 @@ Let a visitor receive value before asking for support. The finder should feel li
 - Signed-in members do not receive the automatic popup.
 - The permanent **Support Kairos** control remains available for people who actively want to give.
 - Donation copy consistently explains Kairos Housing’s work, uses **Rebuilding lives with dignity**, and sends people to the charity’s internal donation page.
+- A member with at least three saved services sees a small optional thank-you and Kairos link only inside their account area. It never opens by itself or interrupts planning or playback.
 
 ### Recommended next stages
 
-1. After a member saves or successfully presents several services, show a small non-modal thank-you panel in the account area. Do not interrupt playback or service preparation.
-2. Use the existing optional email consent to send occasional impact stories. Keep charity news useful and make unsubscribing simple.
-3. Explain tangible outcomes on the donation page—for example what a gift helps Kairos provide—using figures approved by the charity.
-4. Measure the journey anonymously and minimally: finder used, donation invitation shown, donation link selected and returning visit. Review privacy and consent requirements before adding any marketing analytics.
-5. Test only one change at a time. Donation-link clicks are useful, but returning churches and completed service plans are stronger signs that trust is growing.
+1. Use the existing optional email consent to send occasional impact stories. Keep charity news useful and make unsubscribing simple.
+2. Explain tangible outcomes on the donation page—for example what a gift helps Kairos provide—using figures approved by the charity.
+3. Measure the journey anonymously and minimally: finder used, donation invitation shown, donation link selected and returning visit. Review privacy and consent requirements before adding any marketing analytics.
+4. Test only one change at a time. Donation-link clicks are useful, but returning churches and completed service plans are stronger signs that trust is growing.
 
 ## Usability priorities
 
@@ -36,8 +36,8 @@ Let a visitor receive value before asking for support. The finder should feel li
 
 ## Discovery priorities
 
-1. Expand the curated song-family pages only when a familiar song has several credible language versions.
-2. Invite fluent worship leaders to review particular language collections and credit their review with permission.
+1. Continue expanding the 24 curated song-family pages only when a familiar song has several credible named-language versions.
+2. Use the published reviewer guide to invite fluent worship leaders to review particular language collections and credit their review only with permission.
 3. Publish practical church guides that answer real questions about projection, licensing, churches without musicians and multilingual participation.
 4. Ask relevant churches and sanctuary networks to recommend the most useful deep page, not always the homepage.
 5. Use Google Search Console data to decide which collections deserve improvement. Do not create thousands of thin pages simply to increase the sitemap count.

@@ -132,6 +132,11 @@ export function songHymnalReferences(song: WorshipSong): HymnalReference[] {
   }];
 }
 
+/** Familiar current songs or hymns represented in more than one maintained book. */
+export function isWellKnownSong(song: WorshipSong): boolean {
+  return song.ccliUkRank != null || songHymnalReferences(song).length >= 2;
+}
+
 export function songMusicStyle(song: WorshipSong): MusicStyle {
   const identity = `${song.artist} ${song.title} ${song.tune ?? ''}`.toLowerCase();
   if (MUSIC_STYLES.includes(song.category as MusicStyle)) return song.category as MusicStyle;

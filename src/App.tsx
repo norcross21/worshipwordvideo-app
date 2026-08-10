@@ -393,7 +393,7 @@ function MainApp() {
         <section className="member-value-bar" aria-label="Member account benefits">
           <div className="member-value-bar__message">
             <span className="member-value-bar__icon" aria-hidden="true"><Sparkles size={17} /></span>
-            <p><strong>Planning a worship service?</strong> Create an account to save and reuse services, set clean video start and finish points, and present on a distraction-free second screen.</p>
+            <p><strong>Planning a service?</strong> Save playlists, tidy start and finish points, and use a clean church screen.</p>
           </div>
           <div className="member-value-bar__actions">
             <button type="button" className="member-value-bar__create" onClick={() => setAuthModalTab('signup')}>Create an account</button>
@@ -482,7 +482,7 @@ function MainApp() {
 
       {showAccountModal && user && (
         <Suspense fallback={null}>
-          <AccountModal onClose={() => setShowAccountModal(false)} />
+          <AccountModal savedServiceCount={availableServices.length} onClose={() => setShowAccountModal(false)} />
         </Suspense>
       )}
 

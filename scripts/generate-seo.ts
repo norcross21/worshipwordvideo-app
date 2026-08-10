@@ -4,6 +4,7 @@ import { getFullSongLibrary } from '../src/data/songLibraryStore';
 import { inferWorshipSeasons, WORSHIP_SEASONS, type WorshipSeason } from '../src/data/songSeason';
 import { LANGUAGE_PRESENTATIONS, inferLanguagePresentation, inferWorshipArrangement } from '../src/data/songPresentation';
 import { videoTitleIndicatesWords } from '../src/data/videoApproval';
+import { WORSHIP_VIDEO_AUDIT } from '../src/data/worshipVideoAudit';
 import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs';
 
 const SITE = 'https://www.worshipwordvideo.org';
@@ -38,6 +39,33 @@ const SONG_FAMILIES: SongFamilyDefinition[] = [
     title: 'Oceans (Where Feet May Fail)',
     matchingTitles: ['Oceans (Where Feet May Fail)', 'Oceans Where Feet May Fail'],
   },
+  {
+    slug: '10000-reasons-bless-the-lord',
+    title: '10,000 Reasons (Bless the Lord)',
+    matchingTitles: ['10,000 Reasons (Bless the Lord)', '10,000 Reasons'],
+  },
+  { slug: 'build-my-life', title: 'Build My Life', matchingTitles: ['Build My Life'] },
+  { slug: 'holy-forever', title: 'Holy Forever', matchingTitles: ['Holy Forever'] },
+  { slug: 'living-hope', title: 'Living Hope', matchingTitles: ['Living Hope'] },
+  {
+    slug: 'amazing-grace-my-chains-are-gone',
+    title: 'Amazing Grace (My Chains Are Gone)',
+    matchingTitles: ['Amazing Grace (My Chains Are Gone)', 'Amazing Grace My Chains Are Gone'],
+  },
+  { slug: 'amazing-grace', title: 'Amazing Grace', matchingTitles: ['Amazing Grace'] },
+  { slug: 'how-great-is-our-god', title: 'How Great Is Our God', matchingTitles: ['How Great Is Our God'] },
+  { slug: 'here-i-am-to-worship', title: 'Here I Am to Worship', matchingTitles: ['Here I Am to Worship'] },
+  { slug: 'great-are-you-lord', title: 'Great Are You Lord', matchingTitles: ['Great Are You Lord'] },
+  { slug: 'king-of-kings', title: 'King of Kings', matchingTitles: ['King of Kings'] },
+  { slug: 'in-christ-alone', title: 'In Christ Alone', matchingTitles: ['In Christ Alone'] },
+  { slug: 'cornerstone', title: 'Cornerstone', matchingTitles: ['Cornerstone'] },
+  { slug: 'mighty-to-save', title: 'Mighty to Save', matchingTitles: ['Mighty to Save'] },
+  { slug: 'good-good-father', title: 'Good Good Father', matchingTitles: ['Good Good Father'] },
+  { slug: 'reckless-love', title: 'Reckless Love', matchingTitles: ['Reckless Love'] },
+  { slug: 'o-come-to-the-altar', title: 'O Come to the Altar', matchingTitles: ['O Come to the Altar'] },
+  { slug: 'no-longer-slaves', title: 'No Longer Slaves', matchingTitles: ['No Longer Slaves'] },
+  { slug: 'who-you-say-i-am', title: 'Who You Say I Am', matchingTitles: ['Who You Say I Am'] },
+  { slug: 'how-great-thou-art', title: 'How Great Thou Art', matchingTitles: ['How Great Thou Art'] },
 ];
 
 const PRESENTATION_PAGE_DETAILS: Record<LanguagePresentation, {
@@ -128,9 +156,15 @@ function belongsToSongFamily(song: WorshipSong, family: SongFamilyDefinition): b
 }
 
 function hasPublicWordEvidence(song: WorshipSong): boolean {
+  const audit = WORSHIP_VIDEO_AUDIT[song.youtubeId];
   return song.wordsIndicated === true
     || Boolean(song.wordEvidence)
-    || videoTitleIndicatesWords(song.title);
+    || videoTitleIndicatesWords(song.title)
+    || videoTitleIndicatesWords(audit?.title ?? '');
+}
+
+function hasNamedLanguage(song: WorshipSong): boolean {
+  return (song.language ?? 'English') !== 'Language not stated';
 }
 
 function canonicalUrl(path: string): string {
@@ -279,6 +313,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
   <section class="seo-section seo-help">
     <h2>Use a video confidently in church</h2>
     <ol><li>Open the filtered finder and preview the exact linked upload.</li><li>Check whether the vocals, on-screen words and subtitles match your congregation.</li><li>Add it to a service playlist and trim silence or spoken introductions.</li><li>Open the clean projection window on the church's second screen.</li></ol>
+    <p><a class="seo-text-link" href="/guides/review-multilingual-worship-videos/">Help review this language collection →</a></p>
   </section>
   <section class="seo-section"><h2>Explore other language collections</h2><div class="seo-link-grid">${related.map((item) => `<a href="/languages/${slugify(item)}/">${escapeHtml(item)} worship videos</a>`).join('')}</div></section>`;
 
@@ -466,7 +501,11 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   const count = songs.length;
   const presentationFormatCount = new Set(songs.map(inferLanguagePresentation)).size;
   const query = new URLSearchParams({ q: family.title });
-  const description = `Find ${family.title} worship videos in ${languages.length} languages, including versions with on-screen lyrics, native words, translations or subtitles for churches.`;
+  const description = `Find ${family.title} in ${languages.length} languages, with lyric, subtitle and translated worship videos for multilingual church services.`;
+  const fullPageTitle = `${family.title} in Different Languages | Worship Videos`;
+  const pageTitle = fullPageTitle.length <= 65
+    ? fullPageTitle
+    : `${family.title} Languages | Worship Videos`;
   const languageCards = languages.map(([language, languageSongs]) => {
     const languageQuery = new URLSearchParams({ q: family.title, language });
     const formats = countBy(languageSongs, inferLanguagePresentation);
@@ -480,9 +519,7 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   <section class="seo-section seo-help"><h2>Check the exact version before church</h2><p>These are links to public YouTube uploads, not copies of the song or lyrics. A familiar English title can refer to a translation, adaptation, cover or subtitled original. Preview the complete video, ask a fluent speaker to review translated words and theology, and confirm the licences needed for your service.</p></section>`;
   return {
     path: `/songs/${family.slug}/`,
-    title: family.slug === 'oceans-where-feet-may-fail'
-      ? 'Oceans in Different Languages | Worship Lyric Videos'
-      : `${family.title} in Different Languages | Lyric Videos`,
+    title: pageTitle,
     description,
     body,
     schema: [
@@ -602,6 +639,17 @@ const GUIDE_PAGES: SeoPage[] = [
       breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Second-screen projection', path: '/guides/second-screen-church-projection/' }]),
     ],
   },
+  {
+    path: '/guides/review-multilingual-worship-videos/',
+    title: 'Help Review Multilingual Worship Videos | Churches',
+    description: 'A careful review process for fluent speakers and church leaders checking multilingual worship videos, translations, subtitles and catalogue labels.',
+    openGraphType: 'article',
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/guides/">Guides</a><span>›</span><span>Language review</span></nav><article class="seo-hero"><p class="seo-eyebrow">Catalogue quality</p><h1>Help review multilingual worship videos</h1><p class="seo-lead">Automated checks can confirm a public video link and read uploader metadata, but only people can judge whether the language, translation, theology and cultural context are suitable for worship.</p><div class="seo-actions"><a class="seo-button" href="/languages/">Choose a language collection</a><a class="seo-button seo-button--quiet" href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20language%20review">Volunteer to review</a></div></article><section class="seo-section"><h2>Who should review?</h2><p>A useful review normally combines a fluent or native speaker with a trusted church or worship leader. Fluency helps with spelling, natural phrasing and subtitle meaning; church experience helps with theology, denominational context and whether the arrangement is practical for congregational singing.</p></section><section class="seo-section"><h2>A clear review checklist</h2><ol><li>Record the exact Worship Word Video page and YouTube URL so the correct upload is reviewed.</li><li>Watch the complete video, including introductions, spoken sections and ending screens.</li><li>Identify the sung language and the language of any visible words or subtitles separately.</li><li>Check whether it is a translation of the familiar song, an adaptation, or a different song with a similar title.</li><li>Check spelling, meaning, verse order, theology, readable timing, sound quality and suitability for congregational singing.</li><li>Report any concern without copying full copyrighted lyrics into the message.</li></ol></section><section class="seo-section"><h2>How review credits will work</h2><p>A reviewer can choose whether to be credited by name, church or organisation. No credit will be published without permission. A review describes the exact video and date checked; it does not guarantee that a third-party upload will remain unchanged or available.</p><p><a class="seo-text-link" href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20language%20review">Contact Worship Word Video about a language review →</a></p></section><section class="seo-section seo-help"><h2>What the catalogue currently means</h2><p>“Words indicated” means public uploader wording or maintained catalogue metadata signals lyrics, words or subtitles. It is not the same as a fluent-language review. Churches should continue to preview every exact upload before public use and confirm their own music, projection and streaming permissions.</p></section>`,
+    schema: [
+      { '@type': 'Article', '@id': `${SITE}/guides/review-multilingual-worship-videos/#article`, headline: 'Help review multilingual worship videos', description: 'A practical review process for fluent speakers and church leaders checking multilingual worship videos.', mainEntityOfPage: `${SITE}/guides/review-multilingual-worship-videos/`, datePublished: LAST_MODIFIED, dateModified: LAST_MODIFIED, image: `${SITE}/og-cover.png`, author: { '@id': `${SITE}/#organization` }, publisher: { '@id': `${SITE}/#organization` } },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Language review', path: '/guides/review-multilingual-worship-videos/' }]),
+    ],
+  },
 ];
 
 async function writePage(page: SeoPage): Promise<void> {
@@ -630,10 +678,18 @@ async function removeDuplicateIndexFiles(parent: string): Promise<void> {
 
 async function generate(): Promise<void> {
   const playableSongs = getFullSongLibrary().filter((song) => Boolean(song.youtubeId));
+  const publicSongs = playableSongs.map((song) => ({
+    ...song,
+    wordsIndicated: hasPublicWordEvidence(song),
+    catalogueReview: song.catalogueReview ?? (WORSHIP_VIDEO_AUDIT[song.youtubeId] && hasPublicWordEvidence(song)
+      ? 'Word evidence and embed checked'
+      : undefined),
+    qualityCheckedOn: song.qualityCheckedOn ?? WORSHIP_VIDEO_AUDIT[song.youtubeId]?.auditedAt,
+  }));
   await mkdir(resolve(PUBLIC_DIR, 'catalogue'), { recursive: true });
   await writeFile(
     resolve(PUBLIC_DIR, 'catalogue', 'worship-songs.json'),
-    JSON.stringify({ version: 1, songs: playableSongs }),
+    JSON.stringify({ version: 1, songs: publicSongs }),
     'utf8',
   );
   const uniquePlayableVideos = new Set(playableSongs.map((song) => song.youtubeId)).size;
@@ -676,7 +732,7 @@ async function generate(): Promise<void> {
   const presentationPages = presentations.map(([presentation, songs]) => presentationPage(presentation, songs));
 
   const songFamilies = SONG_FAMILIES
-    .map((family) => [family, playableSongs.filter((song) => belongsToSongFamily(song, family) && hasPublicWordEvidence(song))] as const)
+    .map((family) => [family, playableSongs.filter((song) => belongsToSongFamily(song, family) && hasPublicWordEvidence(song) && hasNamedLanguage(song))] as const)
     .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 3);
   const songFamilyPages = songFamilies.map(([family, songs]) => songFamilyPage(family, songs));
 

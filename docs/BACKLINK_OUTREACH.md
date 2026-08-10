@@ -77,6 +77,7 @@ Worship Word Video is a free finder for churches looking for YouTube worship and
 | Multilingual, refugee-welcoming or international churches | `https://www.worshipwordvideo.org/languages/` |
 | Churches looking for translated words or English subtitles | `https://www.worshipwordvideo.org/formats/` |
 | Articles about familiar worship songs used across cultures | `https://www.worshipwordvideo.org/songs/` |
+| Fluent speakers or worship leaders willing to review translations | `https://www.worshipwordvideo.org/guides/review-multilingual-worship-videos/` |
 | Advent, Christmas, Lent, Easter, Pentecost or Harvest planning | `https://www.worshipwordvideo.org/seasons/` |
 | General worship lyrics and word-video searches | `https://www.worshipwordvideo.org/guides/worship-word-lyrics/` |
 

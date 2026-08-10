@@ -3455,6 +3455,11 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .account-email { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid #dbe5ed; border-radius: var(--radius-sm); color: #173478; background: #f7f9fc; }
 .account-email small { color: var(--color-text-muted); }
 .account-privacy-note { margin: 0; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.5; }
+.account-support-note { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.7rem; padding: 0.75rem; border: 1px solid #cce8e3; border-radius: var(--radius-sm); color: #28435b; background: #f2fbf9; }
+.account-support-note__icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; color: #fff; background: #087e76; }
+.account-support-note strong { display: block; color: var(--color-brand-navy); font-size: 0.82rem; }
+.account-support-note p { margin: 0.18rem 0 0; font-size: 0.73rem; line-height: 1.45; }
+.account-support-note a { display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; color: #087e76; font-size: 0.75rem; font-weight: 800; }
 .save-queue-box__details { display: grid; grid-template-columns: minmax(150px, 0.65fr) minmax(220px, 1.35fr); gap: 0.65rem; margin-top: 0.65rem; }
 .save-queue-box__details label { display: grid; gap: 0.25rem; color: #40546d; font-size: 0.74rem; font-weight: 750; }
 .save-queue-box__details label span { color: var(--color-text-muted); font-weight: 600; }
@@ -3480,6 +3485,8 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   .modal-card--account .modal-form { overflow-y: auto; }
   .account-email { grid-template-columns: auto 1fr; }
   .account-email small { grid-column: 2; }
+  .account-support-note { grid-template-columns: auto minmax(0, 1fr); }
+  .account-support-note a { grid-column: 2; }
   .admin-dashboard__actions { width: 100%; justify-content: stretch; }
   .admin-dashboard__actions button { flex: 1; }
 }

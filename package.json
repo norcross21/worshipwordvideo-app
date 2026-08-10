@@ -25,7 +25,8 @@
     "catalogue:research:channels": "python3 scripts/research-trusted-channels.py",
     "catalogue:import:channels": "python3 scripts/import-trusted-channel-candidates.py",
     "catalogue:import-research": "python3 scripts/import-research-candidates.py",
-    "catalogue:report": "vite-node scripts/catalogue-report.ts"
+    "catalogue:report": "vite-node scripts/catalogue-report.ts",
+    "catalogue:song-families": "vite-node scripts/report-song-families.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.2",

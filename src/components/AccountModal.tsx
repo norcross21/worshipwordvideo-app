@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Building2, CheckCircle2, Heart, Mail, Save, UserRound, X } from 'lucide-react';
+import { Building2, CheckCircle2, ExternalLink, Heart, ListMusic, Mail, Save, UserRound, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabaseErrorMessage } from '../lib/supabase';
 import { LegalModal } from './LegalModal';
 
 interface AccountModalProps {
+  savedServiceCount?: number;
   onClose: () => void;
 }
 
-export function AccountModal({ onClose }: AccountModalProps) {
+export function AccountModal({ savedServiceCount = 0, onClose }: AccountModalProps) {
   const { user, profile, profileLoading, updateProfile } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [churchName, setChurchName] = useState('');
@@ -90,6 +91,16 @@ export function AccountModal({ onClose }: AccountModalProps) {
           </div>
 
           <p className="account-privacy-note">Account email records are kept while your membership is active and as needed for security or legal duties. Marketing choices are recorded so Kairos can honour your preference.</p>
+          {savedServiceCount >= 3 ? (
+            <aside className="account-support-note" aria-label="Optional support for Kairos Housing">
+              <span className="account-support-note__icon" aria-hidden="true"><ListMusic size={18} /></span>
+              <div>
+                <strong>Thank you for planning {savedServiceCount} services with us</strong>
+                <p>If the tool is saving your church time, you can make an optional gift to Kairos Housing — <em>Rebuilding lives with dignity</em>.</p>
+              </div>
+              <a href="https://operations.kairoshousing.org.uk/donate" target="_blank" rel="noreferrer">Support Kairos <ExternalLink size={13} /></a>
+            </aside>
+          ) : null}
           <div className="modal-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>Close</button>
             <button type="submit" className="btn-primary" disabled={saving || profileLoading}><Save size={15} /> {saving ? 'Saving…' : 'Save account'}</button>

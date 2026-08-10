@@ -6,7 +6,6 @@ import {
   ListPlus,
   ExternalLink,
   BookOpen,
-  CheckCircle2,
   Sparkles,
   Music,
   Globe2,
@@ -18,6 +17,7 @@ import {
   loadRuntimeSongLibrary,
   languageFiltersForSongs,
   getApprovedRuntimeVideos,
+  isWellKnownSong,
   songMatchesSearch,
   songHymnalReferences,
   songMusicStyle,
@@ -177,7 +177,7 @@ export function SongLibraryDashboard({
       // 2. Music Style / Category
       if (selectedCategory !== 'All') {
         const style = songMusicStyle(song);
-        if (selectedCategory === 'Well-known' && song.wordsIndicated !== true) {
+        if (selectedCategory === 'Well-known' && !isWellKnownSong(song)) {
           return false;
         } else if (selectedCategory !== 'Well-known' && style !== selectedCategory) {
           return false;
@@ -259,7 +259,10 @@ export function SongLibraryDashboard({
           <label className="language-select">
             <Globe2 size={16} />
             <span className="sr-only">Language</span>
-            <select value={selectedLanguage} onChange={(event) => setSelectedLanguage(event.target.value)} aria-label="Filter by language">
+            <select value={selectedLanguage} onChange={(event) => {
+              setSelectedLanguage(event.target.value);
+              if (event.target.value !== 'all') onVisitorEngaged?.();
+            }} aria-label="Filter by language">
               <option value="all">All languages</option>
               {languageFilters.map((language) => <option key={language} value={language}>{language}</option>)}
             </select>
@@ -285,6 +288,7 @@ export function SongLibraryDashboard({
             <span><Music size={13} /> Worship style</span>
             <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value as 'All' | 'Well-known' | MusicStyle)} aria-label="Filter by worship style">
               <option value="All">All styles</option>
+              <option value="Well-known">Well-known songs</option>
               {MUSIC_STYLES.map((style) => <option key={style} value={style}>{style}</option>)}
             </select>
           </label>
@@ -362,8 +366,6 @@ export function SongLibraryDashboard({
               {filteredSongs.slice(0, visibleSongCount).map((song) => {
                 const isSelected = selectedSong?.id === song.id;
                 const hymnalRefs = songHymnalReferences(song);
-                const isWordVideo = song.wordsIndicated === true || approvedVideoIds.has(song.youtubeId);
-
                 return (
                   <button
                     type="button"
@@ -382,11 +384,6 @@ export function SongLibraryDashboard({
                       {song.language && <span className="badge-language"><Globe2 size={11} /> {song.language}</span>}
                       <span className="badge-arrangement">{inferWorshipArrangement(song)}</span>
                       <span className="badge-presentation">{shortPresentationLabel(inferLanguagePresentation(song))}</span>
-                      {isWordVideo && (
-                        <span className="badge-verified-words" title="Verified Word Video">
-                          <CheckCircle2 size={12} /> Words
-                        </span>
-                      )}
                       {hymnalRefs.length > 0 && (
                         <span className="badge-hymnal">
                           {hymnalRefs[0].shortName || hymnalRefs[0].hymnal} #{hymnalRefs[0].number}
@@ -433,7 +430,7 @@ export function SongLibraryDashboard({
                   </div>
                   {selectedSong.catalogueReview && (
                     <p className="song-detail__review-note">
-                      Checked{selectedSong.qualityCheckedOn ? ` on ${selectedSong.qualityCheckedOn}` : ''}. Preview the exact video before using it in church.
+                      YouTube link and uploader wording checked{selectedSong.qualityCheckedOn ? ` on ${selectedSong.qualityCheckedOn}` : ''}; this is not a fluent-language or theological review. Preview the complete video before using it in church.
                     </p>
                   )}
                 </div>
