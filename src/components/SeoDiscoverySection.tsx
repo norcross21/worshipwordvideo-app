@@ -36,9 +36,9 @@ export function SeoDiscoverySection() {
           <MonitorPlay size={22} />
           <span><strong>Simple church projection</strong><small>Keep controls private on a second screen</small></span>
         </a>
-        <a href="/guides/church-youtube-lyric-videos/">
+        <a href="/guides/worship-word-lyrics/">
           <BookOpenCheck size={22} />
-          <span><strong>Choose videos responsibly</strong><small>Accuracy, suitability and licensing checklist</small></span>
+          <span><strong>Find worship word lyrics</strong><small>Lyric videos, hymns, subtitles and useful search tips</small></span>
         </a>
       </div>
 

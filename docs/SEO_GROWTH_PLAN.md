@@ -1,15 +1,37 @@
 # Worship Word Video: SEO and Discovery Plan
 
-Last updated: 9 August 2026
+Last updated: 10 August 2026
+
+## Current Google position
+
+- Google is indexing the home page and many of the dedicated language collections. A public `site:worshipwordvideo.org` check shows the home page first and language pages across several result pages.
+- The broad searches **worship word lyrics**, **worship lyric videos for churches** and **free worship lyric videos for church** do not yet show Worship Word Video prominently on the first page. The site has index coverage, but it has not yet built enough relevance and authority for those competitive searches.
+- Google's displayed home-page result is stale and still mentions 15,000 videos and 85 languages. The previous source metadata also lagged behind at 25,000 videos and 87 languages. The page now uses durable wording—tens of thousands of videos and more than 100 named languages—so future catalogue growth will not make the search result inaccurate again.
+- Exact query impressions, clicks, click-through rate and average position must be read from the verified Google Search Console property. Public checks are useful evidence, but they are not a substitute for Search Console's measurements.
+
+## Search intent and page map
+
+Use one strong page for each distinct church need. Do not create near-duplicate pages for spelling variations.
+
+| Search intent | Natural phrases to cover | Best page |
+| --- | --- | --- |
+| Main service | worship word lyrics; worship lyric videos for churches; worship songs with words | Home page and `/guides/worship-word-lyrics/` |
+| English churches | English worship songs with lyrics; church worship videos with words; hymns with lyrics | English language and arrangement collections |
+| Churches without musicians | worship videos for churches without musicians; YouTube worship for small churches | Home page and worship-word-lyrics guide |
+| Multilingual worship | multilingual worship songs with subtitles; translated worship songs; native-language worship videos with English subtitles | Language index and multilingual guide |
+| Service preparation | church worship playlist; worship video start and stop times; church projection screen | Member features and second-screen guide |
+| Styles and seasons | contemporary worship lyric videos; gospel songs with lyrics; choir worship videos; Christmas or Easter worship songs | Arrangement pages and in-app seasonal filters |
+
+The exact phrase “worship word lyrics” is now present in the home-page title, main heading, explanatory copy, site-name structured data and a substantial dedicated guide. Related phrases appear only where they accurately describe visible content.
 
 ## What is implemented in the site
 
 - Descriptive home-page title, meta description, canonical URL, robots directives and large social share card.
 - Schema.org `WebSite`, `Organization`, `WebApplication`, `CollectionPage`, `ItemList`, `BreadcrumbList`, `Article` and `HowTo` structured data where those types describe visible page content.
 - Useful initial HTML before the React application loads, so crawlers that do not execute JavaScript can still understand the service and follow its main links.
-- 77 substantial language collection pages generated from the current catalogue. Very small or unidentified language groups are not published as SEO pages.
+- Substantial language collection pages generated from the current catalogue. Very small or unidentified language groups are not published as SEO pages.
 - 11 worship-arrangement pages covering contemporary, gospel, choir, traditional hymn, live, acoustic and other useful styles.
-- Three original church guides covering video selection, multilingual worship and second-screen projection.
+- Four original church guides covering worship word lyrics, video selection, multilingual worship and second-screen projection.
 - XML sitemap, `robots.txt`, RSS feed, OpenSearch description, web app manifest and an explanatory `llms.txt` file.
 - IndexNow integration for Bing and participating search engines.
 - Crawlable internal links from the application footer and a small discovery section below the finder.
