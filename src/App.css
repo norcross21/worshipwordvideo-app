@@ -3249,6 +3249,8 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .projection-screen__waiting svg { color: #2db7aa; }
 .projection-screen__waiting h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 3rem); }
 .projection-screen__waiting p { margin: 0; color: #b4c0d1; line-height: 1.6; }
+.projection-screen__waiting small { color: #8291a6; font-size: 0.78rem; }
+.projection-screen__error { max-width: 520px; padding: 0.7rem 0.85rem; border: 1px solid #d49a56; border-radius: 9px; color: #ffe1b7; background: rgb(122 67 7 / 38%); font-size: 0.82rem; line-height: 1.45; }
 .projection-screen__tools { position: fixed; top: 0.8rem; right: 0.8rem; display: flex; gap: 0.45rem; opacity: 0; transition: opacity 160ms ease; }
 .projection-screen:hover .projection-screen__tools,
 .projection-screen__tools:focus-within { opacity: 1; }
@@ -4638,31 +4640,72 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .projection-guide__ready-check svg { flex: 0 0 auto; }
 .projection-guide__primary { width: 100%; min-height: 46px; justify-content: center; }
 
-.projection-screen__waiting ol {
-  display: grid;
-  gap: 0.45rem;
-  margin: 0.45rem 0;
-  padding-left: 1.25rem;
-  color: #d4deea;
-  text-align: left;
+.projection-guide__waiting-confirmation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #34536f;
+  font-size: 0.72rem;
+  font-weight: 750;
 }
 
-.projection-screen__waiting li { padding-left: 0.25rem; line-height: 1.45; }
+.projection-guide__waiting-confirmation > span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #149780;
+  box-shadow: 0 0 0 0 rgb(20 151 128 / 45%);
+  animation: projection-ready-pulse 1.5s infinite;
+}
+
+@keyframes projection-ready-pulse {
+  70% { box-shadow: 0 0 0 8px rgb(20 151 128 / 0%); }
+  100% { box-shadow: 0 0 0 0 rgb(20 151 128 / 0%); }
+}
+
+.projection-controller {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #7fc7bd;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eaf9f6, #f8fbff);
+  box-shadow: 0 10px 26px rgb(10 53 83 / 8%);
+}
+
+.projection-controller__status { display: grid; min-width: 0; gap: 0.12rem; }
+.projection-controller__status > span { color: #087565; font-size: 0.63rem; font-weight: 900; letter-spacing: 0.08em; }
+.projection-controller__status strong { overflow: hidden; color: #0b2f59; font-size: 0.9rem; text-overflow: ellipsis; white-space: nowrap; }
+.projection-controller__status small { overflow: hidden; color: #63788e; font-size: 0.68rem; text-overflow: ellipsis; white-space: nowrap; }
+.projection-controller__controls { display: flex; flex: 0 0 auto; gap: 0.4rem; }
+.projection-controller__controls button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.55rem 0.7rem; border: 1px solid #a9bfd2; border-radius: 8px; color: #163d65; background: #fff; font: inherit; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
+.projection-controller__controls button:hover:not(:disabled) { border-color: #0a7f72; color: #07665d; background: #eefaf7; }
+.projection-controller__controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+.projection-controller__controls button.is-stop { border-color: #e1aaaa; color: #a62b2b; }
+
 .projection-screen__fullscreen-primary {
   display: inline-flex;
-  min-height: 46px;
+  min-height: 58px;
   align-items: center;
   gap: 0.45rem;
   margin-top: 0.4rem;
-  padding: 0.7rem 1rem;
+  padding: 0.9rem 1.25rem;
   border: 1px solid #3cc2b2;
-  border-radius: 9px;
+  border-radius: 11px;
   color: #ffffff;
   background: #087c70;
   font: inherit;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 850;
   cursor: pointer;
 }
+
+.projection-screen__fullscreen-primary:hover,
+.projection-screen__fullscreen-primary:focus-visible { outline: 3px solid rgb(67 217 199 / 45%); outline-offset: 3px; background: #0a9585; }
+.projection-screen__fullscreen-primary:disabled { opacity: 0.7; cursor: wait; }
 
 .admin-table__actions { width: 52px; text-align: right !important; }
 .admin-delete-member {
@@ -4709,6 +4752,8 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   .video-trim-editor__capture-actions button.is-preview { grid-column: 1 / -1; }
   .video-trim-editor__capture-actions button[aria-label="Pause trim preview"] { grid-column: 1 / -1; }
   .worship-queue__empty-actions { align-items: stretch; flex-direction: column; }
+  .projection-controller { align-items: stretch; flex-direction: column; }
+  .projection-controller__controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 520px) {

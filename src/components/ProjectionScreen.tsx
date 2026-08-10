@@ -1,13 +1,58 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Maximize2, MonitorUp, X } from 'lucide-react';
-import { readProjectionState, subscribeToProjectionState } from '../data/projection';
+import {
+  publishProjectionCommand,
+  publishProjectionState,
+  readProjectionState,
+  subscribeToProjectionState,
+} from '../data/projection';
 import { formatPlaybackTime } from '../data/worshipQueue';
 import { YouTubePlayer } from './YouTubePlayer';
 
 export function ProjectionScreen() {
   const [projection, setProjection] = useState(readProjectionState);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
+  const [starting, setStarting] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState('');
+  const autoAttemptedRef = useRef(false);
+  const parameters = new URLSearchParams(window.location.search);
+  const launchId = parameters.get('launch') ?? '';
+  const wasPlaced = parameters.get('placed') === '1';
   const item = projection.playingIndex == null ? null : projection.queue[projection.playingIndex] ?? null;
+
+  const startService = useCallback(() => {
+    if (!projection.queue.length) return;
+    const next = publishProjectionState({
+      queue: projection.queue,
+      playingIndex: 0,
+      playbackRevision: projection.playbackRevision + 1,
+    });
+    setProjection(next);
+    publishProjectionCommand('start', launchId);
+  }, [launchId, projection]);
+
+  const enterFullscreen = useCallback(async (silent = false): Promise<boolean> => {
+    if (document.fullscreenElement) return true;
+    if (!document.fullscreenEnabled) {
+      if (!silent) setFullscreenError('This browser does not offer page full screen. The clean presentation window will remain maximised instead.');
+      return false;
+    }
+    try {
+      await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+      setFullscreenError('');
+      return true;
+    } catch {
+      if (!silent) setFullscreenError('Full screen was blocked. Click the button once more or use your browser’s full-screen command.');
+      return false;
+    }
+  }, []);
+
+  const enterFullscreenAndStart = async () => {
+    setStarting(true);
+    await enterFullscreen();
+    startService();
+    setStarting(false);
+  };
 
   useEffect(() => subscribeToProjectionState(setProjection), []);
   useEffect(() => {
@@ -16,19 +61,30 @@ export function ProjectionScreen() {
     const previousRobots = robotsMeta?.content;
     robotsMeta?.setAttribute('content', 'noindex, nofollow');
     const updateFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const announceClose = () => publishProjectionCommand('closed', launchId);
     document.addEventListener('fullscreenchange', updateFullscreen);
+    window.addEventListener('beforeunload', announceClose);
     return () => {
       document.body.classList.remove('projection-body');
       if (robotsMeta && previousRobots) robotsMeta.content = previousRobots;
       document.removeEventListener('fullscreenchange', updateFullscreen);
+      window.removeEventListener('beforeunload', announceClose);
     };
-  }, []);
+  }, [launchId]);
   useEffect(() => {
     document.title = item ? `${item.title} · Projection` : 'Worship projection';
   }, [item?.title]);
+  useEffect(() => {
+    if (autoAttemptedRef.current || item) return;
+    autoAttemptedRef.current = true;
+    void enterFullscreen(true).then((entered) => {
+      if (entered) startService();
+    });
+  }, [enterFullscreen, item, startService]);
 
-  const enterFullscreen = async () => {
-    try { await document.documentElement.requestFullscreen(); } catch { /* Browser keeps the button visible for a retry. */ }
+  const closeProjection = () => {
+    publishProjectionCommand('closed', launchId);
+    window.close();
   };
 
   return (
@@ -53,17 +109,21 @@ export function ProjectionScreen() {
         <div className="projection-screen__waiting">
           <MonitorUp size={52} />
           <h1>Church screen ready</h1>
-          <ol>
-            <li>Move this window onto the projector or second monitor if it is still on your dashboard.</li>
-            <li>Press the Full screen button below.</li>
-            <li>Return to the dashboard and choose Start the first video.</li>
-          </ol>
-          {!isFullscreen && <button type="button" className="projection-screen__fullscreen-primary" onClick={() => void enterFullscreen()}><Maximize2 size={19} /> Make this screen full screen</button>}
+          <p>{wasPlaced
+            ? 'One final confirmation keeps the browser secure. The service starts immediately after this screen enters full screen.'
+            : 'Place this clean window on the church display if needed. The service starts immediately after full screen opens.'}</p>
+          {!isFullscreen && (
+            <button type="button" autoFocus className="projection-screen__fullscreen-primary" onClick={() => void enterFullscreenAndStart()} disabled={starting}>
+              <Maximize2 size={22} /> {starting ? 'Starting presentation…' : 'Full screen and start'}
+            </button>
+          )}
+          <small>Press Enter to use the highlighted button.</small>
+          {fullscreenError && <div className="projection-screen__error" role="alert">{fullscreenError}</div>}
         </div>
       )}
       <div className="projection-screen__tools">
         {!isFullscreen && <button type="button" onClick={() => void enterFullscreen()}><Maximize2 size={17} /> Full screen</button>}
-        <button type="button" onClick={() => window.close()}><X size={17} /> Close</button>
+        <button type="button" onClick={closeProjection}><X size={17} /> Close</button>
       </div>
     </main>
   );

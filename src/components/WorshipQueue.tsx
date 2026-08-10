@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -21,7 +21,14 @@ import { VideoTrimEditor } from './VideoTrimEditor';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
 import { ProjectionSetupGuide, type ProjectionLaunchResult } from './ProjectionSetupGuide';
-import { publishProjectionState } from '../data/projection';
+import {
+  chooseProjectionScreen,
+  projectionPopupFeatures,
+  publishProjectionState,
+  subscribeToProjectionCommands,
+  type ProjectionScreenInfo,
+  type WindowWithScreenDetails,
+} from '../data/projection';
 import type { SavedUserPlaylist } from '../lib/supabase';
 import {
   WORSHIP_QUEUE_LIMIT,
@@ -42,12 +49,6 @@ interface WorshipQueueProps {
   onBrowseSongs?: () => void;
 }
 
-interface ScreenPlacement {
-  screens: Array<{ isPrimary?: boolean; availLeft: number; availTop: number; availWidth: number; availHeight: number }>;
-}
-
-type WindowWithScreenDetails = Window & { getScreenDetails?: () => Promise<ScreenPlacement> };
-
 export function WorshipQueue({
   queue,
   onChange,
@@ -67,6 +68,9 @@ export function WorshipQueue({
   const [timingError, setTimingError] = useState('');
   const [projectionMessage, setProjectionMessage] = useState('');
   const [showProjectionGuide, setShowProjectionGuide] = useState(false);
+  const [projectionActive, setProjectionActive] = useState(false);
+  const projectionWindowRef = useRef<Window | null>(null);
+  const projectionLaunchIdRef = useRef('');
   const playingItem = !activeService || playingIndex == null ? null : queue[playingIndex] ?? null;
 
   useEffect(() => {
@@ -76,6 +80,23 @@ export function WorshipQueue({
   useEffect(() => {
     publishProjectionState({ queue: activeService ? queue : [], playingIndex: activeService ? playingIndex : null, playbackRevision });
   }, [activeService?.id, queue, playingIndex, playbackRevision]);
+
+  useEffect(() => subscribeToProjectionCommands((command) => {
+    if (!command.launchId || command.launchId !== projectionLaunchIdRef.current) return;
+    if (command.type === 'start' && queue.length) {
+      setProjectionActive(true);
+      setPlayingIndex(0);
+      setPlaybackRevision((value) => value + 1);
+      setShowProjectionGuide(false);
+      setProjectionMessage('Live on the church screen. Use the private controls here to change videos.');
+    }
+    if (command.type === 'closed') {
+      setProjectionActive(false);
+      setPlayingIndex(null);
+      setShowProjectionGuide(false);
+      setProjectionMessage('The church projection window was closed.');
+    }
+  }), [queue.length]);
 
   const update = (next: WorshipQueueItem[]) => onChange(next.slice(0, WORSHIP_QUEUE_LIMIT));
 
@@ -135,39 +156,74 @@ export function WorshipQueue({
     publishProjectionState({ queue, playingIndex: null, playbackRevision: playbackRevision + 1 });
 
     const url = new URL(window.location.href);
-    url.search = '?projection=1';
+    url.search = '';
+    url.searchParams.set('projection', '1');
     url.hash = '';
-    const popup = window.open(url.toString(), 'worship-word-video-projection', 'popup=yes,width=1280,height=720');
+    const launchId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    projectionLaunchIdRef.current = launchId;
+    url.searchParams.set('launch', launchId);
+
+    if (projectionWindowRef.current && !projectionWindowRef.current.closed) projectionWindowRef.current.close();
+    const initialPlacement: ProjectionScreenInfo = {
+      availLeft: window.screenX + 40,
+      availTop: window.screenY + 40,
+      availWidth: Math.min(1280, window.screen.availWidth),
+      availHeight: Math.min(720, window.screen.availHeight),
+    };
+    const popup = window.open('', `worship-word-video-projection-${launchId}`, projectionPopupFeatures(initialPlacement));
     if (!popup) {
+      projectionLaunchIdRef.current = '';
+      setProjectionActive(false);
       setProjectionMessage('Your browser blocked the projection window. Allow pop-ups for this site, then try again.');
       return 'blocked';
     }
+    projectionWindowRef.current = popup;
+    try {
+      popup.document.title = 'Preparing church screen…';
+      popup.document.body.style.cssText = 'display:grid;place-items:center;min-height:100vh;margin:0;color:#fff;background:#06162d;font:700 22px system-ui,sans-serif';
+      popup.document.body.textContent = 'Preparing the church screen…';
+    } catch {
+      // The projection URL still loads if the browser restricts the temporary blank window.
+    }
     setPlaybackRevision((value) => value + 1);
-    setProjectionMessage('Projection window opened. Follow the final step to make it full screen, then start the service here.');
+    setProjectionActive(true);
 
     const multiScreenWindow = window as WindowWithScreenDetails;
+    let result: ProjectionLaunchResult = 'opened';
     if (multiScreenWindow.getScreenDetails) {
       try {
         const details = await multiScreenWindow.getScreenDetails();
-        const target = details.screens.find((screen) => !screen.isPrimary);
+        const target = chooseProjectionScreen(details);
         if (target) {
           popup.moveTo(target.availLeft, target.availTop);
           popup.resizeTo(target.availWidth, target.availHeight);
-          popup.focus();
-          setProjectionMessage('Projection placed on the second screen. Choose Full screen in that window.');
-          return 'placed';
+          url.searchParams.set('placed', '1');
+          result = 'placed';
+        } else if (details.screens.length < 2) {
+          result = 'single-screen';
         }
       } catch {
-        popup.focus();
+        result = 'opened';
       }
-    } else {
-      popup.focus();
     }
-    return 'opened';
+    if (result === 'single-screen') {
+      popup.close();
+      projectionWindowRef.current = null;
+      setProjectionActive(false);
+      setProjectionMessage('Only one display was detected. Connect the church screen and choose Extend, then try again.');
+      return result;
+    }
+    popup.location.replace(url.toString());
+    popup.focus();
+    setProjectionMessage(result === 'placed'
+      ? 'The clean projection window is on the church screen. Press “Full screen and start” there once.'
+      : 'The clean projection window opened. Follow the on-screen full-screen confirmation.');
+    return result;
   };
 
   const startProjection = () => {
     if (!queue.length) return;
+    setProjectionActive(true);
     playAt(0);
     setShowProjectionGuide(false);
     setProjectionMessage('Service started on the projection screen. Use Previous and Next here while the congregation sees only the video.');
@@ -201,7 +257,7 @@ export function WorshipQueue({
 
       {projectionMessage && <div className="projection-message" role="status"><Info size={17} /><span>{projectionMessage}</span><button type="button" onClick={() => setProjectionMessage('')} aria-label="Dismiss projection message"><X size={15} /></button></div>}
 
-      {playingItem && (
+      {playingItem && !projectionActive && (
         <div className="worship-queue__player-card">
           <div className="worship-queue__player-header">
             <div>
@@ -225,6 +281,24 @@ export function WorshipQueue({
             <button type="button" disabled={playingIndex! <= 0} onClick={() => setPlayingIndex((previous) => previous != null && previous > 0 ? previous - 1 : previous)}><SkipBack size={16} /> Previous</button>
             <button type="button" onClick={() => setPlaybackRevision((value) => value + 1)}><RotateCcw size={16} /> Restart video</button>
             <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => setPlayingIndex((previous) => previous != null && previous < queue.length - 1 ? previous + 1 : previous)}>Next <SkipForward size={16} /></button>
+          </div>
+        </div>
+      )}
+
+      {playingItem && projectionActive && (
+        <div className="projection-controller" role="region" aria-label="Private projection controls">
+          <div className="projection-controller__status"><span>LIVE ON CHURCH SCREEN</span><strong>{playingItem.title}</strong><small>{playingItem.artist}</small></div>
+          <div className="projection-controller__controls">
+            <button type="button" disabled={playingIndex! <= 0} onClick={() => setPlayingIndex((previous) => previous != null && previous > 0 ? previous - 1 : previous)}><SkipBack size={16} /> Previous</button>
+            <button type="button" onClick={() => setPlaybackRevision((value) => value + 1)}><RotateCcw size={16} /> Restart</button>
+            <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => setPlayingIndex((previous) => previous != null && previous < queue.length - 1 ? previous + 1 : previous)}>Next <SkipForward size={16} /></button>
+            <button type="button" className="is-stop" onClick={() => {
+              projectionWindowRef.current?.close();
+              projectionWindowRef.current = null;
+              setProjectionActive(false);
+              setPlayingIndex(null);
+              setProjectionMessage('Projection stopped.');
+            }}><X size={16} /> Stop projection</button>
           </div>
         </div>
       )}
