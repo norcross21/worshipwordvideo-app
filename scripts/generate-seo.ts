@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { getFullSongLibrary } from '../src/data/songLibraryStore';
 import { inferWorshipSeasons, WORSHIP_SEASONS, type WorshipSeason } from '../src/data/songSeason';
 import { LANGUAGE_PRESENTATIONS, inferLanguagePresentation, inferWorshipArrangement } from '../src/data/songPresentation';
+import { videoTitleIndicatesWords } from '../src/data/videoApproval';
 import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs';
 
 const SITE = 'https://www.worshipwordvideo.org';
@@ -20,6 +21,24 @@ interface SeoPage {
   schema: Record<string, unknown> | Array<Record<string, unknown>>;
   openGraphType?: 'website' | 'article';
 }
+
+interface SongFamilyDefinition {
+  slug: string;
+  title: string;
+  matchingTitles: string[];
+}
+
+const SONG_FAMILIES: SongFamilyDefinition[] = [
+  { slug: 'goodness-of-god', title: 'Goodness of God', matchingTitles: ['Goodness of God'] },
+  { slug: 'way-maker', title: 'Way Maker', matchingTitles: ['Way Maker'] },
+  { slug: 'the-blessing', title: 'The Blessing', matchingTitles: ['The Blessing'] },
+  { slug: 'what-a-beautiful-name', title: 'What a Beautiful Name', matchingTitles: ['What a Beautiful Name'] },
+  {
+    slug: 'oceans-where-feet-may-fail',
+    title: 'Oceans (Where Feet May Fail)',
+    matchingTitles: ['Oceans (Where Feet May Fail)', 'Oceans Where Feet May Fail'],
+  },
+];
 
 const PRESENTATION_PAGE_DETAILS: Record<LanguagePresentation, {
   slug: string;
@@ -89,6 +108,29 @@ function slugify(value: string): string {
     .replace(/&/g, ' and ')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+function normaliseSongFamilyTitle(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function belongsToSongFamily(song: WorshipSong, family: SongFamilyDefinition): boolean {
+  const accepted = new Set(family.matchingTitles.map(normaliseSongFamilyTitle));
+  return [song.englishTitle, song.title]
+    .filter((value): value is string => Boolean(value))
+    .some((value) => accepted.has(normaliseSongFamilyTitle(value)));
+}
+
+function hasPublicWordEvidence(song: WorshipSong): boolean {
+  return song.wordsIndicated === true
+    || Boolean(song.wordEvidence)
+    || videoTitleIndicatesWords(song.title);
 }
 
 function canonicalUrl(path: string): string {
@@ -183,7 +225,7 @@ ${page.openGraphType === 'article' ? `  <meta property="article:modified_time" c
   </header>
   <main>${page.body}</main>
   <footer class="seo-footer">
-    <nav aria-label="Useful links"><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
+    <nav aria-label="Useful links"><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/songs/">Songs across languages</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
     <p>Worship Word Video is a free directory and playlist-planning tool. Videos remain hosted by YouTube and subject to the uploader's and YouTube's terms. Always preview a video and confirm church licensing before public use.</p>
     <p><a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a></p>
   </footer>
@@ -406,6 +448,71 @@ function presentationPage(presentation: LanguagePresentation, songs: WorshipSong
   };
 }
 
+function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): SeoPage {
+  const orderedSongs = [...songs].sort((left, right) => {
+    const languageOrder = (left.language ?? 'English').localeCompare(right.language ?? 'English');
+    return languageOrder || (right.viewCountAtReview ?? 0) - (left.viewCountAtReview ?? 0);
+  });
+  const languageGroups = new Map<string, WorshipSong[]>();
+  for (const song of orderedSongs) {
+    const language = song.language ?? 'English';
+    languageGroups.set(language, [...(languageGroups.get(language) ?? []), song]);
+  }
+  const languages = [...languageGroups.entries()].sort((left, right) => {
+    if (left[0] === 'English') return -1;
+    if (right[0] === 'English') return 1;
+    return right[1].length - left[1].length || left[0].localeCompare(right[0]);
+  });
+  const count = songs.length;
+  const presentationFormatCount = new Set(songs.map(inferLanguagePresentation)).size;
+  const query = new URLSearchParams({ q: family.title });
+  const description = `Find ${family.title} worship videos in ${languages.length} languages, including versions with on-screen lyrics, native words, translations or subtitles for churches.`;
+  const languageCards = languages.map(([language, languageSongs]) => {
+    const languageQuery = new URLSearchParams({ q: family.title, language });
+    const formats = countBy(languageSongs, inferLanguagePresentation);
+    return `<a class="seo-card" href="/?${languageQuery.toString()}#main-content"><strong>${escapeHtml(language)}</strong><span>${languageSongs.length.toLocaleString('en-GB')} playable ${languageSongs.length === 1 ? 'version' : 'versions'} · ${escapeHtml(formatList(formats, 2))}</span></a>`;
+  }).join('');
+  const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/songs/">Songs across languages</a><span>›</span><span>${escapeHtml(family.title)}</span></nav>
+  <article class="seo-hero"><p class="seo-eyebrow">Well-known worship across languages</p><h1>${escapeHtml(family.title)} in different languages</h1><p class="seo-lead">Compare ${count.toLocaleString('en-GB')} playable versions across ${languages.length.toLocaleString('en-GB')} languages. Use the language and presentation labels to distinguish native-language vocals, translated subtitles, English subtitles and bilingual versions where the uploader's metadata supports that description.</p><div class="seo-actions"><a class="seo-button" href="/?${query.toString()}#main-content">Search every ${escapeHtml(family.title)} video</a><a class="seo-button seo-button--quiet" href="/formats/">Understand lyrics and subtitle labels</a></div></article>
+  <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable word videos</span></div><div><strong>${languages.length.toLocaleString('en-GB')}</strong><span>languages represented</span></div><div><strong>${presentationFormatCount.toLocaleString('en-GB')}</strong><span>lyrics and subtitle formats</span></div></section>
+  <section class="seo-section"><h2>Choose a language version</h2><div class="seo-card-grid">${languageCards}</div></section>
+  <section class="seo-section"><h2>Example ${escapeHtml(family.title)} lyric and subtitle videos</h2><ul class="seo-song-list">${songRows(orderedSongs)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Open all ${count.toLocaleString('en-GB')} matching videos in the finder →</a></p></section>
+  <section class="seo-section seo-help"><h2>Check the exact version before church</h2><p>These are links to public YouTube uploads, not copies of the song or lyrics. A familiar English title can refer to a translation, adaptation, cover or subtitled original. Preview the complete video, ask a fluent speaker to review translated words and theology, and confirm the licences needed for your service.</p></section>`;
+  return {
+    path: `/songs/${family.slug}/`,
+    title: family.slug === 'oceans-where-feet-may-fail'
+      ? 'Oceans in Different Languages | Worship Lyric Videos'
+      : `${family.title} in Different Languages | Lyric Videos`,
+    description,
+    body,
+    schema: [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${SITE}/songs/${family.slug}/#page`,
+        url: `${SITE}/songs/${family.slug}/`,
+        name: `${family.title} in different languages`,
+        description,
+        isPartOf: { '@id': `${SITE}/#website` },
+        inLanguage: 'en-GB',
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: count,
+          itemListElement: orderedSongs.slice(0, 30).map((song, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: `${song.title} — ${song.language ?? 'English'}`,
+          })),
+        },
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Songs across languages', path: '/songs/' },
+        { name: family.title, path: `/songs/${family.slug}/` },
+      ]),
+    ],
+  };
+}
+
 const GUIDE_PAGES: SeoPage[] = [
   {
     path: '/guides/worship-word-lyrics/',
@@ -568,6 +675,11 @@ async function generate(): Promise<void> {
     .filter(([, songs]) => songs.length >= 3);
   const presentationPages = presentations.map(([presentation, songs]) => presentationPage(presentation, songs));
 
+  const songFamilies = SONG_FAMILIES
+    .map((family) => [family, playableSongs.filter((song) => belongsToSongFamily(song, family) && hasPublicWordEvidence(song))] as const)
+    .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 3);
+  const songFamilyPages = songFamilies.map(([family, songs]) => songFamilyPage(family, songs));
+
   const languageIndex: SeoPage = {
     path: '/languages/',
     title: 'Worship Videos by Language | International Church Finder',
@@ -612,6 +724,17 @@ async function generate(): Promise<void> {
     ],
   };
 
+  const songFamilyIndex: SeoPage = {
+    path: '/songs/',
+    title: 'Modern Worship Songs in Different Languages | Churches',
+    description: 'Compare well-known modern worship songs in multiple languages, with clear vocal, lyrics, translation and subtitle labels for church services.',
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Songs across languages</span></nav><article class="seo-hero"><p class="seo-eyebrow">Familiar songs, more languages</p><h1>Well-known worship songs in different languages</h1><p class="seo-lead">Start with a familiar modern worship song, then compare native-language covers, translated subtitles, English subtitles and bilingual versions. Every result opens in the same simple finder so you can preview the exact YouTube upload before church use.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search the complete catalogue</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div></article><section class="seo-section"><div class="seo-card-grid">${songFamilies.map(([family, songs]) => { const languageCount = new Set(songs.map((song) => song.language ?? 'English')).size; return `<a class="seo-card" href="/songs/${family.slug}/"><strong>${escapeHtml(family.title)}</strong><span>${songs.length.toLocaleString('en-GB')} playable versions across ${languageCount.toLocaleString('en-GB')} languages</span></a>`; }).join('')}</div></section><section class="seo-section seo-help"><h2>Why these collections are selective</h2><p>A useful song page needs several real language versions and enough public metadata to distinguish what people will hear and read. The site does not create empty pages for song titles with little evidence, and it does not reproduce copyrighted lyrics.</p></section>`,
+    schema: [
+      { '@type': 'CollectionPage', name: 'Well-known worship songs in different languages', url: `${SITE}/songs/`, mainEntity: { '@type': 'ItemList', numberOfItems: songFamilyPages.length, itemListElement: songFamilyPages.map((page, index) => ({ '@type': 'ListItem', position: index + 1, url: canonicalUrl(page.path), name: page.title })) } },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Songs across languages', path: '/songs/' }]),
+    ],
+  };
+
   const guideIndex: SeoPage = {
     path: '/guides/',
     title: 'Practical Worship Video Guides for Churches',
@@ -632,6 +755,8 @@ async function generate(): Promise<void> {
     ...seasonPages,
     presentationIndex,
     ...presentationPages,
+    songFamilyIndex,
+    ...songFamilyPages,
     guideIndex,
     ...GUIDE_PAGES,
   ];
@@ -640,11 +765,13 @@ async function generate(): Promise<void> {
     removeStaleGeneratedDirectories('arrangements', new Set(arrangementPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('seasons', new Set(seasonPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('formats', new Set(presentationPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
+    removeStaleGeneratedDirectories('songs', new Set(songFamilyPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('guides', new Set(GUIDE_PAGES.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeDuplicateIndexFiles('languages'),
     removeDuplicateIndexFiles('arrangements'),
     removeDuplicateIndexFiles('seasons'),
     removeDuplicateIndexFiles('formats'),
+    removeDuplicateIndexFiles('songs'),
     removeDuplicateIndexFiles('guides'),
   ]);
   await Promise.all(pages.map(writePage));
@@ -655,12 +782,12 @@ async function generate(): Promise<void> {
   await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\n\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'seo-urls.json'), `${JSON.stringify(urls, null, 2)}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'indexnow-key.txt'), `${INDEXNOW_KEY}\n`, 'utf8');
-  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nCanonical site: ${SITE}/\nCatalogue: ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos at the latest catalogue build.\nLanguages: ${namedLanguageCount} named languages, with dedicated public collection pages for languages having at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos. Entries whose public metadata does not safely identify a language remain unclassified rather than being guessed.\nFeatures: public song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; optional automatic next-video playback; per-video start/stop timing; clean second-screen projection.\n\n## Important public collections\n\n- Worship word lyrics guide: ${SITE}/guides/worship-word-lyrics/\n- Churches without musicians guide: ${SITE}/guides/worship-videos-for-churches-without-musicians/\n- Languages: ${SITE}/languages/\n- Lyrics and subtitle formats: ${SITE}/formats/\n- Church seasons: ${SITE}/seasons/\n- Worship arrangements: ${SITE}/arrangements/\n- Church guides: ${SITE}/guides/\n\nCopyright: the site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use.\nContact: stephen@kairoshousing.org.uk\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
+  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nCanonical site: ${SITE}/\nCatalogue: ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos at the latest catalogue build.\nLanguages: ${namedLanguageCount} named languages, with dedicated public collection pages for languages having at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos. Entries whose public metadata does not safely identify a language remain unclassified rather than being guessed.\nFeatures: public song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; optional automatic next-video playback; per-video start/stop timing; clean second-screen projection.\n\n## Important public collections\n\n- Worship word lyrics guide: ${SITE}/guides/worship-word-lyrics/\n- Churches without musicians guide: ${SITE}/guides/worship-videos-for-churches-without-musicians/\n- Well-known songs across languages: ${SITE}/songs/\n- Languages: ${SITE}/languages/\n- Lyrics and subtitle formats: ${SITE}/formats/\n- Church seasons: ${SITE}/seasons/\n- Worship arrangements: ${SITE}/arrangements/\n- Church guides: ${SITE}/guides/\n\nCopyright: the site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use.\nContact: stephen@kairoshousing.org.uk\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
 
   const feedItems = GUIDE_PAGES.map((page) => `<item><title>${escapeHtml(page.title)}</title><link>${canonicalUrl(page.path)}</link><guid>${canonicalUrl(page.path)}</guid><description>${escapeHtml(page.description)}</description><pubDate>${FEED_DATE}</pubDate></item>`).join('');
   await writeFile(resolve(PUBLIC_DIR, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Worship Word Video Guides</title><link>${SITE}/guides/</link><description>Practical worship video guidance for churches.</description><language>en-gb</language>${feedItems}</channel></rss>`, 'utf8');
 
-  console.log(JSON.stringify({ generatedPages: pages.length, languagePages: languagePages.length, arrangementPages: arrangementPages.length, seasonPages: seasonPages.length, presentationPages: presentationPages.length, guidePages: GUIDE_PAGES.length, sitemapUrls: urls.length }, null, 2));
+  console.log(JSON.stringify({ generatedPages: pages.length, languagePages: languagePages.length, arrangementPages: arrangementPages.length, seasonPages: seasonPages.length, presentationPages: presentationPages.length, songFamilyPages: songFamilyPages.length, guidePages: GUIDE_PAGES.length, sitemapUrls: urls.length }, null, 2));
 }
 
 await generate();

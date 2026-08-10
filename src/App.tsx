@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { LegalModal } from './components/LegalModal';
@@ -35,6 +35,7 @@ const DonateModal = lazy(() => import('./components/DonateModal').then((module) 
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then((module) => ({ default: module.AdminDashboard })));
 const AuthModal = lazy(() => import('./components/AuthModal').then((module) => ({ default: module.AuthModal })));
 const AccountModal = lazy(() => import('./components/AccountModal').then((module) => ({ default: module.AccountModal })));
+const DONATION_PROMPT_MINIMUM_DELAY_MS = 75_000;
 
 function LoadingPanel({ label = 'Loading Worship Word Video…' }: { label?: string }) {
   return <div className="app-loading" role="status">{label}</div>;
@@ -55,6 +56,8 @@ function MainApp() {
   const [showSavedPlaylistsModal, setShowSavedPlaylistsModal] = useState(false);
   const [serviceModalMode, setServiceModalMode] = useState<'create' | 'manage'>('manage');
   const [showDonateModal, setShowDonateModal] = useState(false);
+  const [donationDelayElapsed, setDonationDelayElapsed] = useState(false);
+  const [guestHasEngaged, setGuestHasEngaged] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(() =>
     new URLSearchParams(window.location.search).get('legal') === '1'
   );
@@ -176,7 +179,20 @@ function MainApp() {
   }, [authModalTab, profile, profileLoading, user]);
 
   useEffect(() => {
-    if (authLoading || user) return;
+    if (authLoading) return;
+    if (user) {
+      setShowDonateModal(false);
+      setDonationDelayElapsed(false);
+      setGuestHasEngaged(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setDonationDelayElapsed(true), DONATION_PROMPT_MINIMUM_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [authLoading, user?.id]);
+
+  useEffect(() => {
+    if (authLoading || user || !donationDelayElapsed || !guestHasEngaged) return;
 
     let cancelled = false;
     let timer = 0;
@@ -196,13 +212,18 @@ function MainApp() {
       setShowDonateModal(true);
     };
 
-    // Let the catalogue settle and never stack this invitation over another dialog.
-    timer = window.setTimeout(openWhenInterfaceIsSettled, 1800);
+    // Ask only after a guest has had time to search or choose a video, and never
+    // stack the optional invitation over an account or service dialog.
+    timer = window.setTimeout(openWhenInterfaceIsSettled, 250);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [authLoading, user?.id]);
+  }, [authLoading, donationDelayElapsed, guestHasEngaged, user?.id]);
+
+  const recordGuestEngagement = useCallback(() => {
+    setGuestHasEngaged(true);
+  }, []);
 
   const closeDonateModal = () => {
     try {
@@ -429,6 +450,7 @@ function MainApp() {
               playlistEnabled={Boolean(user)}
               activeServiceTitle={activeService?.title ?? null}
               onPresentVideo={user ? handlePresentSingleVideo : undefined}
+              onVisitorEngaged={!user ? recordGuestEngagement : undefined}
             />
           )}
         </Suspense>
@@ -481,6 +503,7 @@ function MainApp() {
           <div className="app-footer__legal-links">
             <a href="/languages/">Languages</a>
             <a href="/formats/">Lyrics & subtitles</a>
+            <a href="/songs/">Songs across languages</a>
             <a href="/seasons/">Church seasons</a>
             <a href="/arrangements/">Worship styles</a>
             <a href="/guides/">Church guides</a>

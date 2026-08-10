@@ -45,6 +45,7 @@ export function SeoDiscoverySection() {
       <nav className="discovery-section__languages" aria-label="Popular worship video languages">
         {popularLanguages.map(([label, slug]) => <a key={slug} href={`/languages/${slug}/`}>{label}</a>)}
         <a href="/languages/">All languages →</a>
+        <a href="/songs/">Well-known songs →</a>
       </nav>
     </section>
   );

@@ -31,4 +31,10 @@ describe('familiar translated worship collection', () => {
       expect(song.catalogueReview).toBe('Metadata and embed checked');
     }
   });
+
+  it('preserves the uploader word or subtitle signal used by catalogue quality checks', () => {
+    const wordVideos = KNOWN_TRANSLATED_WORSHIP_SONGS.filter((song) => song.wordsIndicated);
+    expect(wordVideos.length).toBeGreaterThan(50);
+    expect(wordVideos.every((song) => song.wordEvidence)).toBe(true);
+  });
 });

@@ -26,6 +26,7 @@ Use one strong page for each distinct church need. Do not create near-duplicate 
 | English churches | English worship songs with lyrics; church worship videos with words; hymns with lyrics | English language and arrangement collections |
 | Churches without musicians | worship videos for churches without musicians; YouTube worship for small churches | Dedicated churches-without-musicians guide |
 | Multilingual worship | multilingual worship songs with subtitles; translated worship songs; native-language worship videos with English subtitles | Language, presentation-format and multilingual-guide pages |
+| Familiar songs across languages | Goodness of God in different languages; Way Maker translated worship; The Blessing multilingual worship | Curated song-family collection pages |
 | Service preparation | church worship playlist; worship video start and stop times; church projection screen | Member features and second-screen guide |
 | Styles and seasons | contemporary worship lyric videos; gospel songs with lyrics; choir worship videos; Christmas or Easter worship songs | Arrangement and church-season collection pages |
 
@@ -33,6 +34,7 @@ The exact phrase “worship word lyrics” is now present in the home-page title
 
 ## What is implemented in the site
 
+- 138 validated canonical pages in the current sitemap, each backed by visible catalogue information or original church guidance.
 - Descriptive home-page title, meta description, canonical URL, robots directives and large social share card.
 - Schema.org `WebSite`, `Organization`, `WebApplication`, `CollectionPage`, `ItemList`, `BreadcrumbList`, `Article` and `HowTo` structured data where those types describe visible page content.
 - Useful initial HTML before the React application loads, so crawlers that do not execute JavaScript can still understand the service and follow its main links.
@@ -40,6 +42,7 @@ The exact phrase “worship word lyrics” is now present in the home-page title
 - 11 worship-arrangement pages covering contemporary, gospel, choir, traditional hymn, live, acoustic and other useful styles.
 - Six church-season pages for Advent, Christmas, Lent and Holy Week, Easter, Pentecost, Harvest and Thanksgiving.
 - Six lyrics-and-subtitle-format pages that clearly distinguish English words, translated subtitles, native-language words, English subtitles and bilingual videos.
+- Five curated song-family pages covering Goodness of God, Way Maker, The Blessing, What a Beautiful Name and Oceans across their credible language versions.
 - Five original church guides covering worship word lyrics, churches without musicians, video selection, multilingual worship and second-screen projection.
 - XML sitemap, `robots.txt`, RSS feed, OpenSearch description, web app manifest and an explanatory `llms.txt` file.
 - IndexNow integration for Bing and participating search engines.

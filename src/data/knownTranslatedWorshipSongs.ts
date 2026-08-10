@@ -47,6 +47,8 @@ export const KNOWN_TRANSLATED_WORSHIP_SONGS: WorshipSong[] = rows.map(([
   sourceChannel,
   versionType: 'Familiar-song language version',
   catalogueReview: 'Metadata and embed checked',
+  wordsIndicated,
+  wordEvidence: wordsIndicated ? 'Lyrics or subtitles indicated by the uploader' : undefined,
   durationSeconds,
   viewCountAtReview,
 }));

@@ -45,6 +45,7 @@ interface SongLibraryDashboardProps {
   playlistEnabled?: boolean;
   activeServiceTitle?: string | null;
   onPresentVideo?: (song: WorshipSong) => void;
+  onVisitorEngaged?: () => void;
 }
 
 const seasonsBySongId = new Map<string, WorshipSeason[]>();
@@ -78,6 +79,7 @@ export function SongLibraryDashboard({
   playlistEnabled = false,
   activeServiceTitle = null,
   onPresentVideo,
+  onVisitorEngaged,
 }: SongLibraryDashboardProps) {
   const [songs, setSongs] = useState<WorshipSong[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
@@ -146,6 +148,7 @@ export function SongLibraryDashboard({
   }, [catalogueReloadToken]);
 
   const showSong = (song: WorshipSong) => {
+    onVisitorEngaged?.();
     setSelectedSong(song);
     setMobileDetailOpen(true);
     if (window.matchMedia(MOBILE_CATALOGUE_QUERY).matches) {
@@ -242,7 +245,10 @@ export function SongLibraryDashboard({
             aria-label="Search songs, artists, languages, or hymn numbers"
             placeholder="Search songs, artists, languages or hymn numbers…"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              if (event.target.value.trim()) onVisitorEngaged?.();
+            }}
           />
           {searchQuery && (
             <button type="button" className="search-box__clear" onClick={() => setSearchQuery('')} aria-label="Clear search">✕</button>

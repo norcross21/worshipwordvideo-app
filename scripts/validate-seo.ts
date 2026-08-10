@@ -4,7 +4,7 @@ import { relative, resolve, sep } from 'node:path';
 const SITE = 'https://www.worshipwordvideo.org';
 const ROOT = process.cwd();
 const PUBLIC_DIR = resolve(ROOT, 'public');
-const GENERATED_SECTIONS = ['languages', 'arrangements', 'seasons', 'formats', 'guides'];
+const GENERATED_SECTIONS = ['languages', 'arrangements', 'seasons', 'formats', 'songs', 'guides'];
 
 async function findIndexPages(directory: string): Promise<string[]> {
   const pages: string[] = [];
