@@ -16,7 +16,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "src" / "data"
 OUTPUT = DATA_DIR / "researchedWordWorshipVideos.json"
-TARGET = 45750
+# This is a capacity ceiling, not a promised public count. It leaves room for
+# the 500-per-language programme while the importer continues to publish only
+# videos that pass the word, worship, duration and live-embed checks.
+TARGET = 75000
 RESULTS_PER_QUERY = 50
 
 LANGUAGES = [
@@ -181,7 +184,11 @@ REJECT = re.compile(
     r"long black train|carrie underwood\s*[-–—]\s*church bells|the star\s*[-–—]\s*mariah carey|"
     r"mariah carey.*the star|celine dion.*(?:wonderful jesus|living god)|romeo santos.*inocente|"
     r"genghis khan|taylor swift.*love story|march of the templars|"
-    r"vishnu|krishana|hindu temple|\boh buddha\b",
+    r"vishnu|krishana|hindu temple|\boh buddha\b|\bnaat\b|bah[aá][’'i]|abdu.?l[- ]bah[aá]|"
+    r"how to interpret scriptures|decision vs commitment|deliverance from sin|paul washer|"
+    r"what jesus said about muhammad|syrian kurds open first church|jesus calls and sends 12 apostles|"
+    r"jesus\W+samoan translation\W+part|present your bodies as a living sacrifice|"
+    r"\bneed god\??\s*(?:\||$)|love story lyrics and chords|seri makhluk[- ]makhluk rohani",
     re.I,
 )
 
@@ -360,9 +367,14 @@ def presentation(title: str, language: str) -> str:
         return "Bilingual vocal or subtitles"
     if re.search(r"english", title, re.I) and re.search(language_alias, title, re.I) and not re.search(r"subtitles?|translation|translated", title, re.I):
         return "Bilingual vocal or subtitles"
-    if language != "English" and re.search(r"english\s+(subtitles?|captions?|translation)|eng\s*sub", title, re.I):
+    if language != "English" and re.search(r"english\s+(subtitles?|captions?|translation|lyrics?|words)|eng\s*sub", title, re.I):
         return "Native-language vocal with English subtitles"
-    if language != "English" and re.search(r"subtitles?|translated|translation|subtitulado|legendado|sous[- ]titres|untertitel|ترجمه|زیرنویس|자막|字幕", title, re.I):
+    if language != "English" and re.search(
+        r"subtitles?|translated|translation|subtitulado|legendado|sous[- ]titres|untertitel|"
+        r"terjemahan|traduction|tradu[cç][aã]o|traducci[oó]n|t[lł]umaczenie|перевод|ترجمة|ترجمه|زیرنویس|번역|자막|翻訳|翻译|字幕",
+        title,
+        re.I,
+    ):
         return "English vocal with translated subtitles"
     if language != "English" and re.search(rf"with\s+{language_alias}\s+(?:lyric )?text|{language_alias}\s+(?:lyrics?|words)", title, re.I):
         return "English vocal with translated subtitles"

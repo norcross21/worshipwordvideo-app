@@ -53,7 +53,20 @@ NATIVE_QUERIES: dict[str, tuple[str, ...]] = {
     "Turkish": ("Hristiyan ilahi sözleri", "Türkçe tapınma şarkısı sözleri", "Mesih ilahisi sözleri"),
     "Greek": ("χριστιανικό τραγούδι στίχοι", "ύμνος με στίχους"),
     "Arabic": ("ترنيمة مسيحية كلمات", "تسبيح وعبادة مسيحية كلمات", "ترنيمة مترجمة"),
-    "Persian / Farsi": ("سرود پرستشی مسیحی متن", "سرود پرستشی زیرنویس", "ستایش و پرستش فارسی"),
+    "Persian / Farsi": (
+        "سرود پرستشی مسیحی متن",
+        "سرود پرستشی زیرنویس",
+        "ستایش و پرستش فارسی",
+        "سرود پرستشی فارسی با متن",
+        "سرود مسیحی فارسی با متن",
+        "پرستش فارسی با زیرنویس انگلیسی",
+        "سرود فارسی مسیحی زیرنویس انگلیسی",
+        "موزیک ویدیو پرستشی فارسی متن",
+        "آهنگ پرستشی فارسی متن",
+        "سرود پرستشی کلیسای ایرانی متن",
+        "سرود پرستشی فارسی ترجمه انگلیسی",
+        "پرستش مسیحی فارسی کلمات",
+    ),
     "Urdu": ("مسیحی عبادتی گیت کے بول", "اردو مسیحی گیت لرکس", "یسوع کے گیت الفاظ"),
     "Hindi": ("मसीही आराधना गीत लिरिक्स", "यीशु के गीत के बोल", "मसीही स्तुति गीत शब्द"),
     "Bengali": ("খ্রিস্টান উপাসনা গানের কথা", "যীশুর গান লিরিক্স"),
@@ -73,7 +86,19 @@ NATIVE_QUERIES: dict[str, tuple[str, ...]] = {
     "Indonesian": ("lagu rohani kristen lirik", "pujian penyembahan dengan lirik", "lagu gereja lirik"),
     "Malay": ("lagu rohani Kristian lirik", "lagu pujian gereja lirik"),
     "Tagalog / Filipino": ("Tagalog praise and worship lyrics", "awit papuri may lyrics", "Filipino Christian song lyrics"),
-    "Swahili": ("wimbo wa kuabudu maneno", "nyimbo za sifa lyrics", "wimbo wa Yesu mashairi"),
+    "Swahili": (
+        "wimbo wa kuabudu maneno",
+        "nyimbo za sifa lyrics",
+        "wimbo wa Yesu mashairi",
+        "nyimbo za kuabudu zenye maneno",
+        "wimbo wa injili maneno",
+        "nyimbo za kristo mashairi",
+        "nyimbo za sifa na kuabudu maneno",
+        "nyimbo za kanisa lyrics",
+        "ibada kiswahili lyrics",
+        "wimbo wa injili na maneno",
+        "nyimbo za kuabudu english subtitles",
+    ),
     "Amharic": ("የአማርኛ ክርስቲያን የአምልኮ መዝሙር ግጥም",),
     "Hebrew": ("שיר הלל נוצרי מילים", "שיר עברי ישוע מילים"),
     "Afrikaans": ("Afrikaanse aanbidding lirieke", "Christelike lied lirieke"),
@@ -186,7 +211,10 @@ def search_job(job: tuple[str, str, str, str]) -> tuple[str, str, str, str, list
 def main() -> None:
     quick = "--quick" in sys.argv
     language_limit = next((int(value.split("=", 1)[1]) for value in sys.argv if value.startswith("--languages=")), None)
+    selected_language = next((value.split("=", 1)[1] for value in sys.argv if value.startswith("--language=")), None)
     languages = research.LANGUAGES[:language_limit] if language_limit else research.LANGUAGES
+    if selected_language:
+        languages = [item for item in languages if item[0].casefold() == selected_language.casefold()]
     completed_queries: set[str] = set()
     candidates_by_id: dict[str, dict] = {}
     if OUTPUT.exists() and "--fresh" not in sys.argv:

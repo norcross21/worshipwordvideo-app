@@ -6,7 +6,7 @@ The app includes contemporary worship songs, traditional hymns, CCLI UK favourit
 
 The international catalogue combines curated collections with a large, regularly rechecked words/subtitle discovery library. Automatically researched entries retain their exact YouTube ID, channel, language, region, duration, words-evidence label and review date. Language is only asserted when the uploader title, channel or script supports it; otherwise the entry says “Language not stated”. They are discovery aids rather than linguistic, theological or copyright endorsements, so a fluent speaker or church leader should review a video before public use.
 
-The maintained catalogue now contains 37,524 playable videos with unique YouTube IDs across 114 named languages. Exact-video cards distinguish musical arrangements (including contemporary, live, choral, country, acoustic and traditional) and whether uploader metadata indicates English words, translated subtitles, native-language words, English subtitles or a bilingual format.
+The maintained catalogue now contains 52,337 playable videos with unique YouTube IDs across 114 named languages. Nineteen named-language collections contain at least 500 playable videos, including Persian/Farsi, Mandarin Chinese, Arabic, French, Swahili, Japanese, Korean, Indonesian, Spanish and Portuguese. Exact-video cards distinguish musical arrangements (including contemporary, live, choral, country, acoustic and traditional) and whether uploader metadata indicates English words, translated subtitles, native-language words, English subtitles or a bilingual format.
 
 Service playlists support optional start and stop points using seconds or `m:ss`. A dedicated projection URL opens only the synced YouTube player on a second monitor or projector while the service dashboard stays on the operator's screen.
 
@@ -53,6 +53,12 @@ npm run seo:submit:indexnow
 ```
 
 `seo:submit:indexnow` should be run only after the generated pages and IndexNow key file are live. Google Search Console still requires domain-owner verification and manual or authenticated sitemap submission. See [docs/SEO_GROWTH_PLAN.md](docs/SEO_GROWTH_PLAN.md) for the owner checklist and safe off-site growth plan.
+
+The language-depth research command works through collections below the 500-video target using familiar worship-song titles, native-language word searches and English-subtitle searches. Its target is a research direction rather than a promise: a language remains below 500 when there are not enough public, embeddable, worship-word videos with credible metadata.
+
+```bash
+npm run catalogue:research:language-depth
+```
 
 ## Supabase
 

@@ -20,13 +20,22 @@ const countBy = <T>(items: T[], getLabel: (item: T) => string) => {
   return Object.fromEntries([...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])));
 };
 
+const videosByLanguage = countBy(playable, (song) => song.language ?? 'English');
+const languageDepthTarget = 500;
+const namedLanguageCollectionsAtTarget = Object.entries(videosByLanguage)
+  .filter(([language, videos]) => language !== 'Language not stated' && videos >= languageDepthTarget)
+  .map(([language, videos]) => ({ language, videos }));
+
 const summary = {
   catalogueEntries: library.length,
   playableVideos: playable.length,
   uniquePlayableVideos: new Set(playable.map((song) => song.youtubeId)).size,
   namedLanguages: namedLanguages.size,
   languageLabelsIncludingUnstated: new Set(playable.map((song) => song.language ?? 'English')).size,
-  videosByLanguage: countBy(playable, (song) => song.language ?? 'English'),
+  languageDepthTarget,
+  namedLanguageCollectionsAtTarget: namedLanguageCollectionsAtTarget.length,
+  languagesAtOrAboveTarget: namedLanguageCollectionsAtTarget,
+  videosByLanguage,
   arrangements: countBy(playable, inferWorshipArrangement),
   presentations: countBy(playable, inferLanguagePresentation),
   seasons: Object.fromEntries(WORSHIP_SEASONS.map((season) => [

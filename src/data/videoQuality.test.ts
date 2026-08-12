@@ -151,5 +151,13 @@ describe('video quality helpers', () => {
       youtubeId: '0123456789A',
       wordsIndicated: true,
     })).toBe(true);
+    expect(isUsableWorshipVideoListing({
+      id: 'subtitled-teaching',
+      title: '(Subtitle Indonesia) Elohim - Seri Makhluk-Makhluk Rohani',
+      artist: 'Moonlight Project',
+      category: 'Contemporary Worship',
+      youtubeId: '1234567890A',
+      wordsIndicated: true,
+    })).toBe(false);
   });
 });

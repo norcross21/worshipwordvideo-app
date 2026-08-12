@@ -23,6 +23,7 @@ OUTPUT = ROOT / "src" / "data" / "researchedWordWorshipVideos.json"
 SOURCE_PATHS = [
     Path("/tmp/modern-word-video-deep-candidates.json"),
     Path("/tmp/modern-word-video-candidates.json"),
+    Path("/tmp/expanded-familiar-video-candidates.json"),
     Path("/tmp/expanded-familiar-video-candidates-english-deep.json"),
     Path("/tmp/global-word-video-candidates.json"),
     Path("/tmp/global-word-video-candidates-pass2.json"),
@@ -31,6 +32,7 @@ SOURCE_PATHS = [
     Path("/tmp/wwv-channel-feed-candidates.json"),
     Path("/tmp/wwv-channel-html-candidates.json"),
     Path("/tmp/wwv-search-html-candidates.json"),
+    Path("/tmp/wwv-language-depth-candidates.json"),
     Path("/tmp/wwv-trusted-channel-videos.json"),
 ]
 CHANNEL_PAGE_SOURCE_PATHS = [
@@ -38,6 +40,9 @@ CHANNEL_PAGE_SOURCE_PATHS = [
     Path("/tmp/wwv-channel-page-videos-more.json"),
     Path("/tmp/wwv-expanded-channel-candidates.json"),
 ]
+REVIEWED_CHANNEL_LANGUAGE_PATHS = {
+    Path("/tmp/wwv-expanded-channel-candidates.json"),
+}
 MIN_CHANNEL_PAGE_VIEWS = 100
 
 SCRIPT_LANGUAGE_DEFAULTS: list[tuple[re.Pattern[str], tuple[str, str, str]]] = [
@@ -172,6 +177,16 @@ def explicitly_named_language(title: str) -> tuple[str, str, str] | None:
 
 def main() -> None:
     existing_source_ids = research.existing_video_ids()
+    reviewed_channel_languages = {
+        str(item.get("youtubeId") or ""): (
+            str(item.get("language") or "Language not stated"),
+            str(item.get("languageCode") or "und"),
+            str(item.get("region") or "International / verify before use"),
+        )
+        for path in REVIEWED_CHANNEL_LANGUAGE_PATHS
+        for item in cached_candidates(path)
+        if item.get("youtubeId") and item.get("language") not in {None, "Language not stated"}
+    }
     base_rows = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else []
     base_rows = [
         row for row in base_rows
@@ -179,6 +194,8 @@ def main() -> None:
         and research.is_existing_quality_row(str(row[1]), str(row[2]), str(row[3]), str(row[4]))
     ][:TARGET]
     for row in base_rows:
+        if str(row[3]) == "Language not stated" and str(row[0]) in reviewed_channel_languages:
+            row[3], row[4], row[5] = reviewed_channel_languages[str(row[0])]
         if str(row[3]) == "Language not stated":
             script_language = language_from_unique_script(str(row[1]))
             if script_language:
@@ -220,6 +237,10 @@ def main() -> None:
             requested_language = str(item.get("language") or "Language not stated")
             requested_code = str(item.get("languageCode") or "und")
             requested_region = str(item.get("region") or "International / verify before use")
+            reviewed_channel_language = (
+                path in REVIEWED_CHANNEL_LANGUAGE_PATHS
+                and requested_language != "Language not stated"
+            )
             if source_kind == "search-cache" and requested_language != "Language not stated" and research.has_language_signal(
                 title, channel, requested_language, requested_code
             ):
@@ -229,6 +250,7 @@ def main() -> None:
                 "durationSeconds": duration,
                 "wordEvidence": evidence,
                 "sourceKind": source_kind,
+                "reviewedChannelLanguage": reviewed_channel_language,
             }
             current = candidates_by_id.get(video_id)
             if current is None or candidate_score(candidate) > candidate_score(current):
@@ -238,11 +260,16 @@ def main() -> None:
     candidates = list(candidates_by_id.values())
     for item in candidates:
         if item.get("sourceKind") == "channel-page":
-            language, code, region = defaults.get(
-                str(item.get("sourceChannel") or ""),
-                language_from_unique_script(str(item.get("sourceTitle") or ""))
-                or ("Language not stated", "und", "International / verify before use"),
-            )
+            if item.get("reviewedChannelLanguage"):
+                language = str(item.get("language") or "Language not stated")
+                code = str(item.get("languageCode") or "und")
+                region = str(item.get("region") or "International / verify before use")
+            else:
+                language, code, region = defaults.get(
+                    str(item.get("sourceChannel") or ""),
+                    language_from_unique_script(str(item.get("sourceTitle") or ""))
+                    or ("Language not stated", "und", "International / verify before use"),
+                )
             item["language"] = language
             item["languageCode"] = code
             item["region"] = region
@@ -315,6 +342,7 @@ def main() -> None:
         else:
             stated_language = requested_language != "Language not stated" and (
                 research.has_language_signal(title, channel, requested_language, code)
+                or bool(item.get("reviewedChannelLanguage"))
                 or (item.get("sourceKind") == "channel-page" and channel_default == (requested_language, code, region))
             )
             language = requested_language if stated_language else "Language not stated"

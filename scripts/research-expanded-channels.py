@@ -12,6 +12,7 @@ import importlib.util
 import json
 import math
 import re
+import sys
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -22,10 +23,10 @@ from yt_dlp import YoutubeDL
 ROOT = Path(__file__).resolve().parents[1]
 SEARCH_SOURCE = Path("/tmp/wwv-expanded-search-candidates.json")
 OUTPUT = Path("/tmp/wwv-expanded-channel-candidates.json")
-MAX_CHANNELS = 100
-MAX_RESULTS_PER_CHANNEL = 200
+MAX_CHANNELS = 300
+MAX_RESULTS_PER_CHANNEL = 500
 MAX_ACCEPTED_PER_CHANNEL = 500
-MAX_WORKERS = 1
+MAX_WORKERS = 2
 
 SPEC = importlib.util.spec_from_file_location(
     "catalogue_research",
@@ -62,6 +63,44 @@ def dominant_language(rows: list[dict]) -> tuple[str, str, str] | None:
     return winner if count >= 2 and count / sum(votes.values()) >= 0.6 else None
 
 
+def lead_language(rows: list[dict]) -> str:
+    """Prioritisation hint only; never used as evidence for a video label."""
+    votes = Counter(
+        str(row.get("language"))
+        for row in rows
+        if row.get("languageExplicit") and row.get("language") not in {None, "English", "Language not stated"}
+    )
+    return votes.most_common(1)[0][0] if votes else "Language not stated"
+
+
+def balanced_channel_ranking(rows_by_url: dict[str, list[dict]]) -> list[tuple[str, list[dict]]]:
+    """Reserve discovery breadth before filling remaining slots by quality."""
+    overall = sorted(rows_by_url.items(), key=lambda item: channel_score(item[1]), reverse=True)
+    buckets: dict[str, list[tuple[str, list[dict]]]] = defaultdict(list)
+    for item in overall:
+        buckets[lead_language(item[1])].append(item)
+
+    selected: list[tuple[str, list[dict]]] = []
+    selected_urls: set[str] = set()
+    named_languages = sorted((name for name in buckets if name != "Language not stated"), key=str.casefold)
+    # Up to three proven channel leads per named language prevents the largest
+    # English/Portuguese/Spanish sources from taking every research slot.
+    for _ in range(3):
+        for language in named_languages:
+            bucket = buckets[language]
+            if bucket and len(selected) < MAX_CHANNELS:
+                item = bucket.pop(0)
+                selected.append(item)
+                selected_urls.add(item[0])
+    for item in overall:
+        if len(selected) >= MAX_CHANNELS:
+            break
+        if item[0] not in selected_urls:
+            selected.append(item)
+            selected_urls.add(item[0])
+    return selected
+
+
 def research_channel(job: tuple[str, str, tuple[str, str, str] | None]) -> tuple[str, str, tuple[str, str, str] | None, list[dict], str | None]:
     channel_url, expected_channel, default_language = job
     options = {
@@ -85,19 +124,37 @@ def research_channel(job: tuple[str, str, tuple[str, str, str] | None]) -> tuple
 
 def main() -> None:
     search_rows = loaded_search_candidates()
+    selected_language = next(
+        (value.split("=", 1)[1] for value in sys.argv if value.startswith("--language=")),
+        None,
+    )
+    previous: list[dict] = []
+    previous_channels: set[str] = set()
+    if OUTPUT.exists():
+        previous = json.loads(OUTPUT.read_text(encoding="utf-8"))
+        previous_channels = {str(row.get("channelUrl") or "") for row in previous}
     rows_by_url: dict[str, list[dict]] = defaultdict(list)
     for row in search_rows:
         channel_url = str(row.get("sourceChannelUrl") or "").strip()
         if channel_url.startswith("https://www.youtube.com/"):
             rows_by_url[channel_url].append(row)
 
-    ranked = sorted(rows_by_url.items(), key=lambda item: channel_score(item[1]), reverse=True)[:MAX_CHANNELS]
+    if "--new-channels" in sys.argv:
+        rows_by_url = {url: rows for url, rows in rows_by_url.items() if url not in previous_channels}
+    if selected_language:
+        rows_by_url = {
+            url: rows for url, rows in rows_by_url.items()
+            if lead_language(rows).casefold() == selected_language.casefold()
+        }
+    ranked = balanced_channel_ranking(rows_by_url)
     jobs = [
         (channel_url, str(rows[0].get("sourceChannel") or "").strip(), dominant_language(rows))
         for channel_url, rows in ranked
     ]
     existing_ids = research.existing_video_ids()
-    accepted_by_id: dict[str, dict] = {}
+    accepted_by_id: dict[str, dict] = {
+        str(row.get("youtubeId") or ""): row for row in previous if row.get("youtubeId")
+    }
     errors: list[dict[str, str]] = []
     completed = 0
 
@@ -165,6 +222,7 @@ def main() -> None:
         "output": str(OUTPUT),
         "channel_leads": len(rows_by_url),
         "channels_checked": len(jobs),
+        "previous_channels": len(previous_channels),
         "candidates": len(candidates),
         "errors": len(errors),
         "sample_errors": errors[:5],
