@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { addCustomSong, normalizeYouTubeVideoId } from '../data/songLibraryStore';
 import type { MusicStyle } from '../data/songLibraryStore';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface AddSongModalProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
   const [category, setCategory] = useState<MusicStyle>('Contemporary worship');
   const [youtubeId, setYoutubeId] = useState('');
   const [error, setError] = useState('');
+  const dialogRef = useAccessibleDialog<HTMLDivElement>(onClose);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,16 +46,17 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} className="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-song-title" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Add New Hymn / Worship Video</h3>
-          <button type="button" className="icon-btn" onClick={onClose}><X size={18} /></button>
+          <h3 id="add-song-title">Add New Hymn / Worship Video</h3>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close add video"><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
-            <label>Song Title *</label>
+            <label htmlFor="add-song-title-input">Song Title *</label>
             <input
+              id="add-song-title-input"
               type="text"
               required
               value={title}
@@ -63,8 +66,9 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
           </div>
 
           <div className="form-group">
-            <label>Artist / Author</label>
+            <label htmlFor="add-song-artist">Artist / Author</label>
             <input
+              id="add-song-artist"
               type="text"
               value={artist}
               onChange={(e) => setArtist(e.target.value)}
@@ -73,8 +77,8 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
           </div>
 
           <div className="form-group">
-            <label>Category / Style</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value as MusicStyle)}>
+            <label htmlFor="add-song-category">Category / Style</label>
+            <select id="add-song-category" value={category} onChange={(e) => setCategory(e.target.value as MusicStyle)}>
               <option value="Contemporary worship">Contemporary worship</option>
               <option value="Traditional hymn">Traditional hymn</option>
               <option value="Gospel and spiritual">Gospel and spiritual</option>
@@ -88,7 +92,7 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
 
           <div className="form-group">
             <div className="form-group__header">
-              <label>YouTube Video Link or 11-Character ID *</label>
+              <label htmlFor="add-song-youtube">YouTube Video Link or 11-Character ID *</label>
               {title && (
                 <button type="button" className="btn-link" onClick={handleOpenSearch}>
                   <Search size={13} /> Find on YouTube
@@ -96,6 +100,7 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
               )}
             </div>
             <input
+              id="add-song-youtube"
               type="text"
               required
               value={youtubeId}

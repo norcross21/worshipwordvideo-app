@@ -1,5 +1,6 @@
-import type { HymnalCode, HymnalReference, WorshipSong } from './worshipSongs';
+import type { HymnalCode, HymnalReference, LanguagePresentation, WorshipArrangement, WorshipSong } from './worshipSongs';
 import { inferLanguagePresentation, inferWorshipArrangement } from './songPresentation';
+import { canonicaliseSongLanguage, canonicalLanguageName } from './songLanguage';
 
 const CUSTOM_SONGS_KEY = 'liturgy_custom_worship_songs';
 const SONG_OVERRIDES_KEY = 'liturgy_worship_song_overrides';
@@ -34,12 +35,46 @@ export const MUSIC_STYLES = [
 
 export type MusicStyle = typeof MUSIC_STYLES[number];
 
-interface RuntimeCatalogue {
+interface LegacyRuntimeCatalogue {
   version: number;
   songs: WorshipSong[];
 }
 
+interface CompactCatalogueDictionaries {
+  category: string[];
+  language: string[];
+  region: string[];
+  arrangement: string[];
+  languagePresentation: string[];
+}
+
+type CompactSongRow = [
+  id: string,
+  title: string,
+  artist: string,
+  categoryIndex: number,
+  youtubeId: string,
+  languageIndex: number,
+  regionIndex: number,
+  englishTitle: string,
+  ccliUkRank: number,
+  flags: number,
+  arrangementIndex: number,
+  presentationIndex: number,
+  durationSeconds: number,
+  hymnalReferences: HymnalReference[] | 0,
+  transliteration: string,
+];
+
+interface CompactRuntimeCatalogue {
+  version: 2;
+  checkedOn: string;
+  dictionaries: CompactCatalogueDictionaries;
+  songs: CompactSongRow[];
+}
+
 let cataloguePromise: Promise<WorshipSong[]> | null = null;
+let starterCataloguePromise: Promise<WorshipSong[]> | null = null;
 
 function readStoredValue<T>(key: string, fallback: T): T {
   try {
@@ -50,19 +85,92 @@ function readStoredValue<T>(key: string, fallback: T): T {
   }
 }
 
-/** Load the large catalogue as data instead of making the browser parse it as JavaScript. */
-export function loadRuntimeSongLibrary(): Promise<WorshipSong[]> {
-  if (cataloguePromise) return cataloguePromise;
-  cataloguePromise = fetch('/catalogue/worship-songs.json')
+function dictionaryValue(dictionary: string[], compactIndex: number): string | undefined {
+  return compactIndex > 0 ? dictionary[compactIndex - 1] : undefined;
+}
+
+function decodeCompactSong(row: CompactSongRow, payload: CompactRuntimeCatalogue): WorshipSong {
+  const [
+    id,
+    title,
+    artist,
+    categoryIndex,
+    youtubeId,
+    languageIndex,
+    regionIndex,
+    englishTitle,
+    ccliUkRank,
+    flags,
+    arrangementIndex,
+    presentationIndex,
+    durationSeconds,
+    hymnalReferences,
+    transliteration,
+  ] = row;
+  const catalogueReviewed = Boolean(flags & 2);
+  return {
+    id,
+    title,
+    artist,
+    category: dictionaryValue(payload.dictionaries.category, categoryIndex) as WorshipSong['category'],
+    youtubeId,
+    language: canonicalLanguageName(dictionaryValue(payload.dictionaries.language, languageIndex)),
+    region: dictionaryValue(payload.dictionaries.region, regionIndex),
+    englishTitle: englishTitle || undefined,
+    ccliUkRank: ccliUkRank || undefined,
+    wordsIndicated: Boolean(flags & 1),
+    arrangement: dictionaryValue(payload.dictionaries.arrangement, arrangementIndex) as WorshipArrangement | undefined,
+    languagePresentation: dictionaryValue(payload.dictionaries.languagePresentation, presentationIndex) as LanguagePresentation | undefined,
+    catalogueReview: catalogueReviewed ? 'Metadata and embed checked' : undefined,
+    qualityCheckedOn: catalogueReviewed ? payload.checkedOn : undefined,
+    metadataConfidence: flags & 4 ? 'Uploader-stated' : 'Catalogue-inferred',
+    durationSeconds: durationSeconds || undefined,
+    hymnalReferences: hymnalReferences || undefined,
+    transliteration: transliteration || undefined,
+  };
+}
+
+function decodeCatalogue(payload: LegacyRuntimeCatalogue | CompactRuntimeCatalogue): WorshipSong[] {
+  if (payload.version === 2 && 'dictionaries' in payload && Array.isArray(payload.songs)) {
+    return (payload as CompactRuntimeCatalogue).songs.map((row) => decodeCompactSong(row, payload as CompactRuntimeCatalogue));
+  }
+  if (payload.version === 1 && Array.isArray(payload.songs)) {
+    return (payload as LegacyRuntimeCatalogue).songs.map(canonicaliseSongLanguage);
+  }
+  throw new Error('The catalogue response was not recognised.');
+}
+
+function applyPersonalCatalogueData(decodedSongs: WorshipSong[]): WorshipSong[] {
+  const overrides = readStoredValue<Record<string, Partial<WorshipSong>>>(SONG_OVERRIDES_KEY, {});
+  const custom = readStoredValue<WorshipSong[]>(CUSTOM_SONGS_KEY, []);
+  const maintained = decodedSongs.map((song) => canonicaliseSongLanguage(overrides[song.id] ? { ...song, ...overrides[song.id] } : song));
+  return [...maintained, ...custom.map(canonicaliseSongLanguage)].filter((song) => Boolean(song.id && song.title && song.youtubeId));
+}
+
+function fetchCatalogue(path: string): Promise<WorshipSong[]> {
+  return fetch(path)
     .then(async (response) => {
       if (!response.ok) throw new Error(`Catalogue request failed (${response.status}).`);
-      const payload = await response.json() as RuntimeCatalogue;
-      if (payload.version !== 1 || !Array.isArray(payload.songs)) throw new Error('The catalogue response was not recognised.');
-      const overrides = readStoredValue<Record<string, Partial<WorshipSong>>>(SONG_OVERRIDES_KEY, {});
-      const custom = readStoredValue<WorshipSong[]>(CUSTOM_SONGS_KEY, []);
-      const maintained = payload.songs.map((song) => overrides[song.id] ? { ...song, ...overrides[song.id] } : song);
-      return [...maintained, ...custom].filter((song) => Boolean(song.id && song.title && song.youtubeId));
-    })
+      const payload = await response.json() as LegacyRuntimeCatalogue | CompactRuntimeCatalogue;
+      return applyPersonalCatalogueData(decodeCatalogue(payload));
+    });
+}
+
+/** Load a small, language-diverse first page while the complete catalogue downloads. */
+export function loadRuntimeStarterLibrary(): Promise<WorshipSong[]> {
+  if (starterCataloguePromise) return starterCataloguePromise;
+  starterCataloguePromise = fetchCatalogue('/catalogue/worship-songs-starter.json')
+    .catch((error: unknown) => {
+      starterCataloguePromise = null;
+      throw error;
+    });
+  return starterCataloguePromise;
+}
+
+/** Load the complete catalogue once, then retain the decoded search index for this visit. */
+export function loadRuntimeSongLibrary(): Promise<WorshipSong[]> {
+  if (cataloguePromise) return cataloguePromise;
+  cataloguePromise = fetchCatalogue('/catalogue/worship-songs.json')
     .catch((error: unknown) => {
       cataloguePromise = null;
       throw error;
@@ -71,7 +179,7 @@ export function loadRuntimeSongLibrary(): Promise<WorshipSong[]> {
 }
 
 export function languageFiltersForSongs(songs: WorshipSong[]): string[] {
-  const languages = new Set(songs.map((song) => song.language ?? 'English').filter((language) => language !== 'Language not stated'));
+  const languages = new Set(songs.map((song) => canonicalLanguageName(song.language)).filter((language) => language !== 'Language not stated'));
   return [...languages].sort((left, right) => {
     if (left === 'English') return -1;
     if (right === 'English') return 1;

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CheckCircle2, Cable, Laptop, MonitorUp, Play, X } from 'lucide-react';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 export type ProjectionLaunchResult = 'opened' | 'placed' | 'single-screen' | 'blocked';
 
@@ -24,6 +25,7 @@ export function ProjectionSetupGuide({
   const [launchResult, setLaunchResult] = useState<ProjectionLaunchResult | null>(null);
   const [opening, setOpening] = useState(false);
   const platform = useMemo(() => /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent) ? 'mac' : 'windows', []);
+  const dialogRef = useAccessibleDialog<HTMLDivElement>(onClose);
 
   const launch = async () => {
     setOpening(true);
@@ -36,7 +38,7 @@ export function ProjectionSetupGuide({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card projection-guide" role="dialog" aria-modal="true" aria-labelledby="projection-guide-title" onClick={(event) => event.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} className="modal-card projection-guide" role="dialog" aria-modal="true" aria-labelledby="projection-guide-title" onClick={(event) => event.stopPropagation()}>
         <div className="projection-guide__header">
           <div>
             <span>Second-screen setup</span>

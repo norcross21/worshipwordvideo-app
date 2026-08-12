@@ -57,9 +57,11 @@ function EventAwareYouTubePlayer({
   onEnded,
 }: YouTubePlayerProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const endedHandlerRef = useRef(onEnded);
   const [playerUnavailable, setPlayerUnavailable] = useState(false);
   const [ready, setReady] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   endedHandlerRef.current = onEnded;
 
   useEffect(() => {
@@ -67,6 +69,7 @@ function EventAwareYouTubePlayer({
     let player: YouTubePlayerInstance | null = null;
     setPlayerUnavailable(false);
     setReady(false);
+    setAutoplayBlocked(false);
 
     void loadYouTubeIframeApi()
       .then((api) => {
@@ -90,6 +93,9 @@ function EventAwareYouTubePlayer({
             onReady: () => {
               if (!disposed) setReady(true);
             },
+            onAutoplayBlocked: () => {
+              if (!disposed) setAutoplayBlocked(true);
+            },
             onStateChange: (event) => {
               if (!disposed && event.data === YOUTUBE_PLAYER_ENDED) endedHandlerRef.current?.();
             },
@@ -98,6 +104,7 @@ function EventAwareYouTubePlayer({
             },
           },
         });
+        playerRef.current = player;
       })
       .catch(() => {
         if (!disposed) setPlayerUnavailable(true);
@@ -110,6 +117,7 @@ function EventAwareYouTubePlayer({
       } catch {
         // YouTube may already have removed its iframe during navigation.
       }
+      playerRef.current = null;
     };
   }, [autoplay, controls, endSeconds, startSeconds, videoId]);
 
@@ -121,6 +129,13 @@ function EventAwareYouTubePlayer({
           <NativeYouTubeFrame videoId={videoId} title={title} autoplay={autoplay} startSeconds={startSeconds} endSeconds={endSeconds} controls={controls} loading="eager" />
           <span className="youtube-player__notice" role="status">Automatic next-video playback is unavailable for this upload. Use Next when it finishes.</span>
         </>
+      ) : autoplayBlocked ? (
+        <button type="button" className="youtube-player__start" onClick={() => {
+          playerRef.current?.playVideo();
+          setAutoplayBlocked(false);
+        }}>
+          Start video
+        </button>
       ) : !ready ? <span className="youtube-player__loading" role="status">Preparing playback…</span> : null}
     </>
   );

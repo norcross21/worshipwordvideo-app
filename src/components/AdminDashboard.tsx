@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase, supabaseErrorMessage } from '../lib/supabase';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
+import { runMemberAccountAction } from '../lib/memberAccountActions';
 
 interface AdminMemberRow {
   user_id: string;
@@ -59,8 +61,12 @@ export function AdminDashboard() {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deletingMember, setDeletingMember] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const closeDeleteDialog = useCallback(() => {
+    if (!deletingMember) setDeleteCandidate(null);
+  }, [deletingMember]);
+  const deleteDialogRef = useAccessibleDialog<HTMLDivElement>(closeDeleteDialog, Boolean(deleteCandidate));
 
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     if (!supabase || adminRole !== 'master_admin') return;
     setLoading(true);
     setError('');
@@ -71,9 +77,9 @@ export function AdminDashboard() {
     if (loadError) setError(supabaseErrorMessage(loadError, 'Unable to load members.'));
     else setMembers((data ?? []) as AdminMemberRow[]);
     setLoading(false);
-  };
+  }, [adminRole]);
 
-  useEffect(() => { void loadMembers(); }, [adminRole]);
+  useEffect(() => { void loadMembers(); }, [loadMembers]);
 
   const confirmedCount = useMemo(() => members.filter((item) => item.email_confirmed_at).length, [members]);
   const marketingCount = useMemo(() => members.filter((item) => item.kairos_marketing_opt_in).length, [members]);
@@ -134,25 +140,13 @@ export function AdminDashboard() {
 
     setInviteSending(true);
     try {
-      const response = await fetch('/api/admin/invite-member', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          displayName: inviteName,
-          churchName: inviteChurch,
-          email: inviteEmail,
-        }),
+      const message = await runMemberAccountAction({
+        action: 'invite-member',
+        displayName: inviteName,
+        churchName: inviteChurch,
+        email: inviteEmail,
       });
-      const result = await response.json().catch(() => ({})) as { error?: string; message?: string };
-
-      if (!response.ok) {
-        throw new Error(result.error || 'The invitation could not be sent.');
-      }
-
-      setInviteMessage({ type: 'success', text: result.message || `Invitation sent to ${inviteEmail.trim().toLowerCase()}.` });
+      setInviteMessage({ type: 'success', text: message });
       setInviteName('');
       setInviteChurch('');
       setInviteEmail('');
@@ -166,28 +160,30 @@ export function AdminDashboard() {
   };
 
   const deleteMember = async () => {
-    if (!supabase || !deleteCandidate?.email) return;
+    if (!session?.access_token || !deleteCandidate?.email) return;
     setDeleteMessage(null);
     if (deleteConfirmation.trim().toLowerCase() !== deleteCandidate.email.trim().toLowerCase()) {
       setDeleteMessage({ type: 'error', text: 'Type the member email exactly before deleting the account.' });
       return;
     }
     setDeletingMember(true);
-    const { error: deleteError } = await supabase.rpc('delete_member_account', {
-      target_user_id: deleteCandidate.user_id,
-      confirmation_email: deleteConfirmation.trim(),
-    });
-    if (deleteError) {
+    try {
+      const message = await runMemberAccountAction({
+        action: 'delete-member',
+        targetUserId: deleteCandidate.user_id,
+        targetEmail: deleteCandidate.email,
+        confirmation: deleteConfirmation.trim().toLowerCase(),
+      });
+      const deletedEmail = deleteCandidate.email;
+      setMembers((current) => current.filter((member) => member.user_id !== deleteCandidate.user_id));
+      setDeleteCandidate(null);
+      setDeleteConfirmation('');
+      setDeleteMessage({ type: 'success', text: message || `Deleted ${deletedEmail} and their saved services.` });
+    } catch (deleteError) {
       setDeleteMessage({ type: 'error', text: supabaseErrorMessage(deleteError, 'The member account could not be deleted.') });
+    } finally {
       setDeletingMember(false);
-      return;
     }
-    const deletedEmail = deleteCandidate.email;
-    setMembers((current) => current.filter((member) => member.user_id !== deleteCandidate.user_id));
-    setDeleteCandidate(null);
-    setDeleteConfirmation('');
-    setDeletingMember(false);
-    setDeleteMessage({ type: 'success', text: `Deleted ${deletedEmail} and their saved services.` });
   };
 
   if (adminLoading) return <div className="admin-state">Checking administrator access…</div>;
@@ -264,11 +260,11 @@ export function AdminDashboard() {
         </table>
         {loading && <div className="admin-table__loading">Loading members…</div>}
       </div>
-      <p className="admin-safety-note">Member deletion requires exact-email confirmation, cannot delete the master administrator, removes the member's saved services and writes a private audit record.</p>
+      <p className="admin-safety-note">Member deletion requires authenticator verification and exact-email confirmation, cannot delete the master administrator, removes the member's saved services and writes a private audit record.</p>
 
       {deleteCandidate && (
-        <div className="modal-backdrop" onClick={() => !deletingMember && setDeleteCandidate(null)}>
-          <div className="modal-card admin-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="admin-delete-title" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-backdrop" onClick={closeDeleteDialog}>
+          <div ref={deleteDialogRef} tabIndex={-1} className="modal-card admin-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="admin-delete-title" onClick={(event) => event.stopPropagation()}>
             <div className="admin-delete-modal__icon"><AlertTriangle size={26} /></div>
             <h3 id="admin-delete-title">Permanently delete this member?</h3>
             <p>This removes the login for <strong>{deleteCandidate.email}</strong> and deletes all {deleteCandidate.saved_playlist_count} saved service{deleteCandidate.saved_playlist_count === 1 ? '' : 's'}. This cannot be undone.</p>

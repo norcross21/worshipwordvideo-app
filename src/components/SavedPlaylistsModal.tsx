@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Archive,
   CalendarDays,
   CheckCircle2,
   Clock3,
   Cloud,
+  Copy,
   Library,
   ListMusic,
   Music2,
   Plus,
   Play,
+  Pencil,
+  RotateCcw,
   Trash2,
   X,
 } from 'lucide-react';
 import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { formatPlaybackTime, type WorshipQueueItem } from '../data/worshipQueue';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface SavedPlaylistsModalProps {
   activePlaylistId: string | null;
@@ -22,6 +27,7 @@ interface SavedPlaylistsModalProps {
   pendingItem?: WorshipQueueItem | null;
   initialMode?: 'create' | 'manage';
   onActivatePlaylist: (playlist: SavedUserPlaylist) => Promise<void> | void;
+  onPlaylistUpsert?: (playlist: SavedUserPlaylist) => void;
   onPlaylistDeleted?: (playlistId: string) => void;
   onClose: () => void;
 }
@@ -37,7 +43,11 @@ interface SavedServiceCardProps {
   deletingId: string | null;
   openingId: string | null;
   isActive: boolean;
+  isArchived: boolean;
   onOpen: (playlist: SavedUserPlaylist) => void;
+  onDuplicate: (playlist: SavedUserPlaylist) => void;
+  onArchive: (playlist: SavedUserPlaylist) => void;
+  onRename: (playlist: SavedUserPlaylist, title: string) => Promise<boolean>;
   onRequestDelete: (id: string) => void;
   onCancelDelete: () => void;
   onConfirmDelete: (playlist: SavedUserPlaylist) => void;
@@ -99,7 +109,11 @@ function SavedServiceCard({
   deletingId,
   openingId,
   isActive,
+  isArchived,
   onOpen,
+  onDuplicate,
+  onArchive,
+  onRename,
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
@@ -109,6 +123,23 @@ function SavedServiceCard({
   const isConfirmingDelete = deleteCandidateId === playlist.id;
   const isDeleting = deletingId === playlist.id;
   const previewItems = items.slice(0, 3);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(playlist.title);
+  const [renaming, setRenaming] = useState(false);
+
+  const saveTitle = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const nextTitle = titleDraft.trim();
+    if (!nextTitle || nextTitle === playlist.title) {
+      setTitleDraft(playlist.title);
+      setEditingTitle(false);
+      return;
+    }
+    setRenaming(true);
+    const renamed = await onRename(playlist, nextTitle);
+    setRenaming(false);
+    if (renamed) setEditingTitle(false);
+  };
 
   return (
     <li className={`saved-service-card ${isActive ? 'is-active' : ''}`}>
@@ -121,7 +152,13 @@ function SavedServiceCard({
         <div className="saved-service-card__heading">
           <div>
             <span className="saved-service-card__eyebrow">{isActive ? 'Active service' : serviceDate ? 'Planned service' : 'Saved service'}</span>
-            <h5>{playlist.title}</h5>
+            {editingTitle ? (
+              <form className="saved-service-card__rename" onSubmit={(event) => void saveTitle(event)}>
+                <input autoFocus maxLength={120} value={titleDraft} onChange={(event) => setTitleDraft(event.target.value)} aria-label={`Rename ${playlist.title}`} />
+                <button type="submit" disabled={renaming}>{renaming ? 'Saving…' : 'Save'}</button>
+                <button type="button" onClick={() => { setTitleDraft(playlist.title); setEditingTitle(false); }}>Cancel</button>
+              </form>
+            ) : <h5>{playlist.title}</h5>}
           </div>
           {serviceDate ? (
             <time dateTime={playlist.service_date ?? undefined} className="saved-service-card__date"><CalendarDays size={14} /> {serviceDate}</time>
@@ -160,9 +197,12 @@ function SavedServiceCard({
         <div className="saved-service-card__footer">
           <span>{serviceDate ? formatUpdatedAt(playlist.updated_at) : 'Ready to open and edit'}</span>
           <div className="saved-service-card__actions">
-            <button type="button" className="saved-service-card__open" onClick={() => onOpen(playlist)} disabled={openingId === playlist.id}>
+            {!isArchived && <button type="button" className="saved-service-card__open" onClick={() => onOpen(playlist)} disabled={openingId === playlist.id}>
               <Play size={15} fill="currentColor" /> {openingId === playlist.id ? 'Opening…' : isActive ? 'Continue service' : 'Open service'}
-            </button>
+            </button>}
+            {!isArchived && <button type="button" className="saved-service-card__utility" onClick={() => setEditingTitle(true)} aria-label={`Rename ${playlist.title}`} title="Rename service"><Pencil size={15} /></button>}
+            {!isArchived && <button type="button" className="saved-service-card__utility" onClick={() => onDuplicate(playlist)} aria-label={`Duplicate ${playlist.title}`} title="Duplicate service"><Copy size={15} /></button>}
+            <button type="button" className="saved-service-card__utility" onClick={() => onArchive(playlist)} aria-label={`${isArchived ? 'Restore' : 'Archive'} ${playlist.title}`} title={`${isArchived ? 'Restore' : 'Archive'} service`}>{isArchived ? <RotateCcw size={15} /> : <Archive size={15} />}</button>
             {isConfirmingDelete ? (
               <div className="saved-service-card__delete-confirm" role="group" aria-label={`Confirm deletion of ${playlist.title}`}>
                 <span>Delete?</span>
@@ -189,6 +229,7 @@ export function SavedPlaylistsModal({
   pendingItem = null,
   initialMode = 'manage',
   onActivatePlaylist,
+  onPlaylistUpsert,
   onPlaylistDeleted,
   onClose,
 }: SavedPlaylistsModalProps) {
@@ -203,11 +244,13 @@ export function SavedPlaylistsModal({
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const dialogRef = useAccessibleDialog<HTMLDivElement>(onClose);
   const displayedPlaylists = playlists.map((playlist) => playlist.id === activePlaylist?.id
     ? { ...playlist, items: activePlaylist.items, updated_at: activePlaylist.updated_at }
-    : playlist);
+    : playlist).filter((playlist) => showArchived ? Boolean(playlist.archived_at) : !playlist.archived_at);
 
   const fetchUserPlaylists = useCallback(async () => {
     if (!supabase || !userId) {
@@ -219,7 +262,7 @@ export function SavedPlaylistsModal({
       setLoading(true);
       const { data, error: fetchError } = await supabase
         .from('user_playlists')
-        .select('id,user_id,title,items,service_date,notes,created_at,updated_at')
+        .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
         .limit(100);
@@ -239,14 +282,6 @@ export function SavedPlaylistsModal({
   useEffect(() => {
     void fetchUserPlaylists();
   }, [fetchUserPlaylists]);
-
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [onClose]);
 
   const handleCreateService = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -274,7 +309,7 @@ export function SavedPlaylistsModal({
           service_date: serviceDate || null,
           notes: notes.trim() || null,
         })
-        .select('id,user_id,title,items,service_date,notes,created_at,updated_at')
+        .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
         .single();
 
       if (saveError) {
@@ -326,6 +361,78 @@ export function SavedPlaylistsModal({
     }
   };
 
+  const handleRenamePlaylist = async (playlist: SavedUserPlaylist, title: string): Promise<boolean> => {
+    if (!supabase || !userId) return false;
+    setError('');
+    const { data, error: renameError } = await supabase
+      .from('user_playlists')
+      .update({ title })
+      .eq('id', playlist.id)
+      .eq('user_id', userId)
+      .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
+      .single();
+    if (renameError || !data) {
+      setError(renameError?.message ?? 'This service could not be renamed.');
+      return false;
+    }
+    const renamed = data as SavedUserPlaylist;
+    setPlaylists((current) => current.map((item) => item.id === renamed.id ? renamed : item));
+    onPlaylistUpsert?.(renamed);
+    if (activePlaylistId === renamed.id) await onActivatePlaylist(renamed);
+    setSuccess(`Renamed service to “${renamed.title}”.`);
+    return true;
+  };
+
+  const handleDuplicatePlaylist = async (playlist: SavedUserPlaylist) => {
+    if (!supabase || !userId) return;
+    setError('');
+    setSuccess('');
+    const copyTitle = `${playlist.title} — copy`.slice(0, 120);
+    const { data, error: duplicateError } = await supabase
+      .from('user_playlists')
+      .insert({
+        user_id: userId,
+        title: copyTitle,
+        items: Array.isArray(playlist.items) ? playlist.items : [],
+        service_date: null,
+        notes: playlist.notes,
+        archived_at: null,
+      })
+      .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
+      .single();
+    if (duplicateError || !data) {
+      setError(duplicateError?.message ?? 'This service could not be duplicated.');
+      return;
+    }
+    const duplicate = data as SavedUserPlaylist;
+    setPlaylists((current) => [duplicate, ...current]);
+    onPlaylistUpsert?.(duplicate);
+    setSuccess(`Created “${duplicate.title}” with ${duplicate.items.length} video${duplicate.items.length === 1 ? '' : 's'}.`);
+  };
+
+  const handleArchivePlaylist = async (playlist: SavedUserPlaylist) => {
+    if (!supabase || !userId) return;
+    setError('');
+    setSuccess('');
+    const archivedAt = playlist.archived_at ? null : new Date().toISOString();
+    const { data, error: archiveError } = await supabase
+      .from('user_playlists')
+      .update({ archived_at: archivedAt })
+      .eq('id', playlist.id)
+      .eq('user_id', userId)
+      .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
+      .single();
+    if (archiveError || !data) {
+      setError(archiveError?.message ?? 'This service could not be updated.');
+      return;
+    }
+    const updated = data as SavedUserPlaylist;
+    setPlaylists((current) => current.map((item) => item.id === updated.id ? updated : item));
+    if (archivedAt && activePlaylistId === playlist.id) onPlaylistDeleted?.(playlist.id);
+    else if (!archivedAt) onPlaylistUpsert?.(updated);
+    setSuccess(`${archivedAt ? 'Archived' : 'Restored'} “${playlist.title}”.`);
+  };
+
   const openPlaylist = async (playlist: SavedUserPlaylist) => {
     setError('');
     setOpeningId(playlist.id);
@@ -342,6 +449,8 @@ export function SavedPlaylistsModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className={`modal-card modal-card--playlists modal-card--service-library is-${initialMode}-mode`}
         role="dialog"
         aria-modal="true"
@@ -371,7 +480,10 @@ export function SavedPlaylistsModal({
                   <span><Cloud size={15} /> Stored securely in your account</span>
                   <h4 id="service-library-heading">Your service library</h4>
                 </div>
-                <strong>{displayedPlaylists.length} saved</strong>
+                <div className="service-library__view-controls">
+                  <strong>{displayedPlaylists.length} {showArchived ? 'archived' : 'saved'}</strong>
+                  <button type="button" onClick={() => setShowArchived((value) => !value)}>{showArchived ? 'Show current' : 'Show archive'}</button>
+                </div>
               </div>
 
               {loading ? (
@@ -395,7 +507,11 @@ export function SavedPlaylistsModal({
                       deletingId={deletingId}
                       openingId={openingId}
                       isActive={playlist.id === activePlaylistId}
+                      isArchived={Boolean(playlist.archived_at)}
                       onOpen={openPlaylist}
+                      onDuplicate={(item) => void handleDuplicatePlaylist(item)}
+                      onArchive={(item) => void handleArchivePlaylist(item)}
+                      onRename={handleRenamePlaylist}
                       onRequestDelete={setDeleteCandidateId}
                       onCancelDelete={() => setDeleteCandidateId(null)}
                       onConfirmDelete={(item) => void handleDeletePlaylist(item)}

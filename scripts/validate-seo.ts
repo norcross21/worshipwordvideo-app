@@ -47,6 +47,28 @@ const routes = new Set(pages.map(routeForFile));
 const titles = new Map<string, string>();
 const canonicals = new Map<string, string>();
 const errors: string[] = [];
+const cataloguePath = resolve(PUBLIC_DIR, 'catalogue', 'worship-songs.json');
+const starterCataloguePath = resolve(PUBLIC_DIR, 'catalogue', 'worship-songs-starter.json');
+const [catalogueText, starterCatalogueText] = await Promise.all([
+  readFile(cataloguePath, 'utf8'),
+  readFile(starterCataloguePath, 'utf8'),
+]);
+const catalogue = JSON.parse(catalogueText) as { version?: number; dictionaries?: { language?: string[] }; songs?: unknown[][] };
+const starterCatalogue = JSON.parse(starterCatalogueText) as { version?: number; songs?: unknown[][] };
+const catalogueRows = catalogue.songs ?? [];
+const starterRows = starterCatalogue.songs ?? [];
+const catalogueVideoIds = catalogueRows.map((row) => row[4]).filter((value): value is string => typeof value === 'string');
+
+if (catalogue.version !== 2 || starterCatalogue.version !== 2) errors.push('catalogue: compact version 2 payload expected');
+if (catalogueRows.length < 50_000) errors.push(`catalogue: expected at least 50,000 playable videos, found ${catalogueRows.length}`);
+if (starterRows.length < 1_500 || starterRows.length > 3_000) errors.push(`catalogue: starter should contain 1,500–3,000 videos, found ${starterRows.length}`);
+if (Buffer.byteLength(starterCatalogueText) > 750_000) errors.push('catalogue: starter payload exceeds the 750 KB performance budget');
+if (Buffer.byteLength(catalogueText) > 12_000_000) errors.push('catalogue: complete payload exceeds the 12 MB performance budget');
+if (catalogueVideoIds.some((id) => !/^[A-Za-z0-9_-]{11}$/.test(id))) errors.push('catalogue: invalid YouTube video ID found');
+if (new Set(catalogueVideoIds).size !== catalogueVideoIds.length) errors.push('catalogue: repeated YouTube video IDs found');
+for (const deprecatedLanguage of ['Burmese', 'Farsi', 'Persian', 'Filipino', 'Tagalog']) {
+  if (catalogue.dictionaries?.language?.includes(deprecatedLanguage)) errors.push(`catalogue: non-canonical language label remains: ${deprecatedLanguage}`);
+}
 
 for (const file of pages) {
   const route = routeForFile(file);
@@ -108,4 +130,8 @@ console.log(JSON.stringify({
   uniqueCanonicals: canonicals.size,
   structuredData: 'valid',
   internalLinks: 'valid',
+  catalogueVideos: catalogueRows.length,
+  starterVideos: starterRows.length,
+  starterBytes: Buffer.byteLength(starterCatalogueText),
+  catalogueBytes: Buffer.byteLength(catalogueText),
 }, null, 2));

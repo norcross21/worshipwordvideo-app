@@ -20,6 +20,7 @@ export function ProjectionScreen() {
   const launchId = parameters.get('launch') ?? '';
   const wasPlaced = parameters.get('placed') === '1';
   const item = projection.playingIndex == null ? null : projection.queue[projection.playingIndex] ?? null;
+  const itemTitle = item?.title;
 
   const startService = useCallback(() => {
     if (!projection.queue.length) return;
@@ -78,8 +79,8 @@ export function ProjectionScreen() {
     };
   }, [launchId]);
   useEffect(() => {
-    document.title = item ? `${item.title} · Projection` : 'Worship projection';
-  }, [item?.title]);
+    document.title = itemTitle ? `${itemTitle} · Projection` : 'Worship projection';
+  }, [itemTitle]);
   useEffect(() => {
     if (item) setServiceStarted(true);
   }, [item]);

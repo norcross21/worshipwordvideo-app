@@ -22,6 +22,7 @@ export interface YouTubePlayerOptions {
   events?: {
     onReady?: (event: YouTubePlayerEvent) => void;
     onError?: () => void;
+    onAutoplayBlocked?: () => void;
     onStateChange?: (event: YouTubeStateChangeEvent) => void;
   };
 }

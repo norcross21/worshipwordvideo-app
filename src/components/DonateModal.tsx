@@ -1,13 +1,17 @@
 import { ExternalLink, X, ShieldCheck } from 'lucide-react';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 interface DonateModalProps {
   onClose: () => void;
 }
 
 export function DonateModal({ onClose }: DonateModalProps) {
+  const dialogRef = useAccessibleDialog<HTMLDivElement>(onClose);
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className="modal-card modal-card--donate-rich"
         role="dialog"
         aria-modal="true"

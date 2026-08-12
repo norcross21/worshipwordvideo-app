@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { startTransition, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Search,
   ArrowLeft,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import {
   loadRuntimeSongLibrary,
+  loadRuntimeStarterLibrary,
   languageFiltersForSongs,
   getApprovedRuntimeVideos,
   isWellKnownSong,
@@ -38,6 +39,7 @@ import { inferWorshipSeasons, WORSHIP_SEASONS, type WorshipSeason } from '../dat
 import { YouTubePlayer } from './YouTubePlayer';
 import { youtubeWatchUrl } from '../data/youtube';
 import { firstPlayableSong } from '../data/songSelection';
+import { SONG_FAMILIES, songBelongsToFamily, songFamilyForQuery } from '../data/songFamilies';
 
 interface SongLibraryDashboardProps {
   initialFilter?: 'all' | 'ccli' | 'hymnals' | 'verified';
@@ -50,6 +52,12 @@ interface SongLibraryDashboardProps {
 
 const seasonsBySongId = new Map<string, WorshipSeason[]>();
 const MOBILE_CATALOGUE_QUERY = '(max-width: 900px)';
+const MOBILE_RESULT_BATCH = 18;
+const DESKTOP_RESULT_BATCH = 50;
+
+function initialResultBatchSize(): number {
+  return window.matchMedia(MOBILE_CATALOGUE_QUERY).matches ? MOBILE_RESULT_BATCH : DESKTOP_RESULT_BATCH;
+}
 
 function seasonsForSong(song: WorshipSong): WorshipSeason[] {
   const cached = seasonsBySongId.get(song.id);
@@ -83,6 +91,7 @@ export function SongLibraryDashboard({
 }: SongLibraryDashboardProps) {
   const [songs, setSongs] = useState<WorshipSong[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
+  const [catalogueHydrating, setCatalogueHydrating] = useState(false);
   const [catalogueError, setCatalogueError] = useState('');
   const [catalogueReloadToken, setCatalogueReloadToken] = useState(0);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
@@ -100,11 +109,21 @@ export function SongLibraryDashboard({
   
   const [selectedSong, setSelectedSong] = useState<WorshipSong | null>(null);
   const [approvedVideoIds] = useState<Set<string>>(getApprovedRuntimeVideos);
-  const [visibleSongCount, setVisibleSongCount] = useState(50);
+  const [visibleSongCount, setVisibleSongCount] = useState(initialResultBatchSize);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const mobileBackRef = useRef<HTMLButtonElement>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
   const languageFilters = useMemo(() => languageFiltersForSongs(songs), [songs]);
+  const activeSongFamily = useMemo(() => songFamilyForQuery(deferredSearchQuery), [deferredSearchQuery]);
+  const activeFamilyStats = useMemo(() => {
+    if (!activeSongFamily) return null;
+    const familySongs = songs.filter((song) => songBelongsToFamily(song, activeSongFamily));
+    return {
+      videos: familySongs.length,
+      languages: new Set(familySongs.map((song) => song.language ?? 'English').filter((language) => language !== 'Language not stated')).size,
+    };
+  }, [activeSongFamily, songs]);
   const advancedFilterCount = Number(selectedSeason !== 'all')
     + Number(selectedCategory !== 'All')
     + Number(selectedArrangement !== 'all')
@@ -130,20 +149,37 @@ export function SongLibraryDashboard({
   useEffect(() => {
     let active = true;
     setCatalogueLoading(true);
+    setCatalogueHydrating(false);
     setCatalogueError('');
-    void loadRuntimeSongLibrary()
-      .then((library) => {
+    void (async () => {
+      let starterLoaded = false;
+      try {
+        const starter = await loadRuntimeStarterLibrary();
+        if (!active) return;
+        starterLoaded = true;
+        startTransition(() => {
+          setSongs(starter);
+          setCatalogueLoading(false);
+          setCatalogueHydrating(true);
+        });
+      } catch {
+        // The full catalogue below remains the authoritative fallback.
+      }
+      try {
+        const library = await loadRuntimeSongLibrary();
         if (!active) return;
         startTransition(() => {
           setSongs(library);
           setCatalogueLoading(false);
+          setCatalogueHydrating(false);
         });
-      })
-      .catch(() => {
+      } catch {
         if (!active) return;
         setCatalogueLoading(false);
-        setCatalogueError('The worship catalogue could not be loaded. Check your connection and try again.');
-      });
+        setCatalogueHydrating(false);
+        if (!starterLoaded) setCatalogueError('The worship catalogue could not be loaded. Check your connection and try again.');
+      }
+    })();
     return () => { active = false; };
   }, [catalogueReloadToken]);
 
@@ -153,6 +189,7 @@ export function SongLibraryDashboard({
     setMobileDetailOpen(true);
     if (window.matchMedia(MOBILE_CATALOGUE_QUERY).matches) {
       window.requestAnimationFrame(() => {
+        mobileBackRef.current?.focus();
         document.querySelector('.music-dashboard__grid')?.scrollIntoView({ block: 'start' });
       });
     }
@@ -171,7 +208,7 @@ export function SongLibraryDashboard({
   const filteredSongs = useMemo(() => {
     const matches = songs.filter((song) => {
       // 1. Search Query
-      if (deferredSearchQuery.trim() && !songMatchesSearch(song, deferredSearchQuery)) {
+      if (activeSongFamily ? !songBelongsToFamily(song, activeSongFamily) : deferredSearchQuery.trim() && !songMatchesSearch(song, deferredSearchQuery)) {
         return false;
       }
       // 2. Music Style / Category
@@ -211,13 +248,22 @@ export function SongLibraryDashboard({
 
       return true;
     });
-    return sortSongResults(matches, deferredSearchQuery);
-  }, [songs, deferredSearchQuery, selectedCategory, selectedHymnal, selectedLanguage, selectedSeason, selectedArrangement, selectedPresentation, onlyCcliTop100, onlyVerifiedWords, approvedVideoIds]);
+    const sorted = sortSongResults(matches, deferredSearchQuery);
+    if (!activeSongFamily) return sorted;
+    return sorted.sort((left, right) => {
+      const leftLanguage = left.language ?? 'English';
+      const rightLanguage = right.language ?? 'English';
+      if (leftLanguage === 'English' && rightLanguage !== 'English') return -1;
+      if (rightLanguage === 'English' && leftLanguage !== 'English') return 1;
+      return leftLanguage.localeCompare(rightLanguage)
+        || inferLanguagePresentation(left).localeCompare(inferLanguagePresentation(right));
+    });
+  }, [songs, deferredSearchQuery, activeSongFamily, selectedCategory, selectedHymnal, selectedLanguage, selectedSeason, selectedArrangement, selectedPresentation, onlyCcliTop100, onlyVerifiedWords, approvedVideoIds]);
 
   useLayoutEffect(() => {
-    setVisibleSongCount(50);
+    setVisibleSongCount(initialResultBatchSize());
     setMobileDetailOpen(false);
-    setSelectedSong(firstPlayableSong(filteredSongs));
+    setSelectedSong((current) => filteredSongs.find((song) => song.id === current?.id) ?? firstPlayableSong(filteredSongs));
   }, [filteredSongs]);
 
   const selectedHymnalReferences = useMemo(
@@ -335,13 +381,35 @@ export function SongLibraryDashboard({
         </div>
       </div>}
 
+      <div className={`known-song-picker ${activeSongFamily ? 'is-active' : ''}`}>
+        <label>
+          <Sparkles size={15} />
+          <span>Familiar song in other languages</span>
+          <select
+            value={activeSongFamily?.title ?? ''}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setSelectedLanguage('all');
+              if (event.target.value) onVisitorEngaged?.();
+            }}
+            aria-label="Browse a familiar worship song across languages"
+          >
+            <option value="">Choose a song…</option>
+            {SONG_FAMILIES.map((family) => <option key={family.slug} value={family.title}>{family.title}</option>)}
+          </select>
+        </label>
+        {activeSongFamily && activeFamilyStats ? (
+          <p><strong>{activeSongFamily.title}</strong><span>{activeFamilyStats.videos.toLocaleString()} videos across {activeFamilyStats.languages.toLocaleString()} named languages</span></p>
+        ) : <p><span>Compare local-language vocals, English subtitles and translated versions.</span></p>}
+      </div>
+
       {/* Main Grid: Left List (35%) & Right Detail (65%) */}
       <div className={`music-dashboard__grid ${mobileDetailOpen ? 'is-mobile-detail' : ''}`}>
         {/* Left Side: Song Catalog List */}
         <div className="song-list-panel">
           <div className="song-list-panel__header">
             <h3>Results</h3>
-            <span className="song-count-badge" aria-live="polite">{catalogueLoading ? 'Loading…' : isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()} <span className="song-count-label">songs</span></>}</span>
+            <span className="song-count-badge" aria-live="polite">{catalogueLoading ? 'Loading…' : catalogueHydrating ? <>{filteredSongs.length.toLocaleString()}+ <span className="song-count-label">videos · adding full library</span></> : isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()} <span className="song-count-label">videos</span></>}</span>
           </div>
 
           <div className="song-list-panel__scroll">
@@ -397,9 +465,9 @@ export function SongLibraryDashboard({
                 <button
                   type="button"
                   className="btn-load-more"
-                  onClick={() => setVisibleSongCount((count) => count + 50)}
+                  onClick={() => setVisibleSongCount((count) => count + initialResultBatchSize())}
                 >
-                  Show 50 more ({filteredSongs.length - visibleSongCount} remaining)
+                  Show {Math.min(initialResultBatchSize(), filteredSongs.length - visibleSongCount)} more ({filteredSongs.length - visibleSongCount} remaining)
                 </button>
               )}
               </>
@@ -411,7 +479,7 @@ export function SongLibraryDashboard({
         <div className="song-detail-panel">
           {selectedSong ? (
             <>
-              <button type="button" className="mobile-results-back" onClick={showResults}>
+              <button ref={mobileBackRef} type="button" className="mobile-results-back" onClick={showResults}>
                 <ArrowLeft size={17} /> Back to results
               </button>
               <div className="song-detail-panel__header">
@@ -427,6 +495,9 @@ export function SongLibraryDashboard({
                   <div className="song-detail__format" aria-label="Video format">
                     <span><Music size={13} /> {inferWorshipArrangement(selectedSong)}</span>
                     <span><Globe2 size={13} /> {shortPresentationLabel(inferLanguagePresentation(selectedSong))}</span>
+                    <span className={`catalogue-confidence ${selectedSong.metadataConfidence === 'Uploader-stated' ? 'is-uploader' : selectedSong.catalogueReview ? 'is-checked' : 'is-unreviewed'}`}>
+                      <BadgeCheck size={13} /> {selectedSong.metadataConfidence === 'Uploader-stated' ? 'Uploader identified' : selectedSong.catalogueReview ? 'Catalogue checked' : 'Preview carefully'}
+                    </span>
                   </div>
                   {selectedSong.catalogueReview && (
                     <p className="song-detail__review-note">

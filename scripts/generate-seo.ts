@@ -6,6 +6,8 @@ import { LANGUAGE_PRESENTATIONS, inferLanguagePresentation, inferWorshipArrangem
 import { videoTitleIndicatesWords } from '../src/data/videoApproval';
 import { WORSHIP_VIDEO_AUDIT } from '../src/data/worshipVideoAudit';
 import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs';
+import { canonicaliseSongLanguage } from '../src/data/songLanguage';
+import { SONG_FAMILIES, songBelongsToFamily, type SongFamilyDefinition } from '../src/data/songFamilies';
 
 const SITE = 'https://www.worshipwordvideo.org';
 const PUBLIC_DIR = resolve(process.cwd(), 'public');
@@ -22,51 +24,6 @@ interface SeoPage {
   schema: Record<string, unknown> | Array<Record<string, unknown>>;
   openGraphType?: 'website' | 'article';
 }
-
-interface SongFamilyDefinition {
-  slug: string;
-  title: string;
-  matchingTitles: string[];
-}
-
-const SONG_FAMILIES: SongFamilyDefinition[] = [
-  { slug: 'goodness-of-god', title: 'Goodness of God', matchingTitles: ['Goodness of God'] },
-  { slug: 'way-maker', title: 'Way Maker', matchingTitles: ['Way Maker'] },
-  { slug: 'the-blessing', title: 'The Blessing', matchingTitles: ['The Blessing'] },
-  { slug: 'what-a-beautiful-name', title: 'What a Beautiful Name', matchingTitles: ['What a Beautiful Name'] },
-  {
-    slug: 'oceans-where-feet-may-fail',
-    title: 'Oceans (Where Feet May Fail)',
-    matchingTitles: ['Oceans (Where Feet May Fail)', 'Oceans Where Feet May Fail'],
-  },
-  {
-    slug: '10000-reasons-bless-the-lord',
-    title: '10,000 Reasons (Bless the Lord)',
-    matchingTitles: ['10,000 Reasons (Bless the Lord)', '10,000 Reasons'],
-  },
-  { slug: 'build-my-life', title: 'Build My Life', matchingTitles: ['Build My Life'] },
-  { slug: 'holy-forever', title: 'Holy Forever', matchingTitles: ['Holy Forever'] },
-  { slug: 'living-hope', title: 'Living Hope', matchingTitles: ['Living Hope'] },
-  {
-    slug: 'amazing-grace-my-chains-are-gone',
-    title: 'Amazing Grace (My Chains Are Gone)',
-    matchingTitles: ['Amazing Grace (My Chains Are Gone)', 'Amazing Grace My Chains Are Gone'],
-  },
-  { slug: 'amazing-grace', title: 'Amazing Grace', matchingTitles: ['Amazing Grace'] },
-  { slug: 'how-great-is-our-god', title: 'How Great Is Our God', matchingTitles: ['How Great Is Our God'] },
-  { slug: 'here-i-am-to-worship', title: 'Here I Am to Worship', matchingTitles: ['Here I Am to Worship'] },
-  { slug: 'great-are-you-lord', title: 'Great Are You Lord', matchingTitles: ['Great Are You Lord'] },
-  { slug: 'king-of-kings', title: 'King of Kings', matchingTitles: ['King of Kings'] },
-  { slug: 'in-christ-alone', title: 'In Christ Alone', matchingTitles: ['In Christ Alone'] },
-  { slug: 'cornerstone', title: 'Cornerstone', matchingTitles: ['Cornerstone'] },
-  { slug: 'mighty-to-save', title: 'Mighty to Save', matchingTitles: ['Mighty to Save'] },
-  { slug: 'good-good-father', title: 'Good Good Father', matchingTitles: ['Good Good Father'] },
-  { slug: 'reckless-love', title: 'Reckless Love', matchingTitles: ['Reckless Love'] },
-  { slug: 'o-come-to-the-altar', title: 'O Come to the Altar', matchingTitles: ['O Come to the Altar'] },
-  { slug: 'no-longer-slaves', title: 'No Longer Slaves', matchingTitles: ['No Longer Slaves'] },
-  { slug: 'who-you-say-i-am', title: 'Who You Say I Am', matchingTitles: ['Who You Say I Am'] },
-  { slug: 'how-great-thou-art', title: 'How Great Thou Art', matchingTitles: ['How Great Thou Art'] },
-];
 
 const PRESENTATION_PAGE_DETAILS: Record<LanguagePresentation, {
   slug: string;
@@ -138,23 +95,6 @@ function slugify(value: string): string {
     .replace(/^-|-$/g, '');
 }
 
-function normaliseSongFamilyTitle(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function belongsToSongFamily(song: WorshipSong, family: SongFamilyDefinition): boolean {
-  const accepted = new Set(family.matchingTitles.map(normaliseSongFamilyTitle));
-  return [song.englishTitle, song.title]
-    .filter((value): value is string => Boolean(value))
-    .some((value) => accepted.has(normaliseSongFamilyTitle(value)));
-}
-
 function hasPublicWordEvidence(song: WorshipSong): boolean {
   const audit = WORSHIP_VIDEO_AUDIT[song.youtubeId];
   return song.wordsIndicated === true
@@ -165,6 +105,79 @@ function hasPublicWordEvidence(song: WorshipSong): boolean {
 
 function hasNamedLanguage(song: WorshipSong): boolean {
   return (song.language ?? 'English') !== 'Language not stated';
+}
+
+function buildCompactCatalogue(songs: WorshipSong[]) {
+  const dictionaryKeys = ['category', 'language', 'region', 'arrangement', 'languagePresentation'] as const;
+  const dictionaries = Object.fromEntries(dictionaryKeys.map((key) => [
+    key,
+    [...new Set(songs.map((song) => song[key]).filter((value): value is string => Boolean(value)))],
+  ])) as Record<(typeof dictionaryKeys)[number], string[]>;
+  const indexes = Object.fromEntries(dictionaryKeys.map((key) => [
+    key,
+    new Map(dictionaries[key].map((value, index) => [value, index + 1])),
+  ])) as Record<(typeof dictionaryKeys)[number], Map<string, number>>;
+  const checkedOn = songs
+    .map((song) => song.qualityCheckedOn)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1) ?? LAST_MODIFIED;
+
+  const rows = songs.map((song) => {
+    const flags = Number(song.wordsIndicated === true)
+      | (song.catalogueReview ? 2 : 0)
+      | (song.metadataConfidence === 'Uploader-stated' ? 4 : 0);
+    return [
+      song.id,
+      song.title,
+      song.artist,
+      indexes.category.get(song.category) ?? 0,
+      song.youtubeId,
+      indexes.language.get(song.language ?? 'English') ?? 0,
+      indexes.region.get(song.region ?? '') ?? 0,
+      song.englishTitle ?? '',
+      song.ccliUkRank ?? 0,
+      flags,
+      indexes.arrangement.get(song.arrangement ?? '') ?? 0,
+      indexes.languagePresentation.get(song.languagePresentation ?? '') ?? 0,
+      song.durationSeconds ?? 0,
+      song.hymnalReferences?.length ? song.hymnalReferences : 0,
+      song.transliteration ?? '',
+    ];
+  });
+
+  return { version: 2, checkedOn, dictionaries, songs: rows };
+}
+
+function starterCatalogue(songs: WorshipSong[], limit = 2500): WorshipSong[] {
+  const score = (song: WorshipSong) => (
+    (song.catalogueReview ? 5000 : 0)
+    + (song.wordsIndicated ? 3500 : 0)
+    + (song.metadataConfidence === 'Uploader-stated' ? 1400 : 0)
+    + (song.ccliUkRank ? 1200 - Math.min(song.ccliUkRank, 1000) : 0)
+    + (hasNamedLanguage(song) ? 250 : 0)
+    + (song.languagePresentation?.includes('English subtitles') ? 300 : 0)
+  );
+  const ranked = [...songs].sort((left, right) => score(right) - score(left) || left.title.localeCompare(right.title));
+  const chosen: WorshipSong[] = [];
+  const ids = new Set<string>();
+  const add = (song: WorshipSong) => {
+    if (ids.has(song.youtubeId) || chosen.length >= limit) return;
+    ids.add(song.youtubeId);
+    chosen.push(song);
+  };
+
+  // Put a small, strong sample from every named language in the first response.
+  const byLanguage = new Map<string, WorshipSong[]>();
+  for (const song of ranked) {
+    if (!song.wordsIndicated || !hasNamedLanguage(song)) continue;
+    const language = song.language ?? 'English';
+    byLanguage.set(language, [...(byLanguage.get(language) ?? []), song]);
+  }
+  for (const languageSongs of byLanguage.values()) languageSongs.slice(0, 8).forEach(add);
+  ranked.filter((song) => song.wordsIndicated).forEach(add);
+  ranked.forEach(add);
+  return chosen;
 }
 
 function canonicalUrl(path: string): string {
@@ -319,7 +332,9 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
 
   return {
     path: `/languages/${slug}/`,
-    title: `${language} Worship Songs with Lyrics | Church Videos`,
+    title: language.length > 20
+      ? `${language} Worship Videos | Lyrics`
+      : `${language} Worship Songs with Lyrics | Church Videos`,
     description,
     body,
     schema: [
@@ -677,7 +692,9 @@ async function removeDuplicateIndexFiles(parent: string): Promise<void> {
 }
 
 async function generate(): Promise<void> {
-  const playableSongs = getFullSongLibrary().filter((song) => Boolean(song.youtubeId));
+  const playableSongs = getFullSongLibrary()
+    .filter((song) => Boolean(song.youtubeId))
+    .map(canonicaliseSongLanguage);
   const publicSongs = playableSongs.map((song) => ({
     ...song,
     wordsIndicated: hasPublicWordEvidence(song),
@@ -689,7 +706,12 @@ async function generate(): Promise<void> {
   await mkdir(resolve(PUBLIC_DIR, 'catalogue'), { recursive: true });
   await writeFile(
     resolve(PUBLIC_DIR, 'catalogue', 'worship-songs.json'),
-    JSON.stringify({ version: 1, songs: publicSongs }),
+    JSON.stringify(buildCompactCatalogue(publicSongs)),
+    'utf8',
+  );
+  await writeFile(
+    resolve(PUBLIC_DIR, 'catalogue', 'worship-songs-starter.json'),
+    JSON.stringify(buildCompactCatalogue(starterCatalogue(publicSongs))),
     'utf8',
   );
   const uniquePlayableVideos = new Set(playableSongs.map((song) => song.youtubeId)).size;
@@ -732,7 +754,7 @@ async function generate(): Promise<void> {
   const presentationPages = presentations.map(([presentation, songs]) => presentationPage(presentation, songs));
 
   const songFamilies = SONG_FAMILIES
-    .map((family) => [family, playableSongs.filter((song) => belongsToSongFamily(song, family) && hasPublicWordEvidence(song) && hasNamedLanguage(song))] as const)
+    .map((family) => [family, playableSongs.filter((song) => songBelongsToFamily(song, family) && hasPublicWordEvidence(song) && hasNamedLanguage(song))] as const)
     .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 3);
   const songFamilyPages = songFamilies.map(([family, songs]) => songFamilyPage(family, songs));
 

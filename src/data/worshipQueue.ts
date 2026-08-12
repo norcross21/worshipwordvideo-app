@@ -1,6 +1,6 @@
 import type { WorshipSong } from './worshipSongs';
 
-export const WORSHIP_QUEUE_LIMIT = 10;
+export const WORSHIP_QUEUE_LIMIT = 30;
 const WORSHIP_QUEUE_KEY_PREFIX = 'worship_word_video_queue_v2';
 const ACTIVE_SERVICE_KEY_PREFIX = 'worship_word_video_active_service_v1';
 

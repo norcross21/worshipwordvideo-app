@@ -215,11 +215,12 @@ describe('Worship Songs Database', () => {
   });
 
   it('ships the expanded artist catalogue with playable, uniquely linked videos', () => {
+    const searchableArtists = getFullSongLibrary().map((song) => song.artist.toLowerCase());
     expect(FEATURED_WORSHIP_ARTISTS.length).toBeGreaterThanOrEqual(50);
     expect(ARTIST_WORSHIP_SONGS.length).toBeGreaterThanOrEqual(55);
     expect(ARTIST_WORSHIP_SONGS.every((song) => normalizeYouTubeVideoId(song.youtubeId))).toBe(true);
     for (const artist of FEATURED_WORSHIP_ARTISTS) {
-      expect(getFullSongLibrary().some((song) => song.artist.toLowerCase().includes(artist.toLowerCase()))).toBe(true);
+      expect(searchableArtists.some((songArtist) => songArtist.includes(artist.toLowerCase()))).toBe(true);
     }
   });
 

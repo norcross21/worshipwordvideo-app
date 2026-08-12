@@ -17,9 +17,9 @@ const item = (number: number): WorshipQueueItem => ({
 });
 
 describe('worship queue', () => {
-  it('limits the queue to ten unique videos', () => {
-    const queue = Array.from({ length: 10 }, (_, index) => item(index));
-    expect(addToWorshipQueue(queue, item(10))).toHaveLength(10);
+  it('limits a service to thirty unique videos', () => {
+    const queue = Array.from({ length: 30 }, (_, index) => item(index));
+    expect(addToWorshipQueue(queue, item(30))).toHaveLength(30);
     expect(addToWorshipQueue(queue, item(2))).toEqual(queue);
   });
 

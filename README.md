@@ -64,9 +64,9 @@ npm run catalogue:research:language-depth
 
 Database changes are stored in `supabase/migrations`. The cloud playlist table uses Row Level Security so signed-in users can only read and change their own playlists.
 
-The confirmed master account `stephen@kairoshousing.org.uk` receives the protected administrator directory after database verification. The first admin release is deliberately read-only and includes account search, confirmation state and sign-in activity; destructive controls require MFA and audit logging first.
+The confirmed master account `stephen@kairoshousing.org.uk` receives the protected administrator directory after database verification. It includes account search, confirmation state, sign-in activity, consent-safe invitations and guarded member deletion. Deletion requires authenticator verification, exact-email confirmation and a private audit record.
 
-The administrator can also prepare a consent-safe member invitation. Invitations are sent only by a protected server function, never from the browser, and the recipient must choose their own password, accept the account terms and make their own optional Kairos email choice. See [docs/EMAIL_DELIVERY_SETUP.md](docs/EMAIL_DELIVERY_SETUP.md) for the approval and activation checklist.
+The administrator can also prepare a consent-safe member invitation. Invitations and account deletion run in an authenticated Supabase Edge Function, never from ordinary browser permissions, and the recipient must choose their own password, accept the account terms and make their own optional Kairos email choice. See [docs/EMAIL_DELIVERY_SETUP.md](docs/EMAIL_DELIVERY_SETUP.md) for the email checklist.
 
 For a linked Supabase project:
 
@@ -77,7 +77,7 @@ supabase db advisors --linked --type all
 
 ## Deployment
 
-The site is deployed as a Vite app with a protected Vercel Function for administrator invitations. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for Production, Preview, and Development in Vercel. The invitation function additionally requires server-only `SUPABASE_URL` and `SUPABASE_SECRET_KEY`; never expose the secret through a `VITE_` variable or commit it to a live `.env` file.
+The site is deployed as a Vite app on Vercel. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for Production, Preview, and Development. Sensitive account administration runs in the deployed `member-account-actions` Supabase Edge Function; never expose a secret or service-role key through a `VITE_` variable.
 
 ## Charity support
 

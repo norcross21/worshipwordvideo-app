@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase, supabaseErrorMessage, type MemberProfile } from '../lib/supabase';
 
-export const CURRENT_TERMS_VERSION = '2026-08-09';
+export const CURRENT_TERMS_VERSION = '2026-08-12';
 
 export interface SignUpDetails {
   email: string;
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (!supabase || !user) {
       setProfile(null);
       setProfileLoading(false);
@@ -113,11 +113,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
     setProfile(!error && data ? data as MemberProfile : null);
     setProfileLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     void refreshProfile();
-  }, [user?.id]);
+  }, [refreshProfile]);
 
   useEffect(() => {
     let active = true;

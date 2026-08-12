@@ -23,6 +23,7 @@ export interface SavedUserPlaylist {
   items: WorshipQueueItem[];
   service_date: string | null;
   notes: string | null;
+  archived_at?: string | null;
   created_at: string;
   updated_at: string;
 }

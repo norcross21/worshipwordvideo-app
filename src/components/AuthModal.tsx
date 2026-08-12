@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { supabaseErrorMessage } from '../lib/supabase';
 import { LegalModal } from './LegalModal';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 type AuthTab = 'signin' | 'signup' | 'recover' | 'new-password';
 
@@ -37,6 +38,7 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
   const [acceptedAccountUse, setAcceptedAccountUse] = useState(false);
   const [kairosMarketingOptIn, setKairosMarketingOptIn] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
+  const dialogRef = useAccessibleDialog<HTMLDivElement>(onClose, !showLegalModal);
 
   const {
     signInWithEmail,
@@ -73,8 +75,8 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
       return;
     }
 
-    if (!password || password.length < 8) {
-      setError('Use a password of at least 8 characters.');
+    if (tab !== 'signin' && (password.length < 10 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password))) {
+      setError('Use at least 10 characters with an uppercase letter, lowercase letter and number.');
       return;
     }
 
@@ -153,7 +155,7 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
 
   return (
     <div className="modal-backdrop" onClick={showLegalModal ? undefined : onClose}>
-      <div className="modal-card modal-card--auth" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" onClick={(event) => event.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} className="modal-card modal-card--auth" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
           {tab === 'signin' || tab === 'signup' ? (
             <div className="auth-tab-switch">
@@ -214,10 +216,11 @@ export function AuthModal({ onClose, initialTab = 'signin' }: AuthModalProps) {
               <label htmlFor="auth-password">{tab === 'new-password' ? 'New password' : 'Password'}</label>
               <div className="input-with-icon">
                 <KeyRound size={16} className="input-icon" />
-                <input type={showPassword ? 'text' : 'password'} id="auth-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" autoComplete={tab === 'signin' ? 'current-password' : 'new-password'} />
+                <input type={showPassword ? 'text' : 'password'} id="auth-password" required minLength={tab === 'signin' ? undefined : 10} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={tab === 'signin' ? 'Your password' : '10+ characters, upper/lowercase and number'} autoComplete={tab === 'signin' ? 'current-password' : 'new-password'} />
                 <button type="button" className="input-eye-btn" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
               </div>
               {tab === 'signin' && <small className="auth-password-help">Passwords are case-sensitive. Check for extra characters if your browser filled this field.</small>}
+              {tab !== 'signin' && <small className="auth-password-help">Use at least 10 characters with uppercase and lowercase letters and a number.</small>}
             </div>
           )}
 

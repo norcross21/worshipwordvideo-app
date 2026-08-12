@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ExternalLink, FileText, Heart, LockKeyhole, Scale, ShieldAlert, X } from 'lucide-react';
+import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 
 export type LegalSection = 'terms' | 'copyright' | 'privacy' | 'charity';
 
@@ -13,20 +14,13 @@ const APP_CONTACT = 'stephen@kairoshousing.org.uk';
 
 export function LegalModal({ initialSection = 'terms', onClose }: LegalModalProps) {
   const [section, setSection] = useState<LegalSection>(initialSection);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  const dialogRef = useAccessibleDialog<HTMLDivElement>(onClose);
 
   return createPortal(
     <div className="modal-backdrop legal-backdrop" onClick={onClose}>
-      <div className="modal-card legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onClick={(event) => event.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} className="modal-card legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header legal-modal__header">
-          <div><span className="eyebrow"><Scale size={14} /> Legal & safety</span><h2 id="legal-title">Terms, privacy and copyright</h2><p>Effective 8 August 2026 · Last reviewed 9 August 2026</p></div>
+          <div><span className="eyebrow"><Scale size={14} /> Legal & safety</span><h2 id="legal-title">Terms, privacy and copyright</h2><p>Effective 8 August 2026 · Last reviewed 12 August 2026</p></div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close legal and safety information"><X size={19} /></button>
         </div>
 
@@ -124,6 +118,7 @@ function PrivacySection() {
     <p>Supabase provides authentication and database services; Vercel hosts the application; YouTube provides video playback; and the external donation provider processes donations. These providers may process information outside the UK under their own safeguards and notices. Browser-only information stays on that device unless you choose a cloud-saving feature.</p>
     <h4>Retention and your rights</h4>
     <p>Account and cloud-playlist information is retained while the account is active and for the limited period reasonably needed for security, backup or legal obligations after deletion. Marketing preference records may be retained as a suppression record so an opt-out continues to be honoured. Browser data remains until you clear it. You may ask to access, correct, export or delete your information, withdraw marketing permission, restrict or object to processing, or complain to the UK Information Commissioner's Office.</p>
+    <p>Signed-in members can download a copy of their profile, saved services and recorded consent choices, or permanently delete their account, from <strong>Account &amp; email choices</strong>. The master administrator account cannot be deleted through the app. An administrator may delete another member only after two-step authenticator verification; the action is recorded in a private audit log.</p>
     <p>Email <a href={`mailto:${APP_CONTACT}?subject=Worship%20Word%20Video%20privacy%20request`}>{APP_CONTACT}</a> for an account or privacy request. Identity may need to be verified before account information is disclosed or deleted.</p>
     <div className="legal-links">
       <a href="https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-be-informed/" target="_blank" rel="noreferrer">ICO privacy guidance <ExternalLink size={12} /></a>

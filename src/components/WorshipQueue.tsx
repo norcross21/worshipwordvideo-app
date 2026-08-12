@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
+  AlertTriangle,
+  CheckCircle2,
   Info,
   ListMusic,
   LogIn,
@@ -69,6 +71,7 @@ export function WorshipQueue({
   const [showProjectionGuide, setShowProjectionGuide] = useState(false);
   const [projectionActive, setProjectionActive] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
+  const [readiness, setReadiness] = useState<{ issues: string[]; warnings: string[] } | null>(null);
   const projectionWindowRef = useRef<Window | null>(null);
   const projectionLaunchIdRef = useRef('');
   const playingItem = !activeService || playingIndex == null ? null : queue[playingIndex] ?? null;
@@ -101,6 +104,7 @@ export function WorshipQueue({
 
   useEffect(() => {
     setAutoAdvance(false);
+    setReadiness(null);
   }, [activeService?.id]);
 
   useEffect(() => {
@@ -110,7 +114,7 @@ export function WorshipQueue({
   useEffect(() => {
     if (!activeService || playingIndex == null || !queue[playingIndex]) return;
     publishProjectionState({ queue, playingIndex, playbackRevision });
-  }, [activeService?.id, queue, playingIndex, playbackRevision]);
+  }, [activeService, queue, playingIndex, playbackRevision]);
 
   useEffect(() => subscribeToProjectionCommands((command) => {
     if (!command.launchId || command.launchId !== projectionLaunchIdRef.current) return;
@@ -277,6 +281,19 @@ export function WorshipQueue({
       : 'Auto-next is off. Videos will stop until you choose Next.');
   };
 
+  const checkService = () => {
+    const issues: string[] = [];
+    const warnings: string[] = [];
+    if (!queue.length) issues.push('Add at least one worship video.');
+    const invalidTimings = queue.filter((item) => playbackTimingError(item.startSeconds, item.endSeconds, item.durationSeconds));
+    if (invalidTimings.length) issues.push(`${invalidTimings.length} video${invalidTimings.length === 1 ? ' has' : 's have'} invalid start or finish markers.`);
+    const withoutWordEvidence = queue.filter((item) => !item.hasWords);
+    if (withoutWordEvidence.length) warnings.push(`Preview ${withoutWordEvidence.length} video${withoutWordEvidence.length === 1 ? '' : 's'} whose uploader wording does not clearly confirm words or subtitles.`);
+    const withoutDuration = queue.filter((item) => !item.durationSeconds);
+    if (withoutDuration.length) warnings.push(`${withoutDuration.length} video${withoutDuration.length === 1 ? '' : 's'} should be played through because the catalogue has no confirmed duration.`);
+    setReadiness({ issues, warnings });
+  };
+
   return (
     <section className="worship-queue" aria-labelledby="worship-queue-title">
       <div className="worship-queue__heading">
@@ -293,6 +310,7 @@ export function WorshipQueue({
           {activeService && queue.length > 0 && (
             <>
               <button type="button" className="worship-queue__btn-project" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={15} /> Present</button>
+              <button type="button" className="worship-queue__btn-check" onClick={checkService}><CheckCircle2 size={15} /> Check service</button>
               {queue.length > 1 && (
                 <button type="button" className={`worship-queue__auto-next-button ${autoAdvance ? 'is-on' : ''}`} aria-pressed={autoAdvance} onClick={toggleAutoAdvance} title="Choose whether each finished video starts the next one">
                   <SkipForward size={15} /> Auto-next {autoAdvance ? 'on' : 'off'}
@@ -305,6 +323,19 @@ export function WorshipQueue({
       </div>
 
       {projectionMessage && <div className="projection-message" role="status"><Info size={17} /><span>{projectionMessage}</span><button type="button" onClick={() => setProjectionMessage('')} aria-label="Dismiss projection message"><X size={15} /></button></div>}
+
+      {readiness && (
+        <div className={`service-readiness ${readiness.issues.length ? 'has-issues' : 'is-ready'}`} role="status">
+          <span className="service-readiness__icon">{readiness.issues.length ? <AlertTriangle size={18} /> : <CheckCircle2 size={18} />}</span>
+          <div>
+            <strong>{readiness.issues.length ? 'A few things need attention' : 'Service basics look ready'}</strong>
+            {[...readiness.issues, ...readiness.warnings].length ? (
+              <ul>{[...readiness.issues, ...readiness.warnings].map((message) => <li key={message}>{message}</li>)}</ul>
+            ) : <p>All videos have word evidence, duration information and valid playback markers. Please still preview the complete running order before church.</p>}
+          </div>
+          <button type="button" onClick={() => setReadiness(null)} aria-label="Close service check"><X size={15} /></button>
+        </div>
+      )}
 
       {playingItem && !projectionActive && (
         <div className="worship-queue__player-card">

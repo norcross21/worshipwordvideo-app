@@ -1,8 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, CURRENT_TERMS_VERSION, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { LegalModal } from './components/LegalModal';
-import { VersionRefreshButton } from './components/VersionRefreshButton';
 import {
   getActiveServiceId,
   getWorshipQueue,
@@ -100,8 +99,9 @@ function MainApp() {
 
       const { data, error } = await supabase
         .from('user_playlists')
-        .select('id,user_id,title,items,service_date,notes,created_at,updated_at')
+        .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
         .eq('user_id', user.id)
+        .is('archived_at', null)
         .order('updated_at', { ascending: false })
         .limit(100);
       if (!active) return;
@@ -125,17 +125,17 @@ function MainApp() {
 
     void restoreService();
     return () => { active = false; };
-  }, [authLoading, user?.id]);
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (user && queueOwnerId === user.id) saveWorshipQueue(queue, user.id);
-  }, [queue, queueOwnerId, user?.id]);
+  }, [queue, queueOwnerId, user]);
 
   useEffect(() => {
     if (!user || queueOwnerId !== user.id) return;
     setActiveService((current) => current ? { ...current, items: queue } : current);
     setAvailableServices((current) => current.map((service) => service.id === activeService?.id ? { ...service, items: queue } : service));
-  }, [activeService?.id, queue, queueOwnerId, user?.id]);
+  }, [activeService?.id, queue, queueOwnerId, user]);
 
   useEffect(() => {
     const client = supabase;
@@ -149,26 +149,33 @@ function MainApp() {
         .update({ items: queue })
         .eq('id', activeService.id)
         .eq('user_id', user.id)
-        .then(({ error }) => {
-          if (error) {
+        .eq('updated_at', activeService.updated_at)
+        .select('updated_at')
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (error || !data) {
             setServiceSaveState('error');
+            setToastMessage(error
+              ? 'This service could not be saved. Check your connection and try again.'
+              : 'This service was changed in another tab. Reopen it before making more changes.');
+            window.setTimeout(() => setToastMessage(''), 4500);
             return;
           }
           lastCloudItemsRef.current = serialisedItems;
-          setActiveService((current) => current?.id === activeService.id ? { ...current, items: queue, updated_at: new Date().toISOString() } : current);
+          setActiveService((current) => current?.id === activeService.id ? { ...current, items: queue, updated_at: data.updated_at } : current);
           setAvailableServices((current) => current.map((service) => service.id === activeService.id
-            ? { ...service, items: queue, updated_at: new Date().toISOString() }
+            ? { ...service, items: queue, updated_at: data.updated_at }
             : service));
           setServiceSaveState('saved');
           window.setTimeout(() => setServiceSaveState('idle'), 1800);
         });
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [activeService?.id, queue, queueOwnerId, user?.id]);
+  }, [activeService, queue, queueOwnerId, user]);
 
   useEffect(() => {
-    if (!user || profileLoading || !profile || profile.terms_accepted_at || authModalTab) return;
-    const key = `worship_account_setup_prompt:${user.id}`;
+    if (!user || profileLoading || !profile || (profile.terms_accepted_at && profile.terms_version === CURRENT_TERMS_VERSION) || authModalTab) return;
+    const key = `worship_account_setup_prompt:${CURRENT_TERMS_VERSION}:${user.id}`;
     try {
       if (sessionStorage.getItem(key) === 'seen') return;
       sessionStorage.setItem(key, 'seen');
@@ -189,7 +196,7 @@ function MainApp() {
 
     const timer = window.setTimeout(() => setDonationDelayElapsed(true), DONATION_PROMPT_MINIMUM_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [authLoading, user?.id]);
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (authLoading || user || !donationDelayElapsed || !guestHasEngaged) return;
@@ -219,7 +226,7 @@ function MainApp() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [authLoading, donationDelayElapsed, guestHasEngaged, user?.id]);
+  }, [authLoading, donationDelayElapsed, guestHasEngaged, user]);
 
   const recordGuestEngagement = useCallback(() => {
     setGuestHasEngaged(true);
@@ -307,6 +314,12 @@ function MainApp() {
     setQueue([]);
     lastCloudItemsRef.current = '';
     saveActiveServiceId(null, user?.id);
+  };
+
+  const handleServiceUpsert = (service: SavedUserPlaylist) => {
+    if (service.archived_at) return;
+    setAvailableServices((current) => [service, ...current.filter((item) => item.id !== service.id)]);
+    if (activeService?.id === service.id) setActiveService(service);
   };
 
   const handlePresentSingleVideo = async (song: WorshipSong) => {
@@ -465,6 +478,7 @@ function MainApp() {
             pendingItem={pendingPlaylistItem}
             initialMode={serviceModalMode}
             onActivatePlaylist={handleActivateService}
+            onPlaylistUpsert={handleServiceUpsert}
             onPlaylistDeleted={handleServiceDeleted}
             onClose={() => {
               setPendingPlaylistItem(null);
@@ -511,7 +525,6 @@ function MainApp() {
             <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy & Copyright</button>
             <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a>
           </div>
-          <VersionRefreshButton />
         </div>
       </footer>
     </div>
