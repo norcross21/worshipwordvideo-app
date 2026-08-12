@@ -37,7 +37,7 @@ export function isUsableWorshipVideoListing(song: WorshipSong): boolean {
   if (/carrie underwood\s*[-–—]\s*church bells|the star\s*[-–—]\s*mariah carey|mariah carey.*the star|celine dion.*(?:wonderful jesus|living god)/i.test(metadata)) return false;
   if (song.language === 'French' && /\baustin french\b/i.test(metadata)) return false;
   if (/\bpreaching\b/i.test(metadata) && !/\b(?:song|hymn|lyrics?|worship music)\b/i.test(metadata)) return false;
-  if (/\bconference\s*20\d{2}\b/i.test(metadata) && !/\b(?:song|hymn|lyrics?|worship|praise)\b/i.test(metadata)) return false;
+  if (/\bconference\s*20\d{2}\b/i.test(song.title) && !/\b(?:song|hymn|lyrics?|lyric video|worship|praise)\b/i.test(song.title)) return false;
 
   const duration = song.durationSeconds ?? audit?.durationSeconds;
   if (duration != null && (duration < 45 || duration > 15 * 60)) return false;

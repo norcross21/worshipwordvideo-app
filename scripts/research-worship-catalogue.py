@@ -404,7 +404,7 @@ def is_quality_row(title: str, channel: str, language: str, code: str) -> bool:
         return False
     if re.search(r"\bpreaching\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship music)\b", value, re.I):
         return False
-    if re.search(r"\bconference\s*20\d{2}\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship|praise)\b", value, re.I):
+    if re.search(r"\bconference\s*20\d{2}\b", title, re.I) and not re.search(r"\b(song|hymn|lyrics?|lyric video|worship|praise)\b", title, re.I):
         return False
     if re.search(r"\btalk talk\s*[-–—]\s*it'?s my life\b", value, re.I):
         return False
@@ -425,7 +425,7 @@ def is_existing_quality_row(title: str, channel: str, language: str, code: str) 
         return False
     if re.search(r"\bpreaching\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship music)\b", value, re.I):
         return False
-    if re.search(r"\bconference\s*20\d{2}\b", value, re.I) and not re.search(r"\b(song|hymn|lyrics?|worship|praise)\b", value, re.I):
+    if re.search(r"\bconference\s*20\d{2}\b", title, re.I) and not re.search(r"\b(song|hymn|lyrics?|lyric video|worship|praise)\b", title, re.I):
         return False
     return bool(CHRISTIAN_SIGNAL.search(value))
 

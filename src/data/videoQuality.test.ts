@@ -135,5 +135,21 @@ describe('video quality helpers', () => {
       youtubeId: 'yz012345678',
       wordsIndicated: true,
     })).toBe(true);
+    expect(isUsableWorshipVideoListing({
+      id: 'subtitled-conference',
+      title: 'Global Myanmar Conference 2026 (English Subtitle)',
+      artist: 'The Light Worship Center',
+      category: 'Gospel and spiritual',
+      youtubeId: 'z0123456789',
+      wordsIndicated: true,
+    })).toBe(false);
+    expect(isUsableWorshipVideoListing({
+      id: 'conference-song',
+      title: 'Salvation Is Here - Hillsong Conference 2005 with Lyrics',
+      artist: 'Worship lyrics',
+      category: 'Contemporary Worship',
+      youtubeId: '0123456789A',
+      wordsIndicated: true,
+    })).toBe(true);
   });
 });
