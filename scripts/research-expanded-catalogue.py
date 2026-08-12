@@ -24,7 +24,7 @@ from yt_dlp import YoutubeDL
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = Path("/tmp/wwv-expanded-search-candidates.json")
 RESULTS_PER_QUERY = 25
-MAX_WORKERS = 2
+MAX_WORKERS = 4
 
 SPEC = importlib.util.spec_from_file_location(
     "catalogue_research",
@@ -124,6 +124,11 @@ def generic_queries(language: str) -> list[str]:
         f"{language} Christian hymn lyrics",
         f"modern worship {language} subtitles",
         f"Christian worship {language} English subtitles",
+        f"{language} Christian worship English subtitles",
+        f"{language} worship song English translation lyrics",
+        f"{language} gospel song English subtitles",
+        f"{language} Christian hymn English subtitles",
+        f"{language} bilingual English worship lyrics",
         f"{language} Christian karaoke worship",
         f"Christmas worship {language} lyrics",
         f"Easter worship {language} lyrics",
@@ -171,6 +176,8 @@ def search_job(job: tuple[str, str, str, str]) -> tuple[str, str, str, str, list
     try:
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(f"ytsearch{RESULTS_PER_QUERY}:{query}", download=False) or {}
+        if not info:
+            return language, code, region, query, [], "YouTube returned no search response."
         return language, code, region, query, list(info.get("entries") or []), None
     except Exception as error:
         return language, code, region, query, [], str(error)

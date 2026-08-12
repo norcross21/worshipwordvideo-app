@@ -11,6 +11,7 @@ import importlib.util
 import json
 import re
 import ssl
+import sys
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -116,18 +117,25 @@ def fetch(job: tuple[str, str, str, str]) -> tuple[list[dict], str | None]:
 
 
 def main() -> None:
+    english_subtitles_only = "--english-subtitles" in sys.argv
     completed: set[str] = set()
     if SEARCH_CACHE.exists():
         data = json.loads(SEARCH_CACHE.read_text(encoding="utf-8"))
         completed.update(data.get("completedQueries", []))
     jobs: list[tuple[str, str, str, str]] = []
     for language, code, region in research.LANGUAGES:
-        for query in expanded.generic_queries(language):
-            if f"{language}\t{query}" not in completed:
+        queries = expanded.generic_queries(language)
+        if english_subtitles_only:
+            queries = [query for query in queries if "english" in query.lower()]
+        for query in queries:
+            if english_subtitles_only or f"{language}\t{query}" not in completed:
                 jobs.append((language, code, region, query))
     jobs = jobs[:MAX_QUERIES]
 
     candidates: dict[str, dict] = {}
+    if OUTPUT.exists():
+        for row in json.loads(OUTPUT.read_text(encoding="utf-8")):
+            candidates[str(row["youtubeId"])] = row
     errors: list[str] = []
     done = 0
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:

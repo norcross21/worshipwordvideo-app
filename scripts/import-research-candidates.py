@@ -31,6 +31,7 @@ SOURCE_PATHS = [
     Path("/tmp/wwv-channel-feed-candidates.json"),
     Path("/tmp/wwv-channel-html-candidates.json"),
     Path("/tmp/wwv-search-html-candidates.json"),
+    Path("/tmp/wwv-trusted-channel-videos.json"),
 ]
 CHANNEL_PAGE_SOURCE_PATHS = [
     Path("/tmp/wwv-channel-page-videos.json"),
@@ -115,6 +116,8 @@ def candidate_score(item: dict) -> float:
         score += 4
     if any(word in title.lower() for word in ("official lyric", "subtitles", "translated", "translation", "with lyrics")):
         score += 2
+    if re.search(r"english\s+(?:subtitles?|captions?|translation|lyrics?)|eng\s*sub", title, re.I):
+        score += 6
     if item.get("sourceKind") == "channel-page":
         score += 1
     return score
@@ -246,7 +249,11 @@ def main() -> None:
 
     candidates.sort(key=candidate_score, reverse=True)
     # Check extra candidates so transient metadata failures do not prevent the target.
-    check_pool = candidates[: max(2400, TARGET - len(base_rows) + 3000)]
+    # Recheck a generous reserve because unavailable/blocked videos and stale
+    # titles are discarded here. The larger pool also prevents high-volume
+    # English channels from crowding smaller language collections out before
+    # the round-robin selection stage.
+    check_pool = candidates[: max(2400, TARGET - len(base_rows) + 8000)]
     metadata_by_id: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {pool.submit(youtube_embed_metadata, str(item["youtubeId"])): item for item in check_pool}

@@ -4,9 +4,9 @@ Worship Word Video helps English-speaking and multilingual churches find worship
 
 The app includes contemporary worship songs, traditional hymns, CCLI UK favourites, several hymn-book indexes, verified words-video markers, local custom songs, and optional cloud playlist saving.
 
-The international catalogue includes the original discovery collections, a 5,548-video words/subtitle expansion and 1,800 newly rechecked word-video leads. Automatically researched entries retain their exact YouTube ID, channel, language, region, duration, words-evidence label and review date. Language is only asserted when the uploader title, channel or script supports it; otherwise the entry says “Language not stated”. They are discovery aids rather than linguistic, theological or copyright endorsements, so a native speaker or church leader should review a video before public use.
+The international catalogue combines curated collections with a large, regularly rechecked words/subtitle discovery library. Automatically researched entries retain their exact YouTube ID, channel, language, region, duration, words-evidence label and review date. Language is only asserted when the uploader title, channel or script supports it; otherwise the entry says “Language not stated”. They are discovery aids rather than linguistic, theological or copyright endorsements, so a fluent speaker or church leader should review a video before public use.
 
-The maintained catalogue now contains 15,224 entries, including 12,048 playable videos with unique YouTube IDs across 85 language labels. Exact-video cards distinguish musical arrangements (including contemporary, live, choral, country, acoustic and traditional) and whether uploader metadata indicates English words, translated subtitles, native-language words, English subtitles or a bilingual format.
+The maintained catalogue now contains 37,525 playable videos with unique YouTube IDs across 114 named languages. Exact-video cards distinguish musical arrangements (including contemporary, live, choral, country, acoustic and traditional) and whether uploader metadata indicates English words, translated subtitles, native-language words, English subtitles or a bilingual format.
 
 Service playlists support optional start and stop points using seconds or `m:ss`. A dedicated projection URL opens only the synced YouTube player on a second monitor or projector while the service dashboard stays on the operator's screen.
 
@@ -45,7 +45,7 @@ npm run build
 
 ## Search discovery
 
-The production build generates 77 substantial language pages, 11 worship-style pages, three practical church guides, a root sitemap and crawler files from the current catalogue.
+The production build generates substantial language, worship-style, presentation, season and familiar-song pages, six practical church guides, a root sitemap and crawler files from the current catalogue.
 
 ```bash
 npm run seo:generate

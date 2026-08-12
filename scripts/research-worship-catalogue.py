@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "src" / "data"
 OUTPUT = DATA_DIR / "researchedWordWorshipVideos.json"
-TARGET = 25750
+TARGET = 45750
 RESULTS_PER_QUERY = 50
 
 LANGUAGES = [

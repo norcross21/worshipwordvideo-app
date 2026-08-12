@@ -9,8 +9,8 @@ import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs
 
 const SITE = 'https://www.worshipwordvideo.org';
 const PUBLIC_DIR = resolve(process.cwd(), 'public');
-const LAST_MODIFIED = '2026-08-10';
-const FEED_DATE = 'Mon, 10 Aug 2026 00:00:00 GMT';
+const LAST_MODIFIED = '2026-08-12';
+const FEED_DATE = 'Wed, 12 Aug 2026 00:00:00 GMT';
 const INDEXNOW_KEY = 'b2b960d2c713e3e71a89a4f6e34345d1';
 const MIN_LANGUAGE_PAGE_VIDEOS = 3;
 
@@ -261,7 +261,7 @@ ${page.openGraphType === 'article' ? `  <meta property="article:modified_time" c
   <footer class="seo-footer">
     <nav aria-label="Useful links"><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/songs/">Songs across languages</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
     <p>Worship Word Video is a free directory and playlist-planning tool. Videos remain hosted by YouTube and subject to the uploader's and YouTube's terms. Always preview a video and confirm church licensing before public use.</p>
-    <p><a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a></p>
+    <p><a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20enquiry">Contact: stephen@kairoshousing.org.uk</a> · <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a></p>
   </footer>
 </body>
 </html>`;
