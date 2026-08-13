@@ -18,6 +18,7 @@ import { ProjectionScreen } from './components/ProjectionScreen';
 import { ServiceWorkspaceBar } from './components/ServiceWorkspaceBar';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
+import { accountSetupIsCurrent, accountSetupPromptKey } from './lib/accountSetup';
 import {
   PROJECTION_WINDOW_NAME,
   chooseProjectionScreen,
@@ -174,16 +175,28 @@ function MainApp() {
   }, [activeService, queue, queueOwnerId, user]);
 
   useEffect(() => {
-    if (!user || profileLoading || !profile || (profile.terms_accepted_at && profile.terms_version === CURRENT_TERMS_VERSION) || authModalTab) return;
-    const key = `worship_account_setup_prompt:${CURRENT_TERMS_VERSION}:${user.id}`;
+    if (!user || profileLoading || !profile || accountSetupIsCurrent(profile, CURRENT_TERMS_VERSION) || authModalTab) return;
     try {
-      if (sessionStorage.getItem(key) === 'seen') return;
-      sessionStorage.setItem(key, 'seen');
+      // A dismissed reminder stays dismissed on this device for this terms
+      // version. A genuinely new version gets one fresh, non-repeating prompt.
+      if (localStorage.getItem(accountSetupPromptKey(user.id, CURRENT_TERMS_VERSION)) === 'dismissed') return;
     } catch {
-      // Account setup can still open when browser storage is restricted.
+      // Do not repeatedly interrupt people when durable storage is restricted.
+      return;
     }
     setShowAccountModal(true);
   }, [authModalTab, profile, profileLoading, user]);
+
+  const closeAccountModal = () => {
+    if (user) {
+      try {
+        localStorage.setItem(accountSetupPromptKey(user.id, CURRENT_TERMS_VERSION), 'dismissed');
+      } catch {
+        // Closing account settings must always work.
+      }
+    }
+    setShowAccountModal(false);
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -496,7 +509,7 @@ function MainApp() {
 
       {showAccountModal && user && (
         <Suspense fallback={null}>
-          <AccountModal savedServiceCount={availableServices.length} onClose={() => setShowAccountModal(false)} />
+          <AccountModal savedServiceCount={availableServices.length} onClose={closeAccountModal} />
         </Suspense>
       )}
 

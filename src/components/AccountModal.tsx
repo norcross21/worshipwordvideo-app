@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Building2, CheckCircle2, Download, ExternalLink, Heart, ListMusic, Mail, Save, ShieldAlert, Trash2, UserRound, X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { CURRENT_TERMS_VERSION, useAuth } from '../context/AuthContext';
 import { supabase, supabaseErrorMessage } from '../lib/supabase';
 import { LegalModal } from './LegalModal';
 import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 import { runMemberAccountAction } from '../lib/memberAccountActions';
+import { accountSetupIsCurrent } from '../lib/accountSetup';
 
 interface AccountModalProps {
   savedServiceCount?: number;
@@ -33,13 +34,14 @@ export function AccountModal({ savedServiceCount = 0, onClose }: AccountModalPro
   const [mfaBusy, setMfaBusy] = useState(false);
   const [mfaMessage, setMfaMessage] = useState('');
   const dialogRef = useAccessibleDialog<HTMLDivElement>(onClose, !showLegalModal);
+  const accountTermsAreCurrent = accountSetupIsCurrent(profile, CURRENT_TERMS_VERSION);
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? user?.user_metadata?.display_name ?? '');
     setChurchName(profile?.church_name ?? user?.user_metadata?.church_name ?? '');
     setKairosMarketingOptIn(profile?.kairos_marketing_opt_in ?? false);
-    setAcceptAccountTerms(Boolean(profile?.terms_accepted_at));
-  }, [profile, user]);
+    setAcceptAccountTerms(accountTermsAreCurrent);
+  }, [accountTermsAreCurrent, profile, user]);
 
   useEffect(() => {
     if (!supabase || adminRole !== 'master_admin') return;
@@ -76,7 +78,7 @@ export function AccountModal({ savedServiceCount = 0, onClose }: AccountModalPro
         displayName,
         churchName,
         kairosMarketingOptIn,
-        acceptAccountTerms: !profile?.terms_accepted_at,
+        acceptAccountTerms: !accountTermsAreCurrent,
       });
       if (updateError) setError(updateError.message);
       else setSuccess('Account and email preferences saved.');
@@ -195,7 +197,7 @@ export function AccountModal({ savedServiceCount = 0, onClose }: AccountModalPro
 
           <div className="membership-consents">
             <label className="terms-consent">
-              <input type="checkbox" checked={acceptAccountTerms} onChange={(event) => setAcceptAccountTerms(event.target.checked)} disabled={Boolean(profile?.terms_accepted_at)} required />
+              <input type="checkbox" checked={acceptAccountTerms} onChange={(event) => setAcceptAccountTerms(event.target.checked)} disabled={accountTermsAreCurrent} required />
               <span>I agree to the <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy and Copyright guidance</button> and understand my email is used for essential account and security messages.</span>
             </label>
             <label className="terms-consent terms-consent--optional">
