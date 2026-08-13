@@ -23,7 +23,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOGUE = ROOT / "public" / "catalogue" / "worship-songs.json"
-FAMILIAR_SOURCE = ROOT / "src" / "data" / "expandedWordWorshipVideos.json"
+FAMILIAR_FAMILIES = ROOT / "public" / "catalogue" / "familiar-song-families.json"
+FAMILIAR_FALLBACK = ROOT / "src" / "data" / "expandedWordWorshipVideos.json"
 OUTPUT = Path("/tmp/wwv-language-depth-candidates.json")
 SSL_CONTEXT = ssl._create_unverified_context()
 DEFAULT_TARGET = 500
@@ -85,16 +86,37 @@ def video_renderers(value: object) -> list[dict]:
 def catalogue_state() -> tuple[Counter[str], set[str]]:
     if not CATALOGUE.exists():
         raise SystemExit("Run `npm run seo:generate` before language-depth research.")
-    songs = json.loads(CATALOGUE.read_text(encoding="utf-8")).get("songs", [])
+    catalogue = json.loads(CATALOGUE.read_text(encoding="utf-8"))
+    songs = catalogue.get("songs", [])
+    if catalogue.get("version") == 2:
+        languages = catalogue.get("dictionaries", {}).get("language", [])
+        return Counter(
+            str(languages[row[5] - 1]) if len(row) > 5 and row[5] else "Language not stated"
+            for row in songs
+        ), {str(row[4]) for row in songs if len(row) > 4 and row[4]}
     return Counter(str(song.get("language") or "Language not stated") for song in songs), {
         str(song.get("youtubeId") or "") for song in songs
     }
 
 
 def familiar_titles(limit: int) -> list[str]:
-    rows = json.loads(FAMILIAR_SOURCE.read_text(encoding="utf-8"))
+    if FAMILIAR_FAMILIES.exists():
+        families = json.loads(FAMILIAR_FAMILIES.read_text(encoding="utf-8"))
+        return [str(family["title"]).strip() for family in families[:limit] if family.get("title")]
+    rows = json.loads(FAMILIAR_FALLBACK.read_text(encoding="utf-8"))
     counts = Counter(str(row[6]).strip() for row in rows if len(row) > 6 and row[6])
     return [title for title, _ in counts.most_common(limit)]
+
+
+def title_matches_familiar(source_title: str, familiar_title: str) -> bool:
+    normalise = lambda value: re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
+    source = normalise(source_title)
+    target = normalise(familiar_title)
+    if target and target in source:
+        return True
+    stop = {"the", "and", "for", "with", "you", "your", "our", "are", "this", "that", "into"}
+    tokens = [token for token in target.split() if len(token) > 2 and token not in stop]
+    return bool(tokens) and sum(token in source.split() for token in tokens) / len(tokens) >= 0.75
 
 
 def queries_for(title: str, language: str) -> tuple[str, ...]:
@@ -145,6 +167,7 @@ def fetch(job: tuple[str, str, str, str, str]) -> tuple[str, list[dict], str | N
                 or not channel
                 or not evidence
                 or not 75 <= duration <= 900
+                or not title_matches_familiar(title, english_title)
                 or not research.has_language_signal(title, channel, language, code)
                 or not research.is_quality_row(title, channel, language, code)
             ):

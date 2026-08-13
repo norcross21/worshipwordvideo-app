@@ -1,5 +1,6 @@
 import type { WorshipSong } from './worshipSongs';
 import translatedVideoRows from './knownTranslatedWorshipVideos.json';
+import depthVideoRows from './knownTranslatedWorshipVideoDepth.json';
 
 type TranslatedVideoRow = [
   youtubeId: string,
@@ -12,9 +13,16 @@ type TranslatedVideoRow = [
   wordsIndicated: boolean,
   durationSeconds: number,
   viewCountAtReview: number,
+  languagePresentation?: WorshipSong['languagePresentation'],
+  vocalLanguage?: string,
+  subtitleLanguage?: string,
+  arrangement?: WorshipSong['arrangement'],
 ];
 
-const rows = translatedVideoRows as unknown as TranslatedVideoRow[];
+const rows = [...new Map(
+  ([...translatedVideoRows, ...depthVideoRows] as unknown as TranslatedVideoRow[])
+    .map((row) => [row[0], row] as const),
+).values()];
 
 /** Familiar modern worship songs in local-language, translated or subtitled versions. */
 export const KNOWN_TRANSLATED_WORSHIP_SONGS: WorshipSong[] = rows.map(([
@@ -28,6 +36,10 @@ export const KNOWN_TRANSLATED_WORSHIP_SONGS: WorshipSong[] = rows.map(([
   wordsIndicated,
   durationSeconds,
   viewCountAtReview,
+  languagePresentation,
+  vocalLanguage,
+  subtitleLanguage,
+  arrangement,
 ], index) => ({
   id: `known-${languageCode}-${String(index + 1).padStart(3, '0')}`,
   title: sourceTitle,
@@ -51,6 +63,10 @@ export const KNOWN_TRANSLATED_WORSHIP_SONGS: WorshipSong[] = rows.map(([
   wordEvidence: wordsIndicated ? 'Lyrics or subtitles indicated by the uploader' : undefined,
   durationSeconds,
   viewCountAtReview,
+  languagePresentation,
+  vocalLanguage,
+  subtitleLanguage,
+  arrangement,
 }));
 
 export const KNOWN_TRANSLATED_COUNTS = {

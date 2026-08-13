@@ -12,6 +12,7 @@ lerna-debug.log*
 node_modules
 public/catalogue/worship-songs.json
 public/catalogue/worship-songs-starter.json
+public/catalogue/familiar-song-families.json
 dist
 dist-ssr
 *.tsbuildinfo

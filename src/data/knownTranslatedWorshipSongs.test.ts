@@ -3,20 +3,20 @@ import { KNOWN_TRANSLATED_COUNTS, KNOWN_TRANSLATED_WORSHIP_SONGS } from './known
 
 describe('familiar translated worship collection', () => {
   it('adds a substantial source-checked collection across every international language group', () => {
-    expect(KNOWN_TRANSLATED_WORSHIP_SONGS.length).toBeGreaterThanOrEqual(240);
-    expect(KNOWN_TRANSLATED_COUNTS.languages).toBe(29);
-    expect(KNOWN_TRANSLATED_COUNTS.familiarSongs).toBe(5);
+    expect(KNOWN_TRANSLATED_WORSHIP_SONGS.length).toBeGreaterThanOrEqual(340);
+    expect(KNOWN_TRANSLATED_COUNTS.languages).toBeGreaterThanOrEqual(32);
+    expect(KNOWN_TRANSLATED_COUNTS.familiarSongs).toBeGreaterThanOrEqual(55);
   });
 
   it('keeps the familiar English song identity searchable', () => {
     const titles = new Set(KNOWN_TRANSLATED_WORSHIP_SONGS.map((song) => song.englishTitle));
-    expect(titles).toEqual(new Set([
+    for (const title of [
       'Goodness of God',
       'Way Maker',
       'The Blessing',
       'What a Beautiful Name',
       'Oceans Where Feet May Fail',
-    ]));
+    ]) expect(titles.has(title)).toBe(true);
   });
 
   it('has unique checked video links and complete provenance', () => {

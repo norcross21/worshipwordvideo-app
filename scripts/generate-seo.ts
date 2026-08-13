@@ -714,6 +714,11 @@ async function generate(): Promise<void> {
     JSON.stringify(buildCompactCatalogue(starterCatalogue(publicSongs))),
     'utf8',
   );
+  await writeFile(
+    resolve(PUBLIC_DIR, 'catalogue', 'familiar-song-families.json'),
+    JSON.stringify(SONG_FAMILIES),
+    'utf8',
+  );
   const uniquePlayableVideos = new Set(playableSongs.map((song) => song.youtubeId)).size;
   const namedLanguageCount = new Set(
     playableSongs
