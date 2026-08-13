@@ -1,41 +1,16 @@
 import { getFullSongLibrary } from '../src/data/songLibraryStore';
+import { SONG_FAMILIES, songBelongsToFamily, type SongFamilyDefinition } from '../src/data/songFamilies';
 import { videoTitleIndicatesWords } from '../src/data/videoApproval';
 import { WORSHIP_VIDEO_AUDIT } from '../src/data/worshipVideoAudit';
 
 const requestedTitles = process.argv.slice(2);
-const defaultTitles = [
-  '10,000 Reasons (Bless the Lord)',
-  'Build My Life',
-  'Holy Forever',
-  'Living Hope',
-  'Amazing Grace (My Chains Are Gone)',
-  'Amazing Grace',
-  'How Great Is Our God',
-  'Here I Am to Worship',
-  'Great Are You Lord',
-  'King of Kings',
-  'In Christ Alone',
-  'Cornerstone',
-  'Mighty to Save',
-  'Good Good Father',
-  'Reckless Love',
-  'O Come to the Altar',
-  'No Longer Slaves',
-  'Who You Say I Am',
-  'What a Friend We Have in Jesus',
-  'How Great Thou Art',
-  'Blessed Assurance',
-];
-
-function normaliseTitle(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+const requestedFamilies: SongFamilyDefinition[] = requestedTitles.length
+  ? requestedTitles.map((title) => ({
+    slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+    title,
+    matchingTitles: [title],
+  }))
+  : SONG_FAMILIES;
 
 const songs = getFullSongLibrary().filter((song) => (
   Boolean(song.youtubeId)
@@ -47,25 +22,22 @@ const songs = getFullSongLibrary().filter((song) => (
   )
 ));
 
-let qualifyingFamilies = 0;
+let pickerQualifyingFamilies = 0;
+let seoQualifyingFamilies = 0;
 let qualifyingWordVideos = 0;
 
-for (const title of requestedTitles.length ? requestedTitles : defaultTitles) {
-  const key = normaliseTitle(title);
-  const matches = songs.filter((song) => (
-    [song.title, song.englishTitle]
-      .filter((value): value is string => Boolean(value))
-      .some((value) => normaliseTitle(value) === key)
-  ));
+for (const family of requestedFamilies) {
+  const matches = songs.filter((song) => songBelongsToFamily(song, family));
   const languages = [...new Set(matches.map((song) => song.language ?? 'English'))].sort();
   const namedLanguages = languages.filter((language) => language !== 'Language not stated');
   const namedVideos = matches.filter((song) => (song.language ?? 'English') !== 'Language not stated').length;
+  if (namedLanguages.length >= 2) pickerQualifyingFamilies += 1;
   if (namedLanguages.length >= 3) {
-    qualifyingFamilies += 1;
+    seoQualifyingFamilies += 1;
     qualifyingWordVideos += namedVideos;
   }
   console.log(JSON.stringify({
-    title,
+    title: family.title,
     wordVideos: namedVideos,
     namedLanguages: namedLanguages.length,
     languageNames: namedLanguages,
@@ -73,4 +45,13 @@ for (const title of requestedTitles.length ? requestedTitles : defaultTitles) {
   }));
 }
 
-console.log(JSON.stringify({ summary: { qualifyingFamilies, qualifyingWordVideos, minimumNamedLanguages: 3 } }));
+console.log(JSON.stringify({
+  summary: {
+    configuredFamilies: requestedFamilies.length,
+    pickerQualifyingFamilies,
+    pickerMinimumNamedLanguages: 2,
+    seoQualifyingFamilies,
+    seoMinimumNamedLanguages: 3,
+    qualifyingWordVideos,
+  },
+}));

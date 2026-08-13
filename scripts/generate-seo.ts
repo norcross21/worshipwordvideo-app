@@ -7,7 +7,7 @@ import { videoTitleIndicatesWords } from '../src/data/videoApproval';
 import { WORSHIP_VIDEO_AUDIT } from '../src/data/worshipVideoAudit';
 import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs';
 import { canonicaliseSongLanguage } from '../src/data/songLanguage';
-import { SONG_FAMILIES, songBelongsToFamily, type SongFamilyDefinition } from '../src/data/songFamilies';
+import { SONG_FAMILIES, songFamilyForSong, type SongFamilyDefinition } from '../src/data/songFamilies';
 
 const SITE = 'https://www.worshipwordvideo.org';
 const PUBLIC_DIR = resolve(process.cwd(), 'public');
@@ -753,9 +753,18 @@ async function generate(): Promise<void> {
     .filter(([, songs]) => songs.length >= 3);
   const presentationPages = presentations.map(([presentation, songs]) => presentationPage(presentation, songs));
 
+  const songsByFamily = new Map<string, WorshipSong[]>();
+  for (const song of playableSongs) {
+    if (!hasPublicWordEvidence(song) || !hasNamedLanguage(song)) continue;
+    const family = songFamilyForSong(song);
+    if (!family) continue;
+    const familySongs = songsByFamily.get(family.slug) ?? [];
+    familySongs.push(song);
+    songsByFamily.set(family.slug, familySongs);
+  }
   const songFamilies = SONG_FAMILIES
-    .map((family) => [family, playableSongs.filter((song) => songBelongsToFamily(song, family) && hasPublicWordEvidence(song) && hasNamedLanguage(song))] as const)
-    .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 3);
+    .map((family) => [family, songsByFamily.get(family.slug) ?? []] as const)
+    .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 2);
   const songFamilyPages = songFamilies.map(([family, songs]) => songFamilyPage(family, songs));
 
   const languageIndex: SeoPage = {
@@ -804,9 +813,9 @@ async function generate(): Promise<void> {
 
   const songFamilyIndex: SeoPage = {
     path: '/songs/',
-    title: 'Modern Worship Songs in Different Languages | Churches',
-    description: 'Compare well-known modern worship songs in multiple languages, with clear vocal, lyrics, translation and subtitle labels for church services.',
-    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Songs across languages</span></nav><article class="seo-hero"><p class="seo-eyebrow">Familiar songs, more languages</p><h1>Well-known worship songs in different languages</h1><p class="seo-lead">Start with a familiar modern worship song, then compare native-language covers, translated subtitles, English subtitles and bilingual versions. Every result opens in the same simple finder so you can preview the exact YouTube upload before church use.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search the complete catalogue</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div></article><section class="seo-section"><div class="seo-card-grid">${songFamilies.map(([family, songs]) => { const languageCount = new Set(songs.map((song) => song.language ?? 'English')).size; return `<a class="seo-card" href="/songs/${family.slug}/"><strong>${escapeHtml(family.title)}</strong><span>${songs.length.toLocaleString('en-GB')} playable versions across ${languageCount.toLocaleString('en-GB')} languages</span></a>`; }).join('')}</div></section><section class="seo-section seo-help"><h2>Why these collections are selective</h2><p>A useful song page needs several real language versions and enough public metadata to distinguish what people will hear and read. The site does not create empty pages for song titles with little evidence, and it does not reproduce copyrighted lyrics.</p></section>`,
+    title: 'Familiar Worship Songs in Different Languages | Churches',
+    description: 'Compare 100 familiar modern worship songs and hymns in multiple languages, with clear vocal, lyrics, translation and subtitle labels for church services.',
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Songs across languages</span></nav><article class="seo-hero"><p class="seo-eyebrow">Familiar songs, more languages</p><h1>100 familiar worship songs in different languages</h1><p class="seo-lead">Start with a familiar modern worship song or hymn, then compare native-language covers, translated subtitles, English subtitles and bilingual versions. Every result opens in the same simple finder so you can preview the exact YouTube upload before church use.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search the complete catalogue</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div></article><section class="seo-section"><div class="seo-card-grid">${songFamilies.map(([family, songs]) => { const languageCount = new Set(songs.map((song) => song.language ?? 'English')).size; return `<a class="seo-card" href="/songs/${family.slug}/"><strong>${escapeHtml(family.title)}</strong><span>${songs.length.toLocaleString('en-GB')} playable versions across ${languageCount.toLocaleString('en-GB')} languages</span></a>`; }).join('')}</div></section><section class="seo-section seo-help"><h2>Why these collections are selective</h2><p>Every song in this collection has word-video evidence in at least two named languages. The site does not create empty pages for song titles without useful multilingual results, and it does not reproduce copyrighted lyrics.</p></section>`,
     schema: [
       { '@type': 'CollectionPage', name: 'Well-known worship songs in different languages', url: `${SITE}/songs/`, mainEntity: { '@type': 'ItemList', numberOfItems: songFamilyPages.length, itemListElement: songFamilyPages.map((page, index) => ({ '@type': 'ListItem', position: index + 1, url: canonicalUrl(page.path), name: page.title })) } },
       breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Songs across languages', path: '/songs/' }]),
