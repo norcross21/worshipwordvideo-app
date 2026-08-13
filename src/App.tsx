@@ -19,6 +19,7 @@ import { ServiceWorkspaceBar } from './components/ServiceWorkspaceBar';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
 import { accountSetupIsCurrent, accountSetupPromptKey } from './lib/accountSetup';
+import { recordUsageEvent } from './lib/usageAnalytics';
 import {
   PROJECTION_WINDOW_NAME,
   chooseProjectionScreen,
@@ -66,6 +67,10 @@ function MainApp() {
     const params = new URLSearchParams(window.location.search);
     return params.get('reset-password') === '1' || params.get('invite') === '1' ? 'new-password' : null;
   });
+
+  useEffect(() => {
+    if (!authLoading) recordUsageEvent('visit', 'page');
+  }, [authLoading]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -278,6 +283,7 @@ function MainApp() {
     const nextQueue = addToWorshipQueue(queue, item);
 
     setQueue(nextQueue);
+    if (nextQueue.length > queue.length) recordUsageEvent('playlist_add');
     setToastMessage(nextQueue.length === queue.length
       ? `“${song.title}” is already in ${activeService.title}.`
       : `✓ Added “${song.title}” to ${activeService.title}`);
@@ -301,6 +307,7 @@ function MainApp() {
       if (error) throw new Error(supabaseErrorMessage(error, 'The video could not be added to this service.'));
     }
     const nextService = { ...playlist, items };
+    if (pendingPlaylistItem) recordUsageEvent('playlist_add');
     lastCloudItemsRef.current = JSON.stringify(items);
     setActiveService(nextService);
     setAvailableServices((current) => [nextService, ...current.filter((service) => service.id !== nextService.id)]);
@@ -358,6 +365,7 @@ function MainApp() {
       window.setTimeout(() => setToastMessage(''), 4000);
       return;
     }
+    recordUsageEvent('projection_open');
 
     let alreadyOpen = false;
     try {

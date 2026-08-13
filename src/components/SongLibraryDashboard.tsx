@@ -41,6 +41,7 @@ import { YouTubePlayer } from './YouTubePlayer';
 import { youtubeWatchUrl } from '../data/youtube';
 import { firstPlayableSong } from '../data/songSelection';
 import { SONG_FAMILIES, songBelongsToFamily, songFamilyForQuery } from '../data/songFamilies';
+import { recordUsageEvent } from '../lib/usageAnalytics';
 
 interface SongLibraryDashboardProps {
   initialFilter?: 'all' | 'ccli' | 'hymnals' | 'verified';
@@ -186,6 +187,7 @@ export function SongLibraryDashboard({
 
   const showSong = (song: WorshipSong) => {
     onVisitorEngaged?.();
+    recordUsageEvent('video_preview');
     setSelectedSong(song);
     setMobileDetailOpen(true);
     if (window.matchMedia(MOBILE_CATALOGUE_QUERY).matches) {
@@ -302,7 +304,10 @@ export function SongLibraryDashboard({
             value={searchQuery}
             onChange={(event) => {
               setSearchQuery(event.target.value);
-              if (event.target.value.trim()) onVisitorEngaged?.();
+              if (event.target.value.trim()) {
+                onVisitorEngaged?.();
+                recordUsageEvent('search', 'first-search');
+              }
             }}
           />
           {searchQuery && (
@@ -316,7 +321,10 @@ export function SongLibraryDashboard({
             <span className="sr-only">Language</span>
             <select value={selectedLanguage} onChange={(event) => {
               setSelectedLanguage(event.target.value);
-              if (event.target.value !== 'all') onVisitorEngaged?.();
+              if (event.target.value !== 'all') {
+                onVisitorEngaged?.();
+                recordUsageEvent('language_filter');
+              }
             }} aria-label="Filter by language">
               <option value="all">All languages ({songsMatchingOtherFilters.length.toLocaleString()})</option>
               {languageFilters.map((language) => (

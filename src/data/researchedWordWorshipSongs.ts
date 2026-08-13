@@ -57,7 +57,10 @@ export const RESEARCHED_WORD_WORSHIP_SONGS: WorshipSong[] = rows.map(([
   viewCountAtReview: viewCountAtReview || undefined,
   wordsIndicated: true,
   arrangement,
-  languagePresentation,
+  languagePresentation: language === 'Italian' && languagePresentation === 'Native-language vocal with native words' && (
+    /sottotitoli\s+(?:in\s+)?italiano|testo\s+(?:in\s+)?italiano|italian(?:o)?\s+(?:subtitles?|sottotitoli|text|lyrics?)/i.test(sourceTitle)
+    && /hillsong|bethel|elevation|maverick|english|original/i.test(sourceTitle)
+  ) ? 'English vocal with translated subtitles' : languagePresentation,
   metadataConfidence: 'Catalogue-inferred',
 }));
 

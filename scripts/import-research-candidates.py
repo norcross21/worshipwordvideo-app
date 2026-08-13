@@ -12,6 +12,7 @@ import json
 import math
 import re
 import ssl
+import sys
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import Counter, defaultdict
@@ -70,6 +71,25 @@ research = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(research)
 TARGET = research.TARGET
 SSL_CONTEXT = ssl._create_unverified_context()
+
+ITALIAN_FAMILIAR_ALIASES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"bont[aà]\s+di\s+dio", re.I), "Goodness of God"),
+    (re.compile(r"che\s+(?:magnifico|bel|meraviglioso)\s+nome", re.I), "What a Beautiful Name"),
+    (re.compile(r"(?:il\s+)?nostro\s+dio|dio\s+[eè]\s+grande", re.I), "Our God Is Greater"),
+    (re.compile(r"lo\s+farai\s+ancora", re.I), "Do It Again"),
+    (re.compile(r"cristo\s+muove\s+le\s+montagne", re.I), "Mighty to Save"),
+    (re.compile(r"io\s+mi\s+arrendo", re.I), "Surrender"),
+    (re.compile(r"(?:oceani|mare\s+profondo)", re.I), "Oceans (Where Feet May Fail)"),
+    (re.compile(r"jireh", re.I), "Jireh"),
+    (re.compile(r"million\s+little\s+miracles", re.I), "Million Little Miracles"),
+    (re.compile(r"io\s+credo|questo\s+io\s+credo", re.I), "This I Believe (The Creed)"),
+    (re.compile(r"(?:innalzo|alzo)\s+un\s+alleluia", re.I), "Raise a Hallelujah"),
+    (re.compile(r"\bthe\s+blessing\b", re.I), "The Blessing"),
+    (re.compile(r"worthy\s+is\s+the\s+lamb", re.I), "Worthy Is the Lamb"),
+    (re.compile(r"behold\s+our\s+god", re.I), "Behold Our God"),
+    (re.compile(r"grande\s+sei\s+tu", re.I), "How Great Thou Art"),
+    (re.compile(r"o\s+lode\s+al\s+nome", re.I), "O Praise the Name (Anástasis)"),
+]
 
 
 def cached_candidates(path: Path) -> list[dict]:
@@ -163,6 +183,12 @@ def supported_familiar_title(source_title: str, familiar_title: str | None) -> s
     return familiar_title if tokens and matched / len(tokens) >= 0.6 else None
 
 
+def inferred_familiar_title(source_title: str, language: str) -> str | None:
+    if language != "Italian":
+        return None
+    return next((english_title for pattern, english_title in ITALIAN_FAMILIAR_ALIASES if pattern.search(source_title)), None)
+
+
 def explicitly_named_language(title: str) -> tuple[str, str, str] | None:
     lowered = title.lower()
     matches: list[tuple[str, str, str]] = []
@@ -176,6 +202,7 @@ def explicitly_named_language(title: str) -> tuple[str, str, str] | None:
 
 
 def main() -> None:
+    selected_language = next((value.split("=", 1)[1] for value in sys.argv if value.startswith("--language=")), None)
     existing_source_ids = research.existing_video_ids()
     reviewed_channel_languages = {
         str(item.get("youtubeId") or ""): (
@@ -204,7 +231,8 @@ def main() -> None:
         if str(row[3]) != "Language not stated":
             row[7] = research.presentation(str(row[1]), str(row[3]))
         if len(row) > 11:
-            row[11] = supported_familiar_title(str(row[1]), str(row[11]) if row[11] else None)
+            row[11] = supported_familiar_title(str(row[1]), str(row[11]) if row[11] else None) \
+                or inferred_familiar_title(str(row[1]), str(row[3]))
     if len(base_rows) >= TARGET:
         OUTPUT.write_text(json.dumps(base_rows, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(json.dumps({"selected": len(base_rows), "mode": "metadata-label cleanup"}, indent=2))
@@ -235,6 +263,8 @@ def main() -> None:
             ):
                 continue
             requested_language = str(item.get("language") or "Language not stated")
+            if selected_language and requested_language.casefold() != selected_language.casefold():
+                continue
             requested_code = str(item.get("languageCode") or "und")
             requested_region = str(item.get("region") or "International / verify before use")
             reviewed_channel_language = (
@@ -352,7 +382,8 @@ def main() -> None:
         evidence = research.word_evidence(title)
         if not evidence:
             continue
-        familiar_title = supported_familiar_title(title, str(item.get("englishTitle") or item.get("title") or "").strip() or None)
+        familiar_title = supported_familiar_title(title, str(item.get("englishTitle") or item.get("title") or "").strip() or None) \
+            or inferred_familiar_title(title, language)
         views = int(item.get("viewCountAtReview") or item.get("viewCount") or 0)
         verified_duration = int(metadata.get("durationSeconds") or item["durationSeconds"])
         if verified_duration < 75 or verified_duration > 900:

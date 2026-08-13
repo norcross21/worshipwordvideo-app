@@ -20,7 +20,7 @@ export function LegalModal({ initialSection = 'terms', onClose }: LegalModalProp
     <div className="modal-backdrop legal-backdrop" onClick={onClose}>
       <div ref={dialogRef} tabIndex={-1} className="modal-card legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header legal-modal__header">
-          <div><span className="eyebrow"><Scale size={14} /> Legal & safety</span><h2 id="legal-title">Terms, privacy and copyright</h2><p>Effective 8 August 2026 · Last reviewed 12 August 2026</p></div>
+          <div><span className="eyebrow"><Scale size={14} /> Legal & safety</span><h2 id="legal-title">Terms, privacy and copyright</h2><p>Effective 8 August 2026 · Last reviewed 13 August 2026</p></div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close legal and safety information"><X size={19} /></button>
         </div>
 
@@ -107,12 +107,13 @@ function PrivacySection() {
       <li><strong>Accounts:</strong> email address, display name, optional church or organisation, account identifier, confirmation date, sign-in timestamps and acceptance of the current terms.</li>
       <li><strong>Email choices:</strong> whether and when you opted in to or out of occasional Kairos Housing news, appeals and fundraising emails.</li>
       <li><strong>Saved service plans:</strong> playlist names, optional service date and notes, selected video metadata, playback start/stop points and update dates.</li>
+      <li><strong>Anonymous usage totals:</strong> page visits and broad actions such as searches, video previews, playlist additions and projection launches. These events use a random page-lifetime identifier and do not include IP addresses, account identifiers, search words, video IDs or playlist names. They are used only as aggregate service-improvement metrics, expire after 13 months, and master-administrator activity is excluded.</li>
       <li><strong>On your device:</strong> current queue, custom links, display choices and video-verification choices may be stored in browser storage.</li>
       <li><strong>Security and delivery:</strong> Supabase and Vercel may process technical logs such as IP address, device/browser details, request times and errors.</li>
       <li><strong>YouTube:</strong> opening a song page loads its embedded player and sends technical information to Google/YouTube. Privacy-enhanced mode reduces personalisation but does not prevent every third-party request or cookie.</li>
     </ul>
     <h4>Why and lawful basis</h4>
-    <p>Account and playlist information is used to provide the service requested by the member. Essential confirmation, password, account and security emails are part of operating the membership. Security, fault diagnosis, abuse prevention and basic service administration are carried out for legitimate operational interests, balanced against user rights.</p>
+    <p>Account and playlist information is used to provide the service requested by the member. Essential confirmation, password, account and security emails are part of operating the membership. Security, fault diagnosis, abuse prevention, anonymous aggregate usage measurement and basic service administration are carried out for legitimate operational interests, balanced against user rights.</p>
     <p>Kairos Housing news, appeals and fundraising emails are separate from essential account messages. They are sent only where a recorded permission or another lawful basis applies. The sign-up choice is optional, not pre-selected, and can be changed in Account &amp; email choices. Marketing messages must identify Kairos Housing and provide a simple way to stop future messages.</p>
     <h4>Storage, sharing and transfers</h4>
     <p>Supabase provides authentication and database services; Vercel hosts the application; YouTube provides video playback; and the external donation provider processes donations. These providers may process information outside the UK under their own safeguards and notices. Browser-only information stays on that device unless you choose a cloud-saving feature.</p>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  BarChart3,
   AlertTriangle,
   CheckCircle2,
   Clock3,
@@ -8,16 +9,19 @@ import {
   Heart,
   ListMusic,
   MailPlus,
+  PlayCircle,
   RefreshCw,
   Search,
   ShieldCheck,
   Trash2,
+  Tv2,
   UsersRound,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase, supabaseErrorMessage } from '../lib/supabase';
 import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 import { runMemberAccountAction } from '../lib/memberAccountActions';
+import { loadAdminUsageMetrics, type UsageMetrics } from '../lib/usageAnalytics';
 
 interface AdminMemberRow {
   user_id: string;
@@ -61,6 +65,10 @@ export function AdminDashboard() {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deletingMember, setDeletingMember] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [metricDays, setMetricDays] = useState(30);
+  const [metrics, setMetrics] = useState<UsageMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [metricsError, setMetricsError] = useState('');
   const closeDeleteDialog = useCallback(() => {
     if (!deletingMember) setDeleteCandidate(null);
   }, [deletingMember]);
@@ -80,6 +88,21 @@ export function AdminDashboard() {
   }, [adminRole]);
 
   useEffect(() => { void loadMembers(); }, [loadMembers]);
+
+  const loadMetrics = useCallback(async () => {
+    if (adminRole !== 'master_admin') return;
+    setMetricsLoading(true);
+    setMetricsError('');
+    try {
+      setMetrics(await loadAdminUsageMetrics(metricDays));
+    } catch (loadError) {
+      setMetricsError(supabaseErrorMessage(loadError, 'Unable to load usage metrics.'));
+    } finally {
+      setMetricsLoading(false);
+    }
+  }, [adminRole, metricDays]);
+
+  useEffect(() => { void loadMetrics(); }, [loadMetrics]);
 
   const confirmedCount = useMemo(() => members.filter((item) => item.email_confirmed_at).length, [members]);
   const marketingCount = useMemo(() => members.filter((item) => item.kairos_marketing_opt_in).length, [members]);
@@ -206,6 +229,38 @@ export function AdminDashboard() {
         <article><ListMusic size={20} /><strong>{playlistCount}</strong><span>Saved services</span></article>
         <article><Heart size={20} /><strong>{marketingCount}</strong><span>Kairos email opt-ins</span></article>
       </div>
+
+      <section className="admin-analytics" aria-labelledby="admin-analytics-title">
+        <div className="admin-analytics__heading">
+          <div>
+            <span className="eyebrow"><BarChart3 size={14} /> App use</span>
+            <h3 id="admin-analytics-title">How people use Worship Word Video</h3>
+            <p>Anonymous aggregate activity only. Your master-admin sessions are excluded automatically.</p>
+          </div>
+          <label>
+            <span className="sr-only">Metrics period</span>
+            <select value={metricDays} onChange={(event) => setMetricDays(Number(event.target.value))}>
+              <option value={7}>Last 7 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={90}>Last 90 days</option>
+            </select>
+          </label>
+        </div>
+        {metricsError ? <div className="auth-alert auth-alert--error" role="alert">{metricsError}</div> : null}
+        {metricsLoading ? <div className="admin-analytics__loading" role="status">Loading usage totals…</div> : metrics ? (
+          <div className="admin-analytics__grid">
+            <article><Activity size={19} /><strong>{metrics.totals.browser_sessions.toLocaleString()}</strong><span>Browser sessions</span></article>
+            <article><Search size={19} /><strong>{metrics.totals.searches.toLocaleString()}</strong><span>Searches started</span></article>
+            <article><BarChart3 size={19} /><strong>{metrics.totals.language_filters.toLocaleString()}</strong><span>Language filters used</span></article>
+            <article><PlayCircle size={19} /><strong>{metrics.totals.video_previews.toLocaleString()}</strong><span>Videos opened</span></article>
+            <article><ListMusic size={19} /><strong>{metrics.totals.playlist_adds.toLocaleString()}</strong><span>Playlist additions</span></article>
+            <article><Tv2 size={19} /><strong>{metrics.totals.projection_opens.toLocaleString()}</strong><span>Projection launches</span></article>
+            <article><ListMusic size={19} /><strong>{metrics.totals.services_created.toLocaleString()}</strong><span>Services created</span></article>
+            <article><UsersRound size={19} /><strong>{metrics.totals.signed_in_sessions.toLocaleString()}</strong><span>Signed-in sessions</span></article>
+          </div>
+        ) : null}
+        <p className="admin-analytics__privacy"><ShieldCheck size={14} /> No IP addresses, account IDs, search words, video IDs or service names are stored. Totals begin when this update goes live and events expire after 13 months.</p>
+      </section>
 
       <section className="admin-invite" aria-labelledby="admin-invite-title">
         <div className="admin-invite__intro">

@@ -33,6 +33,53 @@ DEFAULT_SONGS_PER_LANGUAGE = 35
 MAX_WORKERS = 6
 
 
+# Common Italian titles used by churches and uploaders. The English family
+# remains the catalogue identity; these aliases only improve discovery and
+# title matching for genuinely translated versions.
+ITALIAN_FAMILIAR_TITLES: dict[str, tuple[str, ...]] = {
+    "Goodness of God": ("Bontà di Dio", "La bontà di Dio"),
+    "10,000 Reasons (Bless the Lord)": ("Diecimila ragioni", "Benedici il Signore anima mia"),
+    "Amazing Grace": ("Grazia meravigliosa", "Qual grazia"),
+    "How Great Thou Art": ("Grande sei Tu",),
+    "What a Beautiful Name": ("Che nome meraviglioso", "Che bel nome è"),
+    "King of Kings": ("Re dei Re",),
+    "Oceans (Where Feet May Fail)": ("Oceani", "Dove i piedi possono fallire"),
+    "Here I Am to Worship": ("Sono qui a lodarti",),
+    "The Heart of Worship": ("La vera adorazione",),
+    "I Surrender": ("Io mi arrendo", "Mi arrendo"),
+    "Who You Say I Am": ("Tu dici chi sono", "Chi dici che io sia"),
+    "Cornerstone": ("Pietra angolare",),
+    "Do It Again": ("Lo farai ancora",),
+    "Living Hope": ("Speranza viva",),
+    "Great Are You Lord": ("Grande sei Signore",),
+    "Holy Forever": ("Santo per sempre",),
+    "Same God": ("Lo stesso Dio",),
+    "Firm Foundation (He Won't)": ("Fondamento saldo",),
+    "Gratitude": ("Gratitudine",),
+    "Blessed Be Your Name": ("Benedetto il tuo nome",),
+    "Open the Eyes of My Heart": ("Apri gli occhi del mio cuore",),
+    "Shout to the Lord": ("Grida al Signore", "Canta al Signore"),
+    "Above All": ("Al di sopra di tutto",),
+    "Our God Is Greater": ("Nostro Dio", "Il nostro Dio", "Dio è grande"),
+    "Mighty to Save": ("Potente da salvare",),
+    "This I Believe (The Creed)": ("Io credo", "Il credo"),
+    "Christ Is Enough": ("Cristo è tutto per me",),
+    "Hosanna": ("Osanna",),
+    "Good Good Father": ("Buon Padre", "Buon buon Padre"),
+    "No Longer Slaves": ("Non più schiavi",),
+    "Raise a Hallelujah": ("Alzo un alleluia",),
+    "God of Revival": ("Dio del risveglio",),
+    "House of the Lord": ("Casa del Signore",),
+    "Glorious Day": ("Giorno glorioso", "Glorioso giorno"),
+    "Million Little Miracles": ("Un milione di piccoli miracoli",),
+    "Lord I Need You": ("Signore ho bisogno di te",),
+    "Great Is Thy Faithfulness": ("Grande è la tua fedeltà",),
+    "How He Loves": ("Quanto ci ama",),
+    "In Christ Alone": ("Solo in Cristo",),
+    "Yet Not I But Through Christ in Me": ("Non più io ma Cristo in me",),
+}
+
+
 def load_module(name: str, path: Path):
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader
@@ -119,6 +166,12 @@ def title_matches_familiar(source_title: str, familiar_title: str) -> bool:
     return bool(tokens) and sum(token in source.split() for token in tokens) / len(tokens) >= 0.75
 
 
+def local_titles_for(title: str, language: str) -> tuple[str, ...]:
+    if language == "Italian":
+        return ITALIAN_FAMILIAR_TITLES.get(title, ())
+    return ()
+
+
 def queries_for(title: str, language: str) -> tuple[str, ...]:
     return (
         f'"{title}" {language} worship lyrics',
@@ -141,8 +194,8 @@ def candidate_score(item: dict) -> int:
     return score
 
 
-def fetch(job: tuple[str, str, str, str, str]) -> tuple[str, list[dict], str | None]:
-    language, code, region, english_title, query = job
+def fetch(job: tuple[str, str, str, str, str, tuple[str, ...]]) -> tuple[str, list[dict], str | None]:
+    language, code, region, english_title, query, accepted_titles = job
     url = "https://www.youtube.com/results?" + urllib.parse.urlencode({"search_query": query})
     request = urllib.request.Request(
         url,
@@ -167,7 +220,7 @@ def fetch(job: tuple[str, str, str, str, str]) -> tuple[str, list[dict], str | N
                 or not channel
                 or not evidence
                 or not 75 <= duration <= 900
-                or not title_matches_familiar(title, english_title)
+                or not any(title_matches_familiar(title, accepted_title) for accepted_title in accepted_titles)
                 or not research.has_language_signal(title, channel, language, code)
                 or not research.is_quality_row(title, channel, language, code)
             ):
@@ -216,12 +269,16 @@ def main() -> None:
         for item in cached.get("candidates", []):
             candidates[str(item.get("youtubeId") or "")] = item
 
-    jobs: list[tuple[str, str, str, str, str]] = []
+    jobs: list[tuple[str, str, str, str, str, tuple[str, ...]]] = []
     for language, code, region in languages:
         for title in titles:
-            for query in queries_for(title, language):
+            local_titles = local_titles_for(title, language)
+            accepted_titles = (title, *local_titles)
+            search_titles = local_titles or (title,)
+            for search_title in search_titles:
+              for query in queries_for(search_title, language):
                 if query not in completed:
-                    jobs.append((language, code, region, title, query))
+                    jobs.append((language, code, region, title, query, accepted_titles))
     jobs = jobs[:max_queries]
 
     errors: list[str] = []

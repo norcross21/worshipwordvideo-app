@@ -26,7 +26,7 @@ export const LANGUAGE_PRESENTATIONS: LanguagePresentation[] = [
 
 const ENGLISH_SUBTITLE_PATTERN = /english\s+(subtitles?|captions?|translation|lyrics?|words)|eng\s*sub|subtitled\s+in\s+english/i;
 const BILINGUAL_PATTERN = /bilingual|two languages|dual language|english\s*(?:and|[+/&])\s*\p{L}+|\p{L}+\s*(?:and|[+/&])\s*english/iu;
-const TRANSLATED_SUBTITLE_PATTERN = /translated|translation|subtitles?|captions?|subtitulado|legendado|sous[- ]titres|untertitel|napisy|tekst|terjemahan|traduction|tradu[cç][aã]o|traducci[oó]n|t[lł]umaczenie|перевод|z[eé]r[eé]n[eê]vis|ترجمة|ترجمه|زیرنویس|مترجم|번역|자막|翻訳|翻译|字幕/i;
+const TRANSLATED_SUBTITLE_PATTERN = /translated|translation|subtitles?|captions?|subtitulado|legendado|sous[- ]titres|untertitel|sottotitoli|napisy|tekst|terjemahan|traduction|tradu[cç][aã]o|traducci[oó]n|t[lł]umaczenie|перевод|z[eé]r[eé]n[eê]vis|ترجمة|ترجمه|زیرنویس|مترجم|번역|자막|翻訳|翻译|字幕/i;
 
 export function inferWorshipArrangement(song: Pick<WorshipSong, 'arrangement' | 'title' | 'artist' | 'category' | 'tune'>): WorshipArrangement {
   if (song.arrangement) return song.arrangement;
@@ -53,6 +53,9 @@ export function inferLanguagePresentation(song: Pick<WorshipSong, 'languagePrese
 
   if (BILINGUAL_PATTERN.test(evidence)) return 'Bilingual vocal or subtitles';
   if (!isEnglish && ENGLISH_SUBTITLE_PATTERN.test(evidence)) return 'Native-language vocal with English subtitles';
+  if (!isEnglish && /(?:subtitles?|sottotitoli|testo|lyrics?)\s+(?:in\s+)?italian|italian(?:o)?\s+(?:subtitles?|sottotitoli|text|lyrics?)/i.test(evidence) && /hillsong|bethel|elevation|maverick|english|original/i.test(evidence)) {
+    return 'English vocal with translated subtitles';
+  }
   if (!isEnglish && song.versionType === 'Farsi translation / subtitles') return 'English vocal with translated subtitles';
   if (!isEnglish && TRANSLATED_SUBTITLE_PATTERN.test(evidence) && /english|original|translation|translated|terjemahan|traduction|tradu[cç][aã]o|traducci[oó]n|t[lł]umaczenie|перевод|ترجمة|ترجمه|번역|翻訳|翻译/i.test(evidence)) {
     return 'English vocal with translated subtitles';

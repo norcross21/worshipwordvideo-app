@@ -20,6 +20,7 @@ import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from '../lib/s
 import { useAuth } from '../context/AuthContext';
 import { formatPlaybackTime, type WorshipQueueItem } from '../data/worshipQueue';
 import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
+import { recordUsageEvent } from '../lib/usageAnalytics';
 
 interface SavedPlaylistsModalProps {
   activePlaylistId: string | null;
@@ -321,6 +322,7 @@ export function SavedPlaylistsModal({
         setNotes('');
         if (data) {
           const playlist = data as SavedUserPlaylist;
+          recordUsageEvent('service_create');
           setPlaylists((current) => [playlist, ...current]);
           await onActivatePlaylist(playlist);
           onClose();

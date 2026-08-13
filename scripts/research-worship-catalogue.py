@@ -154,6 +154,7 @@ WORD_PATTERNS = [
     ("subtitles", re.compile(r"subtitles?|captions?|subtitled|translated|translation", re.I)),
     ("local-language words", re.compile(
         r"letras?|legendad[oa]|subtitulado|paroles|sous[- ]titres|untertitel|napisy|tekst|"
+        r"(?:con\s+)?testo|con\s+parole|sottotitoli|"
         r"tradu[cç][aã]o|traducci[oó]n|traduction|текст|слова|ترجمه|زیرنویس|كلمات|مترجم|"
         r"가사|자막|歌詞|字幕|歌词|lời bài hát|phụ đề|"
         r"sözleri|liedtext|liedtekst|dalsz[oö]veg|versuri|stihovi|stihovi|sångtext|sangtekst|"
@@ -185,6 +186,8 @@ REJECT = re.compile(
     r"mariah carey.*the star|celine dion.*(?:wonderful jesus|living god)|romeo santos.*inocente|"
     r"genghis khan|taylor swift.*love story|march of the templars|"
     r"vishnu|krishana|hindu temple|\boh buddha\b|\bnaat\b|bah[aá][’'i]|abdu.?l[- ]bah[aá]|"
+    r"papal regina coeli|\bangelus\b|the gospel truth i[-–—]ii[-–—]iii|take me home,? country roads|"
+    r"the savior arabic with italian subtitles|la luce di ges[uù].*mellifluous|"
     r"how to interpret scriptures|decision vs commitment|deliverance from sin|paul washer|"
     r"what jesus said about muhammad|syrian kurds open first church|jesus calls and sends 12 apostles|"
     r"jesus\W+samoan translation\W+part|present your bodies as a living sacrifice|"
@@ -196,7 +199,8 @@ EXCLUDED_CHANNEL = re.compile(
     r"worship jamz|szabo music|worship rehearsal videos|top gospel mix|christian love songs|"
     r"almightygod|almighty god church|ang iglesia ng makapangyarihang diyos|"
     r"ibandla likankulunkulu usomandla|god.?s words|efy karaoke|islamic naat|buddhist worship|"
-    r"hari priya positivity|divineechoes|modern tunes|ai ncm zone|ai gospel music|"
+    r"hari priya positivity|divineechoes|modern tunes|ai ncm zone|ai gospel music|the bible with ai|"
+    r"account appena hackerato|"
     r"église de dieu tout-puissant|церковь всемогущего бога|sunrise ministry|"
     r"sportskillers tv|jr videos|ern3sto|^god lyrics$",
     re.I,
@@ -238,6 +242,7 @@ CHRISTIAN_SIGNAL = re.compile(
 SONG_CONTEXT = re.compile(
     r"\b(?:song|music|worship|gospel|praise|hymn|psalm|chant|karaoke|choir|lyrics?|sing[ -]?along|"
     r"louvor|adora[cç][aã]o|louange|cantique|lobpreis|lied|alabanza|adoraci[oó]n|himno|"
+    r"canto|canzone|lode|adorazione|inno|"
     r"pujian|penyembahan|rohani|th[aá]nh ca|ibada|sifa|letras?|paroles|liedtext|liedtekst|"
     r"lirik|versuri|napisy|tekst|sözleri)\b|"
     r"песн|пісн|поклон|хвал|суруд|پرستش|ترنيمة|تسبيح|"
@@ -375,6 +380,13 @@ def presentation(title: str, language: str) -> str:
         title,
         re.I,
     ):
+        return "English vocal with translated subtitles"
+    if language != "English" and re.search(
+        rf"(?:subtitles?|sottotitoli|testo|lyrics?)\s+(?:in\s+)?{language_alias}|"
+        rf"{language_alias}\s+(?:subtitles?|sottotitoli|text|lyrics?)",
+        title,
+        re.I,
+    ) and re.search(r"hillsong|bethel|elevation|maverick|english|original", title, re.I):
         return "English vocal with translated subtitles"
     if language != "English" and re.search(rf"with\s+{language_alias}\s+(?:lyric )?text|{language_alias}\s+(?:lyrics?|words)", title, re.I):
         return "English vocal with translated subtitles"

@@ -229,15 +229,15 @@ otp_expiry = 3600
 # Uncomment to customize email template
 [auth.email.template.invite]
 subject = "Your Worship Word Video invitation"
-content_path = "./templates/invite.html"
+content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.confirmation]
 subject = "Confirm your Worship Word Video account"
-content_path = "./templates/confirmation.html"
+content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
 subject = "Reset your Worship Word Video password"
-content_path = "./templates/recovery.html"
+content_path = "./supabase/templates/recovery.html"
 
 [auth.email.notification.password_changed]
 enabled = true

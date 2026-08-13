@@ -41,6 +41,7 @@ import {
   playbackTimingError,
   type WorshipQueueItem,
 } from '../data/worshipQueue';
+import { recordUsageEvent } from '../lib/usageAnalytics';
 
 interface WorshipQueueProps {
   queue: WorshipQueueItem[];
@@ -259,6 +260,7 @@ export function WorshipQueue({
     }
     popup.location.replace(url.toString());
     popup.focus();
+    recordUsageEvent('projection_open');
     setProjectionMessage(result === 'placed'
       ? 'The clean projection window is on the church screen. Press “Full screen and start” there once.'
       : 'The clean projection window opened. Follow the on-screen full-screen confirmation.');
