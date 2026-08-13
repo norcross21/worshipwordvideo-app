@@ -23,7 +23,7 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
       <div className="app-header__container">
         <button type="button" className="app-header__brand" onClick={() => onSelectTab('all')} aria-label="Worship Word Video home">
           <span className="app-header__logo" aria-hidden="true">
-            <img src="/worship-word-video-logo-512.png" alt="" />
+            <img src="/worship-word-video-logo.svg" alt="" />
           </span>
           <div className="app-header__brand-copy">
             <h1 className="app-header__title"><span>Worship</span>{' '}Word Video</h1>

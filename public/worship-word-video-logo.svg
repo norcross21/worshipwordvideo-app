@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="favicon-title">
-  <title id="favicon-title">Worship Word Video</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">Worship Word Video</title>
+  <desc id="logo-description">A Christian cross joined to a video play symbol</desc>
   <rect x="4" y="4" width="56" height="56" rx="17" fill="#112d79"/>
   <path d="M34 16 51 32 34 48" fill="none" stroke="#38bdf8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M29 14v36M17 28h24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
