@@ -1,4 +1,4 @@
-import { Check, Cloud, Library, Plus } from 'lucide-react';
+import { Check, Library, Plus } from 'lucide-react';
 import type { SavedUserPlaylist } from '../lib/supabase';
 
 interface ServiceWorkspaceBarProps {
@@ -39,25 +39,33 @@ export function ServiceWorkspaceBar({
 
   return (
     <section className={`service-workspace ${activeService ? 'has-service' : ''}`} aria-label="Current worship service">
-      <span className="service-workspace__icon" aria-hidden="true">{activeService ? <Check size={17} /> : <Cloud size={17} />}</span>
-      <label className="service-workspace__select">
-        <span>Current service</span>
-        <select
-          aria-label="Current service"
-          value={activeService?.id ?? ''}
-          disabled={loading}
-          onChange={(event) => selectService(event.target.value)}
-        >
-          <option value="">{loading ? 'Loading services…' : choices.length ? 'Choose a service' : 'No service yet'}</option>
-          {choices.map((service) => (
-            <option key={service.id} value={service.id}>{service.title}</option>
-          ))}
-        </select>
-      </label>
-      <span className={`service-workspace__status is-${saveState}`} role="status">{status}</span>
+      {activeService ? (
+        <>
+          <span className="service-workspace__active-icon" aria-hidden="true"><Check size={15} /></span>
+          <label className="service-workspace__select">
+            <span>Planning</span>
+            <select
+              aria-label="Current service"
+              value={activeService.id}
+              disabled={loading}
+              onChange={(event) => selectService(event.target.value)}
+            >
+              {choices.map((service) => (
+                <option key={service.id} value={service.id}>{service.title}</option>
+              ))}
+            </select>
+          </label>
+          <span className={`service-workspace__status is-${saveState}`} role="status">{status}</span>
+        </>
+      ) : (
+        <div className="service-workspace__empty">
+          <strong>{loading ? 'Loading your services…' : 'Planning a service?'}</strong>
+          <span>{loading ? 'Please wait a moment.' : 'Create one to save songs and project them.'}</span>
+        </div>
+      )}
       <div className="service-workspace__actions">
-        <button type="button" className="service-workspace__new" onClick={onCreateService}><Plus size={15} /> New</button>
-        <button type="button" className="service-workspace__manage" onClick={onManageServices} aria-label="Manage saved services" title="Manage saved services"><Library size={16} /><span>Manage</span></button>
+        <button type="button" className="service-workspace__new" onClick={onCreateService}><Plus size={15} /> {activeService ? 'New' : 'Create service'}</button>
+        {(activeService || choices.length > 0) && <button type="button" className="service-workspace__manage" onClick={onManageServices} aria-label="Manage saved services" title="Manage saved services"><Library size={16} /><span>Manage</span></button>}
       </div>
     </section>
   );

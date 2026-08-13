@@ -89,6 +89,12 @@ NATIVE_QUERIES: dict[str, tuple[str, ...]] = {
     "Dutch": ("aanbidding liedtekst", "christelijk lied met tekst", "loflied tekst"),
     "Polish": ("uwielbienie tekst piosenki", "pieśń chrześcijańska tekst", "hymn z tekstem"),
     "Romanian": ("cântare creștină versuri", "laudă și închinare versuri", "imn creștin versuri"),
+    "Czech": ("křesťanská chvála s textem", "píseň uctívání text", "křesťanská píseň titulky"),
+    "Slovak": ("kresťanská chvála s textom", "pieseň uctievania text", "chválospev text"),
+    "Hungarian": ("keresztény dicsőítő dal szöveggel", "istentiszteleti ének dalszöveg", "keresztény ének felirattal"),
+    "Croatian": ("kršćanska pjesma s tekstom", "pjesma slavljenja tekst", "duhovna pjesma stihovi"),
+    "Serbian": ("хришћанска песма текст", "песма слављења са текстом", "духовна песма стихови"),
+    "Bulgarian": ("християнска песен текст", "песен за хваление с текст", "поклонение и хваление текст"),
     "Ukrainian": ("християнська пісня текст", "пісня прославлення зі словами", "християнське поклоніння текст"),
     "Russian": ("христианская песня текст", "песня прославления слова", "поклонение текст песни"),
     "Turkish": ("Hristiyan ilahi sözleri", "Türkçe tapınma şarkısı sözleri", "Mesih ilahisi sözleri"),
@@ -108,7 +114,8 @@ NATIVE_QUERIES: dict[str, tuple[str, ...]] = {
         "سرود پرستشی فارسی ترجمه انگلیسی",
         "پرستش مسیحی فارسی کلمات",
     ),
-    "Urdu": ("مسیحی عبادتی گیت کے بول", "اردو مسیحی گیت لرکس", "یسوع کے گیت الفاظ"),
+    "Urdu": ("مسیحی عبادتی گیت کے بول", "اردو مسیحی گیت لرکس", "یسوع کے گیت الفاظ", "مسیحی حمد و ستائش گیت الفاظ", "اردو یسوع گیت سب ٹائٹل"),
+    "Punjabi": ("ਪੰਜਾਬੀ ਮਸੀਹੀ ਭਗਤੀ ਗੀਤ ਬੋਲ", "ਪੰਜਾਬੀ ਯਿਸੂ ਗੀਤ ਲਿਰਿਕਸ", "ਪੰਜਾਬੀ ਮਸੀਹੀ ਉਸਤਤ ਗੀਤ ਬੋਲ"),
     "Hindi": ("मसीही आराधना गीत लिरिक्स", "यीशु के गीत के बोल", "मसीही स्तुति गीत शब्द"),
     "Bengali": ("খ্রিস্টান উপাসনা গানের কথা", "যীশুর গান লিরিক্স"),
     "Tamil": ("தமிழ் கிறிஸ்தவ ஆராதனை பாடல் வரிகள்", "இயேசு பாடல் வரிகள்"),
@@ -118,6 +125,7 @@ NATIVE_QUERIES: dict[str, tuple[str, ...]] = {
     "Marathi": ("मराठी ख्रिस्ती उपासना गीताचे बोल",),
     "Gujarati": ("ગુજરાતી ખ્રિસ્તી આરાધના ગીતના શબ્દો",),
     "Nepali": ("नेपाली ईसाई आराधना गीतको बोल",),
+    "Sinhala": ("සිංහල ක්‍රිස්තියානි නමස්කාර ගීත පද", "ජේසුස් වහන්සේ ගීත පද"),
     "Mandarin Chinese": ("中文基督徒敬拜诗歌 歌词", "中文赞美诗 字幕", "敬拜赞美 歌词"),
     "Cantonese": ("粵語基督教敬拜歌 歌詞", "廣東話讚美詩 字幕"),
     "Korean": ("한국어 기독교 찬양 가사", "새 찬양 자막", "예수 찬양 가사"),
@@ -141,11 +149,30 @@ NATIVE_QUERIES: dict[str, tuple[str, ...]] = {
         "nyimbo za kuabudu english subtitles",
     ),
     "Amharic": ("የአማርኛ ክርስቲያን የአምልኮ መዝሙር ግጥም",),
+    "Yoruba": ("orin ijosin Kristiani pẹlu ọrọ", "orin iyin Jesu lyrics", "orin ìjọsìn pẹ̀lú ọ̀rọ̀"),
+    "Igbo": ("abụ ofufe Ndị Kraịst lyrics", "egwu otuto Jizọs lyrics", "abụ Kraịst nwere okwu"),
+    "Hausa": ("waƙar bautar Kirista kalmomi", "waƙar yabon Yesu lyrics", "wakar bishara da kalmomi"),
+    "Oromo": ("faarfannaa waaqeffannaa Kirista lyrics", "sirba galata Yesu jechoota"),
+    "Tigrinya": ("መዝሙር ኣምልኾ ክርስትያን ግጥሚ", "ትግርኛ መዝሙር ምስ ግጥሚ"),
+    "Somali": ("hees cibaado Masiixi erayo", "hees amaan Ciise lyrics"),
     "Hebrew": ("שיר הלל נוצרי מילים", "שיר עברי ישוע מילים"),
     "Afrikaans": ("Afrikaanse aanbidding lirieke", "Christelike lied lirieke"),
     "Zulu": ("Zulu worship song lyrics", "iculo lokukhonza amazwi"),
     "Xhosa": ("Xhosa worship song lyrics", "ingoma yokudumisa amazwi"),
     "Luganda": ("Luganda worship lyrics", "ennyimba z'okutendereza lyrics"),
+    "Twi": ("Twi Kristo som dwom lyrics", "Ayeyi nnwom nsɛm"),
+    "Shona": ("rwiyo rwekunamata rwechiKristu mazwi", "nziyo dzekurumbidza Jesu lyrics"),
+    "Kinyarwanda": ("indirimbo zo kuramya amagambo", "indirimbo zo guhimbaza Yesu lyrics"),
+    "Chichewa": ("nyimbo zachikhristu mawu", "nyimbo zotamanda Yesu lyrics"),
+    "Lingala": ("nzembo ya losambo paroles", "nzembo ya kokumisa Yesu lyrics"),
+    "Kurdish": ("strana perestiya xiristiyan lyrics", "گۆرانی پەرستنی مەسیحی وشەکان"),
+    "Dari": ("سرود پرستشی مسیحی دری با متن", "سرود عیسی دری زیرنویس"),
+    "Pashto": ("پښتو مسیحي عبادت سندره متن", "د عیسی ستاینه سندره الفاظ"),
+    "Armenian": ("քրիստոնեական երկրպագության երգ բառեր", "հիսուս փառաբանություն բառեր"),
+    "Georgian": ("ქრისტიანული სადიდებელი სიმღერა ტექსტით", "იესოს თაყვანისცემა ტექსტი"),
+    "Albanian": ("këngë adhurimi e krishterë me tekst", "këngë lavdërimi Jezus tekst"),
+    "Welsh": ("cân addoli Gristnogol geiriau", "cân mawl Iesu gyda geiriau"),
+    "Irish": ("amhrán adhartha Críostaí focail", "amhrán molta Íosa liricí"),
 }
 
 
@@ -253,9 +280,14 @@ def main() -> None:
     quick = "--quick" in sys.argv
     language_limit = next((int(value.split("=", 1)[1]) for value in sys.argv if value.startswith("--languages=")), None)
     selected_language = next((value.split("=", 1)[1] for value in sys.argv if value.startswith("--language=")), None)
+    selected_languages = {
+        value.strip().casefold()
+        for value in (selected_language or "").split(",")
+        if value.strip()
+    }
     languages = research.LANGUAGES[:language_limit] if language_limit else research.LANGUAGES
-    if selected_language:
-        languages = [item for item in languages if item[0].casefold() == selected_language.casefold()]
+    if selected_languages:
+        languages = [item for item in languages if item[0].casefold() in selected_languages]
     completed_queries: set[str] = set()
     candidates_by_id: dict[str, dict] = {}
     if OUTPUT.exists() and "--fresh" not in sys.argv:
@@ -271,7 +303,12 @@ def main() -> None:
     for language, code, region in languages:
         queries = generic_queries(language)
         if quick:
-            queries = queries[:3]
+            # A quick pass must still exercise the local-language vocabulary;
+            # English-only query prefixes miss many established local ministries.
+            queries = list(dict.fromkeys([
+                *queries[:3],
+                *list(NATIVE_QUERIES.get(language, ()))[:4],
+            ]))
         for query in queries:
             key = f"{language}\t{query}"
             if key not in completed_queries:

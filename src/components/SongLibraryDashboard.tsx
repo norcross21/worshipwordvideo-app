@@ -286,9 +286,8 @@ export function SongLibraryDashboard({
     <div className="music-dashboard">
       <section className="library-intro">
         <div>
-          <span className="library-intro__eyebrow">For English and multilingual churches</span>
           <h2>Find a worship video</h2>
-          <p>Search by song, artist, language or hymn number. Choose a video, then add it to your service playlist.</p>
+          <p>Search by song, artist, language or hymn number.</p>
         </div>
       </section>
 
@@ -332,6 +331,22 @@ export function SongLibraryDashboard({
                   {language} ({(languageCounts.get(language) ?? 0).toLocaleString()})
                 </option>
               ))}
+            </select>
+          </label>
+          <label className={`known-song-control ${activeSongFamily ? 'is-active' : ''}`}>
+            <Sparkles size={15} />
+            <span className="sr-only">Familiar song in other languages</span>
+            <select
+              value={activeSongFamily?.title ?? ''}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setSelectedLanguage('all');
+                if (event.target.value) onVisitorEngaged?.();
+              }}
+              aria-label="Browse a familiar worship song across languages"
+            >
+              <option value="">Known song in other languages…</option>
+              {SONG_FAMILIES.map((family) => <option key={family.slug} value={family.title}>{family.title}</option>)}
             </select>
           </label>
           <button type="button" className="btn-secondary" aria-expanded={showAdvancedFilters} onClick={() => setShowAdvancedFilters((value) => !value)}>
@@ -402,27 +417,7 @@ export function SongLibraryDashboard({
         </div>
       </div>}
 
-      <div className={`known-song-picker ${activeSongFamily ? 'is-active' : ''}`}>
-        <label>
-          <Sparkles size={15} />
-          <span>Familiar song in other languages</span>
-          <select
-            value={activeSongFamily?.title ?? ''}
-            onChange={(event) => {
-              setSearchQuery(event.target.value);
-              setSelectedLanguage('all');
-              if (event.target.value) onVisitorEngaged?.();
-            }}
-            aria-label="Browse a familiar worship song across languages"
-          >
-            <option value="">Choose a song…</option>
-            {SONG_FAMILIES.map((family) => <option key={family.slug} value={family.title}>{family.title}</option>)}
-          </select>
-        </label>
-        {activeSongFamily && activeFamilyStats ? (
-          <p><strong>{activeSongFamily.title}</strong><span>{activeFamilyStats.videos.toLocaleString()} videos across {activeFamilyStats.languages.toLocaleString()} named languages</span></p>
-        ) : <p><span>Compare local-language vocals, English subtitles and translated versions.</span></p>}
-      </div>
+      {activeSongFamily && activeFamilyStats && <p className="known-song-summary"><strong>{activeSongFamily.title}</strong> · {activeFamilyStats.videos.toLocaleString()} videos across {activeFamilyStats.languages.toLocaleString()} languages</p>}
 
       {/* Main Grid: Left List (35%) & Right Detail (65%) */}
       <div className={`music-dashboard__grid ${mobileDetailOpen ? 'is-mobile-detail' : ''}`}>

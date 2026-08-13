@@ -5302,3 +5302,189 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   .worship-queue__item-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .worship-queue__item-actions .worship-queue__btn-play { margin-right: auto; }
 }
+
+/* Compact finder header: keep the primary search visible without competing panels. */
+.app-header__container {
+  min-height: 60px;
+  padding-block: 0.38rem;
+}
+
+.app-header__logo {
+  width: 34px;
+  height: 34px;
+}
+
+.app-header__brand { gap: 0.62rem; }
+.app-header__title { font-size: 0.98rem; }
+.app-header__subtitle { margin-top: 0.04rem; font-size: 0.65rem; }
+.app-header__nav { overflow: visible; }
+.nav-tab,
+.user-pill {
+  min-height: 36px;
+  padding: 0.42rem 0.65rem;
+  font-size: 0.77rem;
+}
+
+.app-main { padding-top: 0.72rem; }
+
+.service-workspace {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 48px;
+  margin-bottom: 0.62rem;
+  padding: 0.36rem 0.5rem 0.36rem 0.65rem;
+  border-color: #d9e4ef;
+  border-radius: 10px;
+  background: #f8fbfe;
+  box-shadow: none;
+}
+
+.service-workspace.has-service {
+  grid-template-columns: 26px minmax(180px, 1fr) auto auto;
+  border-color: #d5e2ee;
+}
+
+.service-workspace__active-icon {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #123f76;
+}
+
+.service-workspace__empty {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: #667a90;
+  font-size: 0.72rem;
+}
+
+.service-workspace__empty strong {
+  color: #123f76;
+  font-size: 0.78rem;
+}
+
+.service-workspace__select {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.service-workspace__select > span { flex: 0 0 auto; }
+.service-workspace__select select { min-height: 26px; font-size: 0.79rem; }
+.service-workspace__status { font-size: 0.65rem; }
+.service-workspace__actions button { min-height: 34px; }
+
+.library-intro { padding: 0; }
+.library-intro > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+.library-intro h2 { font-size: clamp(1.35rem, 2.2vw, 1.7rem); }
+.library-intro p { margin: 0; color: #667a90; font-size: 0.76rem; }
+.music-dashboard { gap: 0.6rem; }
+
+.music-dashboard__toolbar {
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  padding: 0.45rem;
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+.search-box,
+.language-select,
+.known-song-control,
+.music-dashboard__toolbar .btn-secondary {
+  min-height: 42px;
+}
+
+.search-box { min-width: 280px; }
+.search-box__input { min-height: 40px; font-size: 0.82rem; }
+.toolbar-actions { flex-wrap: nowrap; gap: 0.42rem; }
+.language-select { min-width: 190px; }
+.language-select select { min-height: 40px; font-size: 0.78rem; }
+
+.known-song-control {
+  display: flex;
+  width: min(250px, 25vw);
+  min-width: 185px;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.55rem;
+  border: 1px solid #d3deea;
+  border-radius: 9px;
+  color: #56708a;
+  background: #f8fbfe;
+}
+
+.known-song-control.is-active {
+  border-color: #77aee0;
+  color: #123f76;
+  background: #eef7ff;
+}
+
+.known-song-control select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 0;
+  outline: 0;
+  color: #173d65;
+  background: transparent;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.known-song-summary {
+  margin: -0.15rem 0 0;
+  padding-inline: 0.25rem;
+  color: #667a90;
+  font-size: 0.68rem;
+}
+
+.known-song-summary strong { color: #123f76; }
+
+@media (max-width: 1060px) {
+  .music-dashboard__toolbar { flex-wrap: wrap; }
+  .search-box { flex-basis: 100%; }
+  .toolbar-actions { width: 100%; }
+  .language-select { flex: 1 1 220px; }
+  .known-song-control { flex: 1 1 220px; width: auto; }
+}
+
+@media (max-width: 760px) {
+  .app-header__container { min-height: 54px; padding-block: 0.28rem; }
+  .app-header__logo { width: 32px; height: 32px; }
+  .app-header__subtitle { display: none; }
+  .service-workspace,
+  .service-workspace.has-service { grid-template-columns: minmax(0, 1fr) auto; }
+  .service-workspace__active-icon { display: none; }
+  .service-workspace__empty { display: grid; gap: 0.05rem; }
+  .service-workspace__select { grid-column: 1; grid-row: 1; }
+  .service-workspace__status { grid-column: 1; grid-row: 2; }
+  .service-workspace__actions { grid-column: 2; grid-row: 1 / 3; }
+  .library-intro > div { display: block; }
+  .library-intro p { margin-top: 0.15rem; }
+}
+
+@media (max-width: 900px) {
+  /* The timed Kairos invitation and footer remain available; avoid turning
+     the guest header into a second row for a secondary action. */
+  .app-header__nav.is-guest { display: none; }
+}
+
+@media (max-width: 560px) {
+  .toolbar-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .language-select { min-width: 0; }
+  .known-song-control { grid-column: 1 / -1; width: 100%; }
+  .service-workspace__empty span { display: none; }
+  .service-workspace__actions .service-workspace__new { padding-inline: 0.55rem; }
+}

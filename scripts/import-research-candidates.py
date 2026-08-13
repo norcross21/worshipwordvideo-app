@@ -46,6 +46,18 @@ REVIEWED_CHANNEL_LANGUAGE_PATHS = {
 }
 MIN_CHANNEL_PAGE_VIEWS = 100
 
+# These candidates were found through a named-language query, but YouTube's
+# live title/channel did not prove that language at publication time. Keeping
+# the IDs out avoids turning a search hint into a public language claim.
+UNPROVEN_LANGUAGE_IDS = {
+    "XRW-jr_PnbQ", "kcH3fdzz6C0", "END-D8LQdAw", "kCoAj5_XyJw",
+    "nvomYTQ4YNI", "VJlid7N8_5Y", "abXgYvt-UR8", "TrkL0Pp62XE",
+    "gMU6ly5qbgM", "tOKiVeefkek", "bxwIpxBni6s", "EvoNENHJy9U",
+    "zWhcUC1oG-8", "K-ZtjvMstOM", "_ZfxI4eNGdA", "DcD_iE2vvCc",
+    "KR4iZmae2P8", "1Yzvn2hqAEI", "2FBDpUvM5Rs", "QZ8g2xFMgQQ",
+    "08gpDal90So",
+}
+
 SCRIPT_LANGUAGE_DEFAULTS: list[tuple[re.Pattern[str], tuple[str, str, str]]] = [
     (re.compile(r"[\uac00-\ud7af]"), ("Korean", "ko", "South Korea / diaspora")),
     (re.compile(r"[\u3040-\u30ff]"), ("Japanese", "ja", "Japan")),
@@ -203,6 +215,11 @@ def explicitly_named_language(title: str) -> tuple[str, str, str] | None:
 
 def main() -> None:
     selected_language = next((value.split("=", 1)[1] for value in sys.argv if value.startswith("--language=")), None)
+    selected_languages = {
+        value.strip().casefold()
+        for value in (selected_language or "").split(",")
+        if value.strip()
+    }
     existing_source_ids = research.existing_video_ids()
     reviewed_channel_languages = {
         str(item.get("youtubeId") or ""): (
@@ -217,7 +234,8 @@ def main() -> None:
     base_rows = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else []
     base_rows = [
         row for row in base_rows
-        if research.word_evidence(str(row[1]))
+        if str(row[0]) not in UNPROVEN_LANGUAGE_IDS
+        and research.word_evidence(str(row[1]))
         and research.is_existing_quality_row(str(row[1]), str(row[2]), str(row[3]), str(row[4]))
     ][:TARGET]
     for row in base_rows:
@@ -263,7 +281,7 @@ def main() -> None:
             ):
                 continue
             requested_language = str(item.get("language") or "Language not stated")
-            if selected_language and requested_language.casefold() != selected_language.casefold():
+            if selected_languages and requested_language.casefold() not in selected_languages:
                 continue
             requested_code = str(item.get("languageCode") or "und")
             requested_region = str(item.get("region") or "International / verify before use")
@@ -377,8 +395,10 @@ def main() -> None:
             )
             language = requested_language if stated_language else "Language not stated"
             if not stated_language:
-                code = "und"
-                region = "International / verify before use"
+                # Search terms are discovery leads, never publication proof.
+                # If the live title/channel no longer proves the requested
+                # language, leave it out rather than exposing an unlabelled row.
+                continue
         evidence = research.word_evidence(title)
         if not evidence:
             continue

@@ -31,12 +31,7 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
           </div>
         </button>
 
-        <nav className="app-header__nav" aria-label="Main Navigation">
-          {adminRole === 'master_admin' && (
-            <button type="button" className={`nav-tab ${activeTab === 'admin' ? 'is-active' : ''}`} aria-pressed={activeTab === 'admin'} onClick={() => onSelectTab('admin')}>
-              <ShieldCheck size={16} /> Admin
-            </button>
-          )}
+        <nav className={`app-header__nav ${user ? 'is-member' : 'is-guest'}`} aria-label="Main Navigation">
           {user && (
             <button
               type="button"
@@ -48,17 +43,7 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
               <ListMusic size={17} /> <span className="nav-tab__label">Service</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
             </button>
           )}
-          {user ? (
-            <a
-              className="nav-tab nav-tab--donate"
-              href="https://operations.kairoshousing.org.uk/donate"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Support Kairos Housing charity"
-            >
-              <Heart size={16} /> <span className="nav-tab__label">Support Kairos</span>
-            </a>
-          ) : (
+          {!user && (
             <button
               type="button"
               className="nav-tab nav-tab--donate"
@@ -106,6 +91,18 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
                         <Cloud size={15} /> Manage services
                       </button>
                     )}
+                    {adminRole === 'master_admin' && (
+                      <button
+                        type="button"
+                        className="user-dropdown__item"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          onSelectTab('admin');
+                        }}
+                      >
+                        <ShieldCheck size={15} /> Administration
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="user-dropdown__item"
@@ -116,6 +113,15 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
                     >
                       <Settings size={15} /> Account & email choices
                     </button>
+                    <a
+                      className="user-dropdown__item"
+                      href="https://operations.kairoshousing.org.uk/donate"
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Heart size={15} /> Support Kairos Housing
+                    </a>
                     <button
                       type="button"
                       className="user-dropdown__item user-dropdown__item--logout"

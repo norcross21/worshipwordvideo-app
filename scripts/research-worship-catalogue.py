@@ -160,8 +160,10 @@ WORD_PATTERNS = [
         r"sözleri|liedtext|liedtekst|dalsz[oö]veg|versuri|stihovi|stihovi|sångtext|sangtekst|"
         r"στίχοι|מילים|Բառեր|ტექსტი|متن سرود|گیت کے بول|"
         r"गीत के बोल|लिरिक्स|গানের কথা|লিরিক্স|பாடல் வரிகள்|పాట సాహిత్యం|"
-        r"ഗാനവരികൾ|ಹಾಡಿನ ಸಾಹಿತ್ಯ|गीताचे बोल|ગીતના શબ્દો|गीतको बोल|ගී පද|"
-        r"เนื้อเพลง|lirik|lirieke|mashairi|maneno|lyrics? video",
+        r"ഗാനവരികൾ|ಹಾಡಿನ ಸಾಹಿತ್ಯ|गीताचे बोल|ગીતના શબ્દો|गीतको बोल|ගී පද|ਬੋਲ|ግጥሚ|"
+        r"เนื้อเพลง|lirik|lirieke|ọ̀?rọ̀?|"
+        r"\b(?:mashairi|maneno|kalmomi|jechoota|erayo|mawu|amagambo|mazwi|ns[eɛ]m)\b|"
+        r"lyrics? video",
         re.I,
     )),
 ]
@@ -188,6 +190,8 @@ REJECT = re.compile(
     r"vishnu|krishana|hindu temple|\boh buddha\b|\bnaat\b|bah[aá][’'i]|abdu.?l[- ]bah[aá]|"
     r"papal regina coeli|\bangelus\b|the gospel truth i[-–—]ii[-–—]iii|take me home,? country roads|"
     r"the savior arabic with italian subtitles|la luce di ges[uù].*mellifluous|"
+    r"nat king cole.*the christmas song|the christmas song.*nat king cole|"
+    r"learn (?:the )?[a-z]+ language|language teacher|"
     r"how to interpret scriptures|decision vs commitment|deliverance from sin|paul washer|"
     r"what jesus said about muhammad|syrian kurds open first church|jesus calls and sends 12 apostles|"
     r"jesus\W+samoan translation\W+part|present your bodies as a living sacrifice|"
@@ -229,13 +233,17 @@ CHRISTIAN_SIGNAL = re.compile(
     r"\b(?:jesus|yeshua|yesu|yeshu|christ|christian|god|lord|yahweh|adonai|holy spirit|holy ghost|worship|"
     r"gospel|praise|hymn|psalm|faith|grace|cross|church|ministry|maranatha|bethel|hillsong|elevation|"
     r"dios|cristo|alabanza|adoraci[oó]n|iglesia|deus|louvor|adora[cç][aã]o|igreja|dieu|j[eé]sus|"
-    r"louange|[eé]glise|gott|christus|lobpreis|anbetung|kirche|dio|ges[uù]|lode|chiesa)\b|"
+    r"louange|[eé]glise|gott|christus|lobpreis|anbetung|kirche|dio|ges[uù]|lode|chiesa|"
+    r"chrze[sś]cija[nń]|cre[sș]tin|k[rř]es[tť]ansk|kereszt[eé]ny|kr[sš][cć]ansk|"
+    r"krishter|cr[ií]osta[ií]|gristnogol)\b|"
     r"бог|иисус|господ|христ|поклон|хвал|церк|مسیح|عیسی|پرستش|سرود|المسيح|يسوع|الرب|ترنيمة|عبادة|"
     r"예수|하나님|주님|찬양|교회|敬拜|赞美|讚美|耶稣|耶穌|上帝|礼拝|賛美|イエス|"
     r"\bch[uú]a\b|th[aá]nh ca|tin l[aà]nh|tuhan|pujian|penyembahan|rohani|mungu|ibada|sifa|ọlọrun|olodumare|"
+    r"jizọs|masiixi|kirista|kristo|jesu|iesu|íosa|waaqa|քրիստ|հիսուս|ქრისტ|იესო|"
     r"यीशु|मसीही|ईसाई|ख्रिस्ती|आराधना|যীশু|খ্রিস্টান|উপাসনা|"
     r"இயேசு|கிறிஸ்தவ|ஆராதனை|యేసు|క్రైస్తవ|ఆరాధన|യേശു|ക്രിസ്തീയ|ആരാധന|"
-    r"ಕ್ರೈಸ್ತ|ಆರಾಧನೆ|นมัสการ|คริสเตียน|አምልኮ|ክርስቲያን",
+    r"ಕ್ರೈಸ್ತ|ಆರಾಧನೆ|นมัสการ|คริสเตียน|አምልኮ|ክርስቲያን|ክርስትያን|"
+    r"хришћан|християн|مسیحي|مسیحی",
     re.I,
 )
 
@@ -244,9 +252,13 @@ SONG_CONTEXT = re.compile(
     r"louvor|adora[cç][aã]o|louange|cantique|lobpreis|lied|alabanza|adoraci[oó]n|himno|"
     r"canto|canzone|lode|adorazione|inno|"
     r"pujian|penyembahan|rohani|th[aá]nh ca|ibada|sifa|letras?|paroles|liedtext|liedtekst|"
-    r"lirik|versuri|napisy|tekst|sözleri)\b|"
+    r"lirik|versuri|napisy|tekst|sözleri|uwielbienie|pie[sś][nń]|c[aâ]ntare|[iî]nchinare|"
+    r"chv[aá]la|p[ií]se[nň]|piese[nň]|dics[oő][ií]t[oő]|[eé]nek|pjesma|slavljenje|"
+    r"tap[iı]nma|ilahi|adhurimi|lavd[eë]rimi|addoli|adhradh)\b|"
     r"песн|пісн|поклон|хвал|суруд|پرستش|ترنيمة|تسبيح|"
-    r"찬양|예배|가사|자막|敬拜|赞美|讚美|賛美|礼拝|歌詞|歌词|字幕|นมัสการ|เพลง|आराधना|উপাসনা|ஆராதனை|ఆరాధన|ആരാധന",
+    r"orin|abụ|egwu|waƙa|wakar|faarfannaa|sirba|hees|nzembo|indirimbo|nyimbo|"
+    r"rwiyo|nziyo|ennyimba|dwom|cân|amhrán|"
+    r"መዝሙር|찬양|예배|가사|자막|敬拜|赞美|讚美|賛美|礼拝|歌詞|歌词|字幕|นมัสการ|เพลง|आराधना|উপাসনা|ஆராதனை|ఆరాధన|ആരാധന",
     re.I,
 )
 
@@ -280,10 +292,13 @@ LOCAL_LANGUAGE_SIGNALS: dict[str, re.Pattern[str]] = {
     "sk": re.compile(r"slovensk|text piesne", re.I),
     "hu": re.compile(r"magyar|dalsz[oö]veg", re.I),
     "hr": re.compile(r"hrvatsk|tekst", re.I),
+    "sr": re.compile(r"srpsk|српск|хришћан|слављењ", re.I),
+    "bg": re.compile(r"българск|християнск|хваление", re.I),
     "tr": re.compile(r"t[uü]rk[cç]e|s[oö]zleri|altyaz", re.I),
     "ar": re.compile(r"عربي|العربية|ترنيمة|تسبيح|يسوع|المسيح", re.I),
     "fa": re.compile(r"فارسی|پرستش|سرود|عیسی|مسیحی", re.I),
     "ur": re.compile(r"اردو|مسیحی|گیت|یسوع", re.I),
+    "pa": re.compile(r"ਪੰਜਾਬੀ|ਮਸੀਹੀ|ਯਿਸੂ|ਭਗਤੀ|ਉਸਤਤ", re.I),
     "hi": re.compile(r"हिन्दी|मसीही|आराधना|यीशु", re.I),
     "mr": re.compile(r"मराठी|ख्रिस्ती|उपासना", re.I),
     "ne": re.compile(r"नेपाली|ईसाई|आराधना", re.I),
@@ -292,17 +307,35 @@ LOCAL_LANGUAGE_SIGNALS: dict[str, re.Pattern[str]] = {
     "yue": re.compile(r"粵語|粤语|廣東話|广东话", re.I),
     "am": re.compile(r"አማርኛ|የአምልኮ|የክርስቲያን", re.I),
     "ti": re.compile(r"ትግርኛ|መዝሙር", re.I),
+    "om": re.compile(r"afaan oromoo|oromo|faarfannaa|waaqeffannaa", re.I),
+    "so": re.compile(r"somali|hees|cibaado|masiixi", re.I),
     "vi": re.compile(r"ti[eế]ng vi[eệ]t|lời bài hát|phụ đề|th[aá]nh ca", re.I),
     "id": re.compile(r"bahasa indonesia|lirik|rohani|pujian", re.I),
     "ms": re.compile(r"bahasa melayu|lirik", re.I),
     "tl": re.compile(r"tagalog|filipino|awit|papuri", re.I),
     "sw": re.compile(r"kiswahili|swahili|mungu|yesu|ibada|sifa", re.I),
+    "yo": re.compile(r"yoruba|orin|ijosin|ìjọsìn|iyin", re.I),
+    "ig": re.compile(r"igbo|abụ|egwu|jizọs|ofufe", re.I),
+    "ha": re.compile(r"hausa|waƙa|wakar|yabon|bautar", re.I),
+    "zu": re.compile(r"zulu|isizulu|iculo|ukukhonza", re.I),
+    "xh": re.compile(r"xhosa|isixhosa|ingoma|yokudumisa", re.I),
+    "lg": re.compile(r"luganda|ennyimba|okutendereza", re.I),
+    "tw": re.compile(r"twi|ayeyi|nnwom|som dwom", re.I),
+    "sn": re.compile(r"shona|rwiyo|nziyo|kunamata|kurumbidza", re.I),
+    "rw": re.compile(r"kinyarwanda|indirimbo|kuramya|guhimbaza", re.I),
+    "ln": re.compile(r"lingala|nzembo|losambo|kokumisa", re.I),
     "af": re.compile(r"afrikaans|lirieke", re.I),
     "ca": re.compile(r"catal[aà]|lletra|lloan[cç]a", re.I),
     "eu": re.compile(r"euskara|euskaraz|abesti|gurtza", re.I),
     "gl": re.compile(r"galego|galega|letra|louvanza", re.I),
     "cy": re.compile(r"cymraeg|geiriau|addoliad", re.I),
     "ga": re.compile(r"gaeilge|focail|adhradh", re.I),
+    "sq": re.compile(r"shqip|shqiptar|adhurimi|lavdërimi", re.I),
+    "hy": re.compile(r"հայերեն|քրիստոնեական|երկրպագության|փառաբանություն", re.I),
+    "ka": re.compile(r"ქართული|ქრისტიანული|სადიდებელი|თაყვანისცემა", re.I),
+    "ku": re.compile(r"kurd[iî]|xiristiyan|perestiy|پەرستن|مەسیحی", re.I),
+    "prs": re.compile(r"دری|سرود|پرستشی|مسیحی", re.I),
+    "ps": re.compile(r"پښتو|مسیحي|عبادت|ستاینه", re.I),
     "bs": re.compile(r"bosansk|tekst pjesme|slavljenje", re.I),
     "sl": re.compile(r"slovensk|besedilo|slaviln", re.I),
     "mk": re.compile(r"македонск|христијан", re.I),
