@@ -16,6 +16,7 @@ import {
 import {
   loadRuntimeSongLibrary,
   loadRuntimeStarterLibrary,
+  languageFilterOptionsForSongs,
   languageFiltersForSongs,
   getApprovedRuntimeVideos,
   isWellKnownSong,
@@ -204,9 +205,11 @@ export function SongLibraryDashboard({
     }
   };
 
-  // Filtered song list
-  const filteredSongs = useMemo(() => {
-    const matches = songs.filter((song) => {
+  // Apply every active search option except language first. Language counts are
+  // derived from this list, so people can see how many results each language
+  // would produce without their current language choice hiding alternatives.
+  const songsMatchingOtherFilters = useMemo(() => {
+    return songs.filter((song) => {
       // 1. Search Query
       if (activeSongFamily ? !songBelongsToFamily(song, activeSongFamily) : deferredSearchQuery.trim() && !songMatchesSearch(song, deferredSearchQuery)) {
         return false;
@@ -219,11 +222,6 @@ export function SongLibraryDashboard({
         } else if (selectedCategory !== 'Well-known' && style !== selectedCategory) {
           return false;
         }
-      }
-      // 3. Hymnal Collection Filter
-      if (selectedLanguage !== 'all') {
-        const language = song.language ?? 'English';
-        if (language !== selectedLanguage) return false;
       }
       if (selectedSeason !== 'all' && !seasonsForSong(song).includes(selectedSeason)) return false;
       if (selectedArrangement !== 'all' && inferWorshipArrangement(song) !== selectedArrangement) return false;
@@ -248,6 +246,17 @@ export function SongLibraryDashboard({
 
       return true;
     });
+  }, [songs, deferredSearchQuery, activeSongFamily, selectedCategory, selectedHymnal, selectedSeason, selectedArrangement, selectedPresentation, onlyCcliTop100, onlyVerifiedWords, approvedVideoIds]);
+
+  const languageCounts = useMemo(() => new Map(
+    languageFilterOptionsForSongs(songsMatchingOtherFilters).map(({ language, count }) => [language, count]),
+  ), [songsMatchingOtherFilters]);
+
+  // Filtered song list
+  const filteredSongs = useMemo(() => {
+    const matches = selectedLanguage === 'all'
+      ? songsMatchingOtherFilters
+      : songsMatchingOtherFilters.filter((song) => (song.language ?? 'English') === selectedLanguage);
     const sorted = sortSongResults(matches, deferredSearchQuery);
     if (!activeSongFamily) return sorted;
     return sorted.sort((left, right) => {
@@ -258,7 +267,7 @@ export function SongLibraryDashboard({
       return leftLanguage.localeCompare(rightLanguage)
         || inferLanguagePresentation(left).localeCompare(inferLanguagePresentation(right));
     });
-  }, [songs, deferredSearchQuery, activeSongFamily, selectedCategory, selectedHymnal, selectedLanguage, selectedSeason, selectedArrangement, selectedPresentation, onlyCcliTop100, onlyVerifiedWords, approvedVideoIds]);
+  }, [songsMatchingOtherFilters, deferredSearchQuery, activeSongFamily, selectedLanguage]);
 
   useLayoutEffect(() => {
     setVisibleSongCount(initialResultBatchSize());
@@ -309,8 +318,12 @@ export function SongLibraryDashboard({
               setSelectedLanguage(event.target.value);
               if (event.target.value !== 'all') onVisitorEngaged?.();
             }} aria-label="Filter by language">
-              <option value="all">All languages</option>
-              {languageFilters.map((language) => <option key={language} value={language}>{language}</option>)}
+              <option value="all">All languages ({songsMatchingOtherFilters.length.toLocaleString()})</option>
+              {languageFilters.map((language) => (
+                <option key={language} value={language}>
+                  {language} ({(languageCounts.get(language) ?? 0).toLocaleString()})
+                </option>
+              ))}
             </select>
           </label>
           <button type="button" className="btn-secondary" aria-expanded={showAdvancedFilters} onClick={() => setShowAdvancedFilters((value) => !value)}>

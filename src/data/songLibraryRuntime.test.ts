@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WorshipSong } from './worshipSongs';
 import {
   isWellKnownSong,
+  languageFilterOptionsForSongs,
   languageFiltersForSongs,
   parseHymnNumberSearch,
   songMatchesSearch,
@@ -27,6 +28,18 @@ describe('runtime song catalogue helpers', () => {
       song('3', 'Three', { language: 'Persian / Farsi' }),
       song('4', 'Four', { language: 'Arabic' }),
     ])).toEqual(['English', 'Persian / Farsi', 'Arabic', 'Zulu']);
+  });
+
+  it('counts the playable catalogue entries available for each language', () => {
+    expect(languageFilterOptionsForSongs([
+      song('1', 'One', { language: 'Welsh' }),
+      song('2', 'Two', { language: 'Welsh' }),
+      song('3', 'Three', { language: 'English' }),
+      song('4', 'Four', { language: 'Language not stated' }),
+    ])).toEqual([
+      { language: 'English', count: 1 },
+      { language: 'Welsh', count: 2 },
+    ]);
   });
 
   it('understands qualified hymn numbers in the deferred catalogue', () => {

@@ -178,15 +178,29 @@ export function loadRuntimeSongLibrary(): Promise<WorshipSong[]> {
   return cataloguePromise;
 }
 
-export function languageFiltersForSongs(songs: WorshipSong[]): string[] {
-  const languages = new Set(songs.map((song) => canonicalLanguageName(song.language)).filter((language) => language !== 'Language not stated'));
-  return [...languages].sort((left, right) => {
+export interface LanguageFilterOption {
+  language: string;
+  count: number;
+}
+
+export function languageFilterOptionsForSongs(songs: WorshipSong[]): LanguageFilterOption[] {
+  const counts = new Map<string, number>();
+  for (const song of songs) {
+    const language = canonicalLanguageName(song.language);
+    if (language === 'Language not stated') continue;
+    counts.set(language, (counts.get(language) ?? 0) + 1);
+  }
+  return [...counts].sort(([left], [right]) => {
     if (left === 'English') return -1;
     if (right === 'English') return 1;
     if (left === 'Persian / Farsi') return -1;
     if (right === 'Persian / Farsi') return 1;
     return left.localeCompare(right);
-  });
+  }).map(([language, count]) => ({ language, count }));
+}
+
+export function languageFiltersForSongs(songs: WorshipSong[]): string[] {
+  return languageFilterOptionsForSongs(songs).map(({ language }) => language);
 }
 
 export function getApprovedRuntimeVideos(): Set<string> {
