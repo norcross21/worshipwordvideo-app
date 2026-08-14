@@ -23,8 +23,11 @@ from yt_dlp import YoutubeDL
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = Path("/tmp/wwv-expanded-search-candidates.json")
-RESULTS_PER_QUERY = 25
-MAX_WORKERS = 4
+RESULTS_PER_QUERY = 50
+# Keep public-search traffic deliberately modest. Larger pools trigger
+# YouTube throttling on long multilingual research passes and create false
+# gaps in the smaller-language collections.
+MAX_WORKERS = 2
 
 SPEC = importlib.util.spec_from_file_location(
     "catalogue_research",
@@ -173,6 +176,56 @@ NATIVE_QUERIES: dict[str, tuple[str, ...]] = {
     "Albanian": ("këngë adhurimi e krishterë me tekst", "këngë lavdërimi Jezus tekst"),
     "Welsh": ("cân addoli Gristnogol geiriau", "cân mawl Iesu gyda geiriau"),
     "Irish": ("amhrán adhartha Críostaí focail", "amhrán molta Íosa liricí"),
+    "Haitian Creole": ("chant chrétien créole haïtien paroles", "adorasyon kreyòl lyrics", "chan lwanj kreyòl ak pawòl"),
+    "Māori": ("waiata karakia Karaitiana kupu", "waiata whakapono Māori kupu", "waiata whakamoemiti ki a Ihu kupu"),
+    "Samoan": ("pese lotu Samoa upu", "pese faamanu Samoa lyrics", "pese viiga Iesu upu"),
+    "Tongan": ("hiva lotu Tonga lea", "hiva fakalotu lyrics", "hiva fakafetaʻi Sisu lea"),
+    "Fijian": ("sere lotu Vakaviti lyrics", "sere ni lotu vosa", "sere ni vakavinavinaka Jisu lyrics"),
+    "Finnish": ("kristillinen ylistyslaulu sanat", "hengellinen laulu sanoitukset", "Jeesus laulu sanat"),
+    "Swedish": ("kristen lovsång text", "psalm med sångtext", "Jesus lovsång med text"),
+    "Norwegian": ("kristen lovsang tekst", "salme med sangtekst", "Jesus lovsang med tekst"),
+    "Danish": ("kristen lovsang tekst", "salme med sangtekst", "Jesus lovsang med tekst"),
+    "Icelandic": ("kristilegt lofgjörðarlag texti", "sálmur með texta", "Jesús lofsöngur texti"),
+    "Lithuanian": ("krikščioniška giesmė žodžiai", "šlovinimo giesmė tekstas", "Jėzaus garbinimo giesmė žodžiai"),
+    "Latvian": ("kristīga slavas dziesma vārdi", "pielūgsmes dziesma teksts", "Jēzus slavas dziesma vārdi"),
+    "Estonian": ("kristlik ülistuslaul sõnad", "vaimulik laul sõnadega", "Jeesuse ülistuslaul sõnad"),
+    "Latin": ("hymnus christianus cum textu", "canticum latinum cum verbis", "laus Iesu hymnus lyrics"),
+    "Khmer": ("បទចម្រៀងថ្វាយបង្គំគ្រីស្ទាន អត្ថបទ", "ចម្រៀងសរសើរព្រះយេស៊ូវ lyrics", "ទំនុកតម្កើងគ្រីស្ទាន អត្ថបទ"),
+    "Lao": ("ເພງນະມັດສະການຄຣິສຕຽນ ເນື້ອເພງ", "ເພງສັນລະເສີນພຣະເຢຊູ lyrics"),
+    "Burmese / Myanmar": ("ခရစ်ယာန် ဝတ်ပြုသီချင်း စာသား", "ယေရှု ချီးမွမ်းသီချင်း lyrics", "မြန်မာ ဓမ္မသီချင်း စာသား"),
+    "Ndebele": ("ingoma yokukhonza isiNdebele amazwi", "amaculo okudumisa lyrics", "iculo lokudumisa uJesu amazwi"),
+    "Sesotho": ("pina ea borapeli mantsoe", "lipina tsa thoriso lyrics", "pina ea Jesu mantsoe"),
+    "Setswana": ("pina ya kobamelo mafoko", "difela tsa thoriso lyrics", "sefela sa Jesu mafoko"),
+    "Kirundi": ("indirimbo zo guhimbaza amajambo", "indirimbo zo gusenga lyrics", "indirimbo za Yesu amajambo"),
+    "Akan": ("Akan ayeyi dwom nsɛm", "Kristo som dwom lyrics", "Yesu ayeyi nnwom nsɛm"),
+    "Ewe": ("Ewe subɔsubɔ ha nyawo", "Kristo kafukafu ha lyrics", "Yesu kafukafu hadzidzi"),
+    "Ga": ("Ga Christian worship song lyrics", "Ga praise song Jesus words", "Ga Kristo worship lyrics"),
+    "Wolof": ("Wolof Christian worship lyrics", "woy Yeesu ngir jaamu Yàlla lyrics", "Wolof praise song paroles"),
+    "Catalan": ("cançó cristiana de lloança amb lletra", "cant d'adoració lletra", "cançó de Jesús amb lletra"),
+    "Basque": ("kristau gurtza abestia letrak", "gorespen kanta letra", "Jesusen gurtza abestia letrak"),
+    "Galician": ("canción cristiá de louvanza con letra", "canto de adoración letra", "canción de Xesús con letra"),
+    "Bosnian": ("kršćanska pjesma slavljenja tekst", "duhovna pjesma sa tekstom", "pjesma slavljenja Isusa tekst"),
+    "Slovenian": ("krščanska slavilna pesem besedilo", "duhovna pesem z besedilom", "pesem slavljenja Jezusa besedilo"),
+    "Macedonian": ("христијанска песна текст", "песна за славење со текст", "песна за Исус текст"),
+    "Azerbaijani": ("xristian ibadət mahnısı sözləri", "İsa həmd mahnısı sözləri", "Azərbaycan xristian mahnısı sözləri"),
+    "Kazakh": ("христиандық мадақ әні мәтіні", "Исаға ғибадат әні сөздері", "қазақша христиан әні мәтіні"),
+    "Uzbek": ("xristian sajda qo'shig'i matni", "Iso madhiyasi matni", "o'zbekcha masihiy qo'shiq so'zlari"),
+    "Kyrgyz": ("христиан сыйынуу ыры сөздөрү", "Иса мактоо ыры текст", "кыргызча христиан ыры сөздөрү"),
+    "Tajik": ("суруди парастиши масеҳӣ матн", "суруди ҳамду санои Исо матн", "суруди масеҳӣ тоҷикӣ матн"),
+    "Turkmen": ("hristian sežde aýdym sözleri", "Isa öwgi aýdym sözleri", "türkmen hristian aýdymy lyrics"),
+    "Mongolian": ("христийн магтаал дууны үг", "Есүс мөргөлийн дуу үг", "монгол христийн дууны үг"),
+    "Assyrian / Aramaic": ("Assyrian Christian hymn lyrics", "Aramaic worship song subtitles", "Syriac Christian chant with words"),
+    "Odia": ("ଓଡ଼ିଆ ଖ୍ରୀଷ୍ଟିୟ ଉପାସନା ଗୀତ ଲିରିକ୍ସ", "ଯୀଶୁ ପ୍ରଶଂସା ଗୀତ lyrics", "Odia Christian song lyrics"),
+    "Assamese": ("অসমীয়া খ্ৰীষ্টান উপাসনা গীতৰ কথা", "যীচু প্ৰশংসা গীত lyrics", "Assamese Christian song lyrics"),
+    "Konkani": ("Konkani Christian worship song lyrics", "कोंकणी क्रिस्ती भजन lyrics", "Konkani Jesus praise song lyrics"),
+    "Mizo": ("Mizo Kristian fakna hla lyrics", "Isua biakna hla thu", "Mizo gospel song lyrics"),
+    "Khasi": ("Khasi Christian worship song lyrics", "jingrwai mane U Jisu lyrics", "Khasi gospel song lyrics"),
+    "Javanese": ("lagu rohani Kristen Jawa lirik", "kidung pasamuwan Jawa lirik", "pujian Yesus Jawa lirik"),
+    "Sundanese": ("lagu rohani Kristen Sunda lirik", "pujian Sunda lirik", "lagu Yesus Sunda lirik"),
+    "Batak": ("ende rohani Batak lirik", "lagu pujian Batak lirik", "ende ni Jesus Batak lyrics"),
+    "Hmong": ("nkauj qhuas Vajtswv Hmoob lyrics", "Hmong Christian worship song lyrics", "nkauj ntseeg Yexus lyrics"),
+    "Tok Pisin": ("Tok Pisin lotu song lyrics", "singsing lotu wantaim ol tok", "Jisas song Tok Pisin lyrics"),
+    "Quechua": ("canto cristiano quechua letra", "takiy Jesucristo Quechua lyrics", "alabanza quechua con letra"),
 }
 
 

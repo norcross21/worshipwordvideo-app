@@ -108,7 +108,7 @@ function hasNamedLanguage(song: WorshipSong): boolean {
 }
 
 function buildCompactCatalogue(songs: WorshipSong[]) {
-  const dictionaryKeys = ['category', 'language', 'region', 'arrangement', 'languagePresentation'] as const;
+  const dictionaryKeys = ['artist', 'category', 'language', 'region', 'arrangement', 'languagePresentation'] as const;
   const dictionaries = Object.fromEntries(dictionaryKeys.map((key) => [
     key,
     [...new Set(songs.map((song) => song[key]).filter((value): value is string => Boolean(value)))],
@@ -130,7 +130,7 @@ function buildCompactCatalogue(songs: WorshipSong[]) {
     return [
       song.id,
       song.title,
-      song.artist,
+      indexes.artist.get(song.artist) ?? 0,
       indexes.category.get(song.category) ?? 0,
       song.youtubeId,
       indexes.language.get(song.language ?? 'English') ?? 0,

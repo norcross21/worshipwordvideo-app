@@ -162,7 +162,11 @@ WORD_PATTERNS = [
         r"गीत के बोल|लिरिक्स|গানের কথা|লিরিক্স|பாடல் வரிகள்|పాట సాహిత్యం|"
         r"ഗാനവരികൾ|ಹಾಡಿನ ಸಾಹಿತ್ಯ|गीताचे बोल|ગીતના શબ્દો|गीतको बोल|ගී පද|ਬੋਲ|ግጥሚ|"
         r"เนื้อเพลง|lirik|lirieke|ọ̀?rọ̀?|"
-        r"\b(?:mashairi|maneno|kalmomi|jechoota|erayo|mawu|amagambo|mazwi|ns[eɛ]m)\b|"
+        r"\b(?:mashairi|maneno|kalmomi|jechoota|erayo|mawu|amagambo|amajambo|mazwi|ns[eɛ]m|"
+        r"paw[oò]l|kupu|upu|vosa|sanat|sanoitukset|s[aå]ngtext|sangtekst|texti|žodžiai|vārdi|"
+        r"sõnad|verbis|mantsoe|mafoko|nyawo|lletra|letrak|besedilo|sözləri|мәтіні|сөздөрү|"
+        r"matni|sözleri|дууны үг|գիրք)\b|"
+        r"អត្ថបទ|ເນື້ອເພງ|စာသား|ଗୀତ|গীতৰ কথা|hla thu|ol tok|"
         r"lyrics? video",
         re.I,
     )),
@@ -239,10 +243,13 @@ CHRISTIAN_SIGNAL = re.compile(
     r"бог|иисус|господ|христ|поклон|хвал|церк|مسیح|عیسی|پرستش|سرود|المسيح|يسوع|الرب|ترنيمة|عبادة|"
     r"예수|하나님|주님|찬양|교회|敬拜|赞美|讚美|耶稣|耶穌|上帝|礼拝|賛美|イエス|"
     r"\bch[uú]a\b|th[aá]nh ca|tin l[aà]nh|tuhan|pujian|penyembahan|rohani|mungu|ibada|sifa|ọlọrun|olodumare|"
-    r"jizọs|masiixi|kirista|kristo|jesu|iesu|íosa|waaqa|քրիստ|հիսուս|ქრისტ|იესო|"
+    r"jizọs|masiixi|kirista|kristo|jesu|iesu|íosa|waaqa|karaitiana|ihu|jisas|yesu|yesus|yexus|"
+    r"jeesus|jes[uú]s|j[eė]zus|xristian|isua|jisu|yesu|Yeesu|u jisu|քրիստ|հիսուս|ქრისტ|იესო|"
     r"यीशु|मसीही|ईसाई|ख्रिस्ती|आराधना|যীশু|খ্রিস্টান|উপাসনা|"
     r"இயேசு|கிறிஸ்தவ|ஆராதனை|యేసు|క్రైస్తవ|ఆరాధన|യേശു|ക്രിസ്തീയ|ആരാധന|"
-    r"ಕ್ರೈಸ್ತ|ಆರಾಧನೆ|นมัสการ|คริสเตียน|አምልኮ|ክርስቲያን|ክርስትያን|"
+    r"ಕ್ರೈಸ್ತ|ಆರಾಧನೆ|ନବୀନ|ଖ୍ରୀଷ୍ଟିୟ|ଯୀଶୁ|খ্ৰীষ্টান|যীচু|นมัสการ|คริสเตียน|"
+    r"គ្រីស្ទាន|ព្រះយេស៊ូវ|ຄຣິສຕຽນ|ພຣະເຢຊູ|ခရစ်ယာန်|ယေရှု|"
+    r"አምልኮ|ክርስቲያን|ክርስትያን|"
     r"хришћан|християн|مسیحي|مسیحی",
     re.I,
 )
@@ -257,8 +264,14 @@ SONG_CONTEXT = re.compile(
     r"tap[iı]nma|ilahi|adhurimi|lavd[eë]rimi|addoli|adhradh)\b|"
     r"песн|пісн|поклон|хвал|суруд|پرستش|ترنيمة|تسبيح|"
     r"orin|abụ|egwu|waƙa|wakar|faarfannaa|sirba|hees|nzembo|indirimbo|nyimbo|"
-    r"rwiyo|nziyo|ennyimba|dwom|cân|amhrán|"
-    r"መዝሙር|찬양|예배|가사|자막|敬拜|赞美|讚美|賛美|礼拝|歌詞|歌词|字幕|นมัสการ|เพลง|आराधना|উপাসনা|ஆராதனை|ఆరాధన|ആരാധന",
+    r"rwiyo|nziyo|ennyimba|dwom|cân|amhrán|waiata|pese|hiva|sere|ylistyslaulu|hengellinen laulu|"
+    r"lovs[aå]ng|salme|lofgjörð|sálmur|giesmė|dziesma|ülistuslaul|hymnus|canticum|"
+    r"pina|lipina|difela|sefela|kafukafu|woy|cançó|abesti|kanta|pesem|mahnı|qo['‘’]?shiq|"
+    r"aýdym|takiy|kidung|ende|nkauj|singsing lotu|"
+    r"መዝሙር|찬양|예배|가사|자막|敬拜|赞美|讚美|賛美|礼拝|歌詞|歌词|字幕|"
+    r"នម្កើង|ចម្រៀង|ເພງ|သီချင်း|နိန်|နုန်း|"
+    r"នมัสการ|เพลง|आराधना|উপাসনা|ஆராதனை|ఆరాధన|ആരാധന|"
+    r"песна|ән|суруди|дуу|ଗୀତ|গীত|hla|jingrwai",
     re.I,
 )
 
@@ -356,6 +369,33 @@ LOCAL_LANGUAGE_SIGNALS: dict[str, re.Pattern[str]] = {
     "wo": re.compile(r"wolof|wólof", re.I),
     "tpi": re.compile(r"tok pisin|lotu song", re.I),
     "qu": re.compile(r"quechua|kichwa|takiy", re.I),
+    "ht": re.compile(r"krey[oò]l|ayisyen|adorasyon|lwanj", re.I),
+    "mi": re.compile(r"m[aā]ori|waiata|karaitiana|whakapono|whakamoemiti", re.I),
+    "sm": re.compile(r"samoa|pese lotu|faamanu|viiga", re.I),
+    "to": re.compile(r"tonga|hiva lotu|fakalotu|fakafeta", re.I),
+    "fj": re.compile(r"vakaviti|fijian|sere lotu|vakavinavinaka", re.I),
+    "fi": re.compile(r"suomi|suomeksi|ylistyslaulu|hengellinen|sanoitukset", re.I),
+    "sv": re.compile(r"svensk|lovs[aå]ng|s[aå]ngtext", re.I),
+    "no": re.compile(r"norsk|lovsang|sangtekst", re.I),
+    "da": re.compile(r"dansk|lovsang|sangtekst", re.I),
+    "is": re.compile(r"íslensk|lofgjör|sálmur|texti", re.I),
+    "lt": re.compile(r"lietuvi|giesmė|žodžiai|šlovinimo", re.I),
+    "lv": re.compile(r"latvie|dziesma|vārdi|pielūgsmes", re.I),
+    "et": re.compile(r"eesti|ülistuslaul|sõnad|vaimulik", re.I),
+    "la": re.compile(r"latine|latina|hymnus|canticum|cum textu", re.I),
+    "km": re.compile(r"ខ្មែរ|គ្រីស្ទាន|ថ្វាយបង្គំ|សរសើរ|ចម្រៀង", re.I),
+    "lo": re.compile(r"ລາວ|ຄຣິສຕຽນ|ນະມັດສະການ|ສັນລະເສີນ|ເພງ", re.I),
+    "my": re.compile(r"မြန်မာ|ခရစ်ယာန်|ဝတ်ပြု|ချီးမွမ်း|သီချင်း", re.I),
+    "nd": re.compile(r"ndebele|isindebele|ingoma yokukhonza|amaculo", re.I),
+    "st": re.compile(r"sesotho|borapeli|lipina|thoriso", re.I),
+    "ak": re.compile(r"akan|ayeyi|nnwom|som dwom", re.I),
+    "ee": re.compile(r"ewe|subɔsubɔ|kafukafu|hadzidzi", re.I),
+    "gaa": re.compile(r"ga christian|ga worship|ga language|ga kristo", re.I),
+    "kok": re.compile(r"konkani|कोंकणी|क्रिस्ती", re.I),
+    "lus": re.compile(r"mizo|fakna hla|isua|biakna", re.I),
+    "kha": re.compile(r"khasi|jingrwai|u jisu", re.I),
+    "hmn": re.compile(r"hmong|hmoob|nkauj|vajtswv|yexus", re.I),
+    "syr": re.compile(r"assyrian|aramaic|syriac|suryoyo", re.I),
 }
 
 SCRIPT_SIGNALS: dict[str, re.Pattern[str]] = {

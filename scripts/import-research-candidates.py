@@ -34,6 +34,7 @@ SOURCE_PATHS = [
     Path("/tmp/wwv-channel-html-candidates.json"),
     Path("/tmp/wwv-search-html-candidates.json"),
     Path("/tmp/wwv-language-depth-candidates.json"),
+    Path("/tmp/wwv-invidious-search-candidates.json"),
     Path("/tmp/wwv-trusted-channel-videos.json"),
 ]
 CHANNEL_PAGE_SOURCE_PATHS = [
@@ -43,6 +44,10 @@ CHANNEL_PAGE_SOURCE_PATHS = [
 ]
 REVIEWED_CHANNEL_LANGUAGE_PATHS = {
     Path("/tmp/wwv-expanded-channel-candidates.json"),
+    # Deep channel rows receive a language only after at least two independent
+    # search leads agree and 60% of all explicit leads point to that language.
+    # Per-title script/name matches can also establish the label directly.
+    Path("/tmp/wwv-channel-html-candidates.json"),
 }
 MIN_CHANNEL_PAGE_VIEWS = 100
 
@@ -83,6 +88,11 @@ research = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(research)
 TARGET = research.TARGET
 SSL_CONTEXT = ssl._create_unverified_context()
+
+
+def integer_argument(name: str, default: int) -> int:
+    prefix = f"--{name}="
+    return next((int(value.split("=", 1)[1]) for value in sys.argv if value.startswith(prefix)), default)
 
 ITALIAN_FAMILIAR_ALIASES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"bont[aà]\s+di\s+dio", re.I), "Goodness of God"),
@@ -220,6 +230,8 @@ def main() -> None:
         for value in (selected_language or "").split(",")
         if value.strip()
     }
+    requested_target = integer_argument("target", TARGET)
+    target = min(max(requested_target, 1), TARGET)
     existing_source_ids = research.existing_video_ids()
     reviewed_channel_languages = {
         str(item.get("youtubeId") or ""): (
@@ -237,7 +249,7 @@ def main() -> None:
         if str(row[0]) not in UNPROVEN_LANGUAGE_IDS
         and research.word_evidence(str(row[1]))
         and research.is_existing_quality_row(str(row[1]), str(row[2]), str(row[3]), str(row[4]))
-    ][:TARGET]
+    ][:target]
     for row in base_rows:
         if str(row[3]) == "Language not stated" and str(row[0]) in reviewed_channel_languages:
             row[3], row[4], row[5] = reviewed_channel_languages[str(row[0])]
@@ -251,7 +263,7 @@ def main() -> None:
         if len(row) > 11:
             row[11] = supported_familiar_title(str(row[1]), str(row[11]) if row[11] else None) \
                 or inferred_familiar_title(str(row[1]), str(row[3]))
-    if len(base_rows) >= TARGET:
+    if len(base_rows) >= target:
         OUTPUT.write_text(json.dumps(base_rows, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(json.dumps({"selected": len(base_rows), "mode": "metadata-label cleanup"}, indent=2))
         return
@@ -328,7 +340,7 @@ def main() -> None:
     # titles are discarded here. The larger pool also prevents high-volume
     # English channels from crowding smaller language collections out before
     # the round-robin selection stage.
-    check_pool = candidates[: max(2400, TARGET - len(base_rows) + 8000)]
+    check_pool = candidates[: max(2400, target - len(base_rows) + 8000)]
     metadata_by_id: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {pool.submit(youtube_embed_metadata, str(item["youtubeId"])): item for item in check_pool}
@@ -361,14 +373,14 @@ def main() -> None:
 
     selected: list[dict] = []
     language_order = sorted(buckets, key=lambda value: (value == "English", value))
-    while len(base_rows) + len(selected) < TARGET:
+    while len(base_rows) + len(selected) < target:
         added = False
         for language in language_order:
             bucket = buckets[language]
             if bucket:
                 selected.append(bucket.pop(0))
                 added = True
-                if len(base_rows) + len(selected) >= TARGET:
+                if len(base_rows) + len(selected) >= target:
                     break
         if not added:
             break
@@ -396,9 +408,11 @@ def main() -> None:
             language = requested_language if stated_language else "Language not stated"
             if not stated_language:
                 # Search terms are discovery leads, never publication proof.
-                # If the live title/channel no longer proves the requested
-                # language, leave it out rather than exposing an unlabelled row.
-                continue
+                # The video itself has still passed live embed, duration,
+                # worship context and word-evidence checks. Retain an honest
+                # unknown label rather than guessing its language.
+                code = "und"
+                region = "International / verify before use"
         evidence = research.word_evidence(title)
         if not evidence:
             continue
@@ -424,14 +438,15 @@ def main() -> None:
             views,
         ])
 
-    OUTPUT.write_text(json.dumps(rows[:TARGET], ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    OUTPUT.write_text(json.dumps(rows[:target], ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(json.dumps({
         "base_rows": len(base_rows),
         "eligible_unused_candidates": len(candidates),
         "youtube_metadata_checked": len(metadata_by_id),
-        "imported": len(rows[:TARGET]) - len(base_rows),
-        "selected": len(rows[:TARGET]),
-        "explicit_languages": len({row[3] for row in rows[:TARGET] if row[3] != "Language not stated"}),
+        "requested_target": target,
+        "imported": len(rows[:target]) - len(base_rows),
+        "selected": len(rows[:target]),
+        "explicit_languages": len({row[3] for row in rows[:target] if row[3] != "Language not stated"}),
     }, indent=2, ensure_ascii=False))
 
 

@@ -21,8 +21,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SEARCH_SOURCE = Path("/tmp/wwv-expanded-search-candidates.json")
+SEARCH_PAGE_SOURCE = Path("/tmp/wwv-search-html-candidates.json")
 OUTPUT = Path("/tmp/wwv-channel-feed-candidates.json")
-MAX_WORKERS = 6
+MAX_WORKERS = 3
 SSL_CONTEXT = ssl._create_unverified_context()
 
 SPEC = importlib.util.spec_from_file_location(
@@ -36,7 +37,14 @@ SPEC.loader.exec_module(research)
 
 def search_candidates() -> list[dict]:
     data = json.loads(SEARCH_SOURCE.read_text(encoding="utf-8"))
-    return data.get("candidates", data if isinstance(data, list) else [])
+    rows = list(data.get("candidates", [])) if isinstance(data, dict) else list(data)
+    if SEARCH_PAGE_SOURCE.exists():
+        loaded = json.loads(SEARCH_PAGE_SOURCE.read_text(encoding="utf-8"))
+        if isinstance(loaded, dict):
+            rows.extend(loaded.get("candidates", []))
+        else:
+            rows.extend(loaded)
+    return rows
 
 
 def channel_id(channel_url: str) -> str | None:

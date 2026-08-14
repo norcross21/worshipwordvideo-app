@@ -21,8 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SEARCH_CACHE = Path("/tmp/wwv-expanded-search-candidates.json")
 OUTPUT = Path("/tmp/wwv-search-html-candidates.json")
-MAX_QUERIES = 800
-MAX_WORKERS = 4
+MAX_QUERIES = 1600
+MAX_WORKERS = 2
 SSL_CONTEXT = ssl._create_unverified_context()
 
 
@@ -83,6 +83,9 @@ def fetch(job: tuple[str, str, str, str]) -> tuple[list[dict], str | None]:
             video_id = str(item.get("videoId") or "")
             title = text_value(item.get("title") or {})
             channel = text_value(item.get("ownerText") or item.get("longBylineText") or {})
+            owner = item.get("ownerText") or item.get("longBylineText") or {}
+            owner_runs = owner.get("runs") or []
+            browse_id = str((((owner_runs[0] if owner_runs else {}).get("navigationEndpoint") or {}).get("browseEndpoint") or {}).get("browseId") or "")
             duration = duration_seconds(text_value(item.get("lengthText") or {}))
             evidence = research.word_evidence(title)
             if (
@@ -106,6 +109,7 @@ def fetch(job: tuple[str, str, str, str]) -> tuple[list[dict], str | None]:
                 "youtubeId": video_id,
                 "sourceTitle": title,
                 "sourceChannel": channel,
+                "sourceChannelUrl": f"https://www.youtube.com/channel/{browse_id}" if browse_id.startswith("UC") else None,
                 "durationSeconds": duration,
                 "viewCountAtReview": 0,
                 "wordEvidence": evidence,
@@ -133,7 +137,7 @@ def main() -> None:
     jobs = jobs[:MAX_QUERIES]
 
     candidates: dict[str, dict] = {}
-    if OUTPUT.exists():
+    if OUTPUT.exists() and "--fresh" not in sys.argv:
         for row in json.loads(OUTPUT.read_text(encoding="utf-8")):
             candidates[str(row["youtubeId"])] = row
     errors: list[str] = []
@@ -145,7 +149,9 @@ def main() -> None:
             if error:
                 errors.append(error)
             for row in rows:
-                candidates.setdefault(str(row["youtubeId"]), row)
+                current = candidates.get(str(row["youtubeId"]))
+                if current is None or (not current.get("sourceChannelUrl") and row.get("sourceChannelUrl")):
+                    candidates[str(row["youtubeId"])] = row
             done += 1
             if done % 50 == 0:
                 print(json.dumps({"completed": done, "queries": len(jobs), "candidates": len(candidates)}), flush=True)

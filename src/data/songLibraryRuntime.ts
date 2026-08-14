@@ -41,6 +41,7 @@ interface LegacyRuntimeCatalogue {
 }
 
 interface CompactCatalogueDictionaries {
+  artist?: string[];
   category: string[];
   language: string[];
   region: string[];
@@ -51,7 +52,7 @@ interface CompactCatalogueDictionaries {
 type CompactSongRow = [
   id: string,
   title: string,
-  artist: string,
+  artist: string | number,
   categoryIndex: number,
   youtubeId: string,
   languageIndex: number,
@@ -93,7 +94,7 @@ function decodeCompactSong(row: CompactSongRow, payload: CompactRuntimeCatalogue
   const [
     id,
     title,
-    artist,
+    artistValue,
     categoryIndex,
     youtubeId,
     languageIndex,
@@ -108,6 +109,9 @@ function decodeCompactSong(row: CompactSongRow, payload: CompactRuntimeCatalogue
     transliteration,
   ] = row;
   const catalogueReviewed = Boolean(flags & 2);
+  const artist = typeof artistValue === 'number'
+    ? dictionaryValue(payload.dictionaries.artist ?? [], artistValue) ?? ''
+    : artistValue;
   return {
     id,
     title,
