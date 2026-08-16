@@ -460,7 +460,7 @@ export function SongLibraryDashboard({
         {/* Left Side: Song Catalog List */}
         <div className="song-list-panel">
           <div className="song-list-panel__header">
-            <h3>Results</h3>
+            <h2>Results</h2>
             <span className="song-count-badge" aria-live="polite">{catalogueLoading ? 'Loading…' : catalogueHydrating ? <>{filteredSongs.length.toLocaleString()}+ <span className="song-count-label">videos · adding full library</span></> : isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()}{catalogueComplete ? '' : '+'} <span className="song-count-label">videos</span>{!catalogueComplete && <span className="sr-only"> ready; search or filter to load the complete library</span>}</>}</span>
           </div>
 

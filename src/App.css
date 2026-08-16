@@ -364,7 +364,7 @@ body:has(.modal-backdrop) {
 }
 
 .app-loading {
-  min-height: 45vh;
+  min-height: 75svh;
   display: grid;
   place-items: center;
   color: var(--color-text-muted);
@@ -980,7 +980,7 @@ body:has(.modal-backdrop) {
   align-items: center;
 }
 
-.song-list-panel__header h3 {
+.song-list-panel__header h2 {
   font-size: 0.95rem;
   font-weight: 700;
 }
@@ -2097,7 +2097,7 @@ body:has(.modal-backdrop) {
   background: var(--color-bg-card);
   padding: 1.5rem;
   font-size: 0.82rem;
-  color: var(--color-text-muted);
+  color: #445a73;
   text-align: center;
 }
 
@@ -2109,7 +2109,7 @@ body:has(.modal-backdrop) {
 
 .app-footer__sub {
   font-size: 0.75rem;
-  color: var(--color-text-light);
+  color: #52657a;
   margin-top: 0.25rem;
 }
 

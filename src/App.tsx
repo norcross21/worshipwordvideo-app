@@ -478,17 +478,19 @@ function MainApp() {
               onBrowseSongs={() => setActiveTab('all')}
             />
           ) : (
-            <SongLibraryDashboard
-              initialFilter="all"
-              onAddToPlaylist={handleAddToPlaylist}
-              playlistEnabled={Boolean(user)}
-              activeServiceTitle={activeService?.title ?? null}
-              onPresentVideo={user ? handlePresentSingleVideo : undefined}
-              onVisitorEngaged={!user ? recordGuestEngagement : undefined}
-            />
+            <>
+              <SongLibraryDashboard
+                initialFilter="all"
+                onAddToPlaylist={handleAddToPlaylist}
+                playlistEnabled={Boolean(user)}
+                activeServiceTitle={activeService?.title ?? null}
+                onPresentVideo={user ? handlePresentSingleVideo : undefined}
+                onVisitorEngaged={!user ? recordGuestEngagement : undefined}
+              />
+              <SeoDiscoverySection />
+            </>
           )}
         </Suspense>
-        {activeTab === 'all' && <SeoDiscoverySection />}
       </main>
 
       {showSavedPlaylistsModal && (
