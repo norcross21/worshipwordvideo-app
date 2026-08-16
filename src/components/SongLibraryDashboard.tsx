@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Search,
   ArrowLeft,
@@ -83,6 +83,13 @@ const requestedArrangement = initialQueryParameter('arrangement');
 const initialArrangement = WORSHIP_ARRANGEMENTS.includes(requestedArrangement as (typeof WORSHIP_ARRANGEMENTS)[number]) ? requestedArrangement : 'all';
 const requestedPresentation = initialQueryParameter('presentation');
 const initialPresentation = LANGUAGE_PRESENTATIONS.includes(requestedPresentation as (typeof LANGUAGE_PRESENTATIONS)[number]) ? requestedPresentation : 'all';
+const hasInitialFinderRequest = Boolean(
+  initialSearchQuery
+  || initialLanguage !== 'all'
+  || initialSeason !== 'all'
+  || initialArrangement !== 'all'
+  || initialPresentation !== 'all',
+);
 
 export function SongLibraryDashboard({
   initialFilter = 'all',
@@ -95,6 +102,7 @@ export function SongLibraryDashboard({
   const [songs, setSongs] = useState<WorshipSong[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
   const [catalogueHydrating, setCatalogueHydrating] = useState(false);
+  const [catalogueComplete, setCatalogueComplete] = useState(false);
   const [catalogueError, setCatalogueError] = useState('');
   const [catalogueReloadToken, setCatalogueReloadToken] = useState(0);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
@@ -115,6 +123,9 @@ export function SongLibraryDashboard({
   const [visibleSongCount, setVisibleSongCount] = useState(initialResultBatchSize);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const mobileBackRef = useRef<HTMLButtonElement>(null);
+  const mountedRef = useRef(false);
+  const fullCatalogueRequestedRef = useRef(false);
+  const fullCatalogueLoadedRef = useRef(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchPending = searchQuery !== deferredSearchQuery;
   const languageFilters = useMemo(() => languageFiltersForSongs(songs), [songs]);
@@ -150,41 +161,56 @@ export function SongLibraryDashboard({
   }, [initialFilter]);
 
   useEffect(() => {
-    let active = true;
-    setCatalogueLoading(true);
-    setCatalogueHydrating(false);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const requestFullCatalogue = useCallback(() => {
+    if (fullCatalogueRequestedRef.current || fullCatalogueLoadedRef.current) return;
+    fullCatalogueRequestedRef.current = true;
+    setCatalogueHydrating(true);
     setCatalogueError('');
-    void (async () => {
-      let starterLoaded = false;
-      try {
-        const starter = await loadRuntimeStarterLibrary();
-        if (!active) return;
-        starterLoaded = true;
-        startTransition(() => {
-          setSongs(starter);
-          setCatalogueLoading(false);
-          setCatalogueHydrating(true);
-        });
-      } catch {
-        // The full catalogue below remains the authoritative fallback.
-      }
-      try {
-        const library = await loadRuntimeSongLibrary();
-        if (!active) return;
+    void loadRuntimeSongLibrary()
+      .then((library) => {
+        if (!mountedRef.current) return;
+        fullCatalogueLoadedRef.current = true;
         startTransition(() => {
           setSongs(library);
           setCatalogueLoading(false);
           setCatalogueHydrating(false);
+          setCatalogueComplete(true);
         });
-      } catch {
+      })
+      .catch(() => {
+        fullCatalogueRequestedRef.current = false;
+        if (mountedRef.current) setCatalogueHydrating(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    setCatalogueLoading(true);
+    setCatalogueHydrating(false);
+    setCatalogueError('');
+    void loadRuntimeStarterLibrary()
+      .then((starter) => {
         if (!active) return;
+        if (!fullCatalogueLoadedRef.current) {
+          startTransition(() => {
+            setSongs(starter);
+            setCatalogueLoading(false);
+            setCatalogueComplete(false);
+          });
+        }
+        if (hasInitialFinderRequest || initialFilter !== 'all') requestFullCatalogue();
+      })
+      .catch(() => {
+        if (!active || fullCatalogueLoadedRef.current) return;
         setCatalogueLoading(false);
-        setCatalogueHydrating(false);
-        if (!starterLoaded) setCatalogueError('The worship catalogue could not be loaded. Check your connection and try again.');
-      }
-    })();
+        setCatalogueError('The worship catalogue could not be loaded. Check your connection and try again.');
+      });
     return () => { active = false; };
-  }, [catalogueReloadToken]);
+  }, [catalogueReloadToken, initialFilter, requestFullCatalogue]);
 
   const showSong = (song: WorshipSong) => {
     onVisitorEngaged?.();
@@ -260,7 +286,10 @@ export function SongLibraryDashboard({
     const matches = selectedLanguage === 'all'
       ? songsMatchingOtherFilters
       : songsMatchingOtherFilters.filter((song) => (song.language ?? 'English') === selectedLanguage);
-    const sorted = sortSongResults(matches, deferredSearchQuery);
+    // The generated catalogue is already ordered with familiar, reviewed videos
+    // first. Avoid re-sorting all 72,000+ rows until a query needs relevance
+    // ranking; this keeps the first search interaction responsive.
+    const sorted = deferredSearchQuery.trim() ? sortSongResults(matches, deferredSearchQuery) : matches;
     if (!activeSongFamily) return sorted;
     return sorted.sort((left, right) => {
       const leftLanguage = left.language ?? 'English';
@@ -302,7 +331,9 @@ export function SongLibraryDashboard({
             aria-label="Search songs, artists, languages, or hymn numbers"
             placeholder="Search songs, artists, languages or hymn numbers…"
             value={searchQuery}
+            onFocus={requestFullCatalogue}
             onChange={(event) => {
+              requestFullCatalogue();
               setSearchQuery(event.target.value);
               if (event.target.value.trim()) {
                 onVisitorEngaged?.();
@@ -319,17 +350,17 @@ export function SongLibraryDashboard({
           <label className="language-select">
             <Globe2 size={16} />
             <span className="sr-only">Language</span>
-            <select value={selectedLanguage} onChange={(event) => {
+            <select value={selectedLanguage} onFocus={requestFullCatalogue} onChange={(event) => {
               setSelectedLanguage(event.target.value);
               if (event.target.value !== 'all') {
                 onVisitorEngaged?.();
                 recordUsageEvent('language_filter');
               }
             }} aria-label="Filter by language">
-              <option value="all">All languages ({songsMatchingOtherFilters.length.toLocaleString()})</option>
+              <option value="all">All languages ({songsMatchingOtherFilters.length.toLocaleString()}{catalogueComplete ? '' : '+'})</option>
               {languageFilters.map((language) => (
                 <option key={language} value={language}>
-                  {language} ({(languageCounts.get(language) ?? 0).toLocaleString()})
+                  {language} ({(languageCounts.get(language) ?? 0).toLocaleString()}{catalogueComplete ? '' : '+'})
                 </option>
               ))}
             </select>
@@ -339,6 +370,7 @@ export function SongLibraryDashboard({
             <span className="sr-only">Familiar song in other languages</span>
             <select
               value={activeSongFamily?.title ?? ''}
+              onFocus={requestFullCatalogue}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
                 setSelectedLanguage('all');
@@ -350,7 +382,10 @@ export function SongLibraryDashboard({
               {SONG_FAMILIES.map((family) => <option key={family.slug} value={family.title}>{family.title}</option>)}
             </select>
           </label>
-          <button type="button" className="btn-secondary" aria-expanded={showAdvancedFilters} onClick={() => setShowAdvancedFilters((value) => !value)}>
+          <button type="button" className="btn-secondary" aria-expanded={showAdvancedFilters} onClick={() => {
+            requestFullCatalogue();
+            setShowAdvancedFilters((value) => !value);
+          }}>
             <SlidersHorizontal size={15} /> Filters {advancedFilterCount > 0 ? <span className="filter-count">{advancedFilterCount}</span> : null}
           </button>
         </div>
@@ -426,7 +461,7 @@ export function SongLibraryDashboard({
         <div className="song-list-panel">
           <div className="song-list-panel__header">
             <h3>Results</h3>
-            <span className="song-count-badge" aria-live="polite">{catalogueLoading ? 'Loading…' : catalogueHydrating ? <>{filteredSongs.length.toLocaleString()}+ <span className="song-count-label">videos · adding full library</span></> : isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()} <span className="song-count-label">videos</span></>}</span>
+            <span className="song-count-badge" aria-live="polite">{catalogueLoading ? 'Loading…' : catalogueHydrating ? <>{filteredSongs.length.toLocaleString()}+ <span className="song-count-label">videos · adding full library</span></> : isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()}{catalogueComplete ? '' : '+'} <span className="song-count-label">videos</span>{!catalogueComplete && <span className="sr-only"> ready; search or filter to load the complete library</span>}</>}</span>
           </div>
 
           <div className="song-list-panel__scroll">
@@ -460,7 +495,7 @@ export function SongLibraryDashboard({
                     onClick={() => showSong(song)}
                   >
                     <div className="song-card__main">
-                      <h4 className="song-card__title">{song.title}</h4>
+                      <span className="song-card__title">{song.title}</span>
                       {song.englishTitle && song.englishTitle !== song.title && <p className="song-card__translation">{song.englishTitle}</p>}
                       <p className="song-card__artist">{song.artist}</p>
                     </div>
@@ -482,7 +517,10 @@ export function SongLibraryDashboard({
                 <button
                   type="button"
                   className="btn-load-more"
-                  onClick={() => setVisibleSongCount((count) => count + initialResultBatchSize())}
+                  onClick={() => {
+                    requestFullCatalogue();
+                    setVisibleSongCount((count) => count + initialResultBatchSize());
+                  }}
                 >
                   Show {Math.min(initialResultBatchSize(), filteredSongs.length - visibleSongCount)} more ({filteredSongs.length - visibleSongCount} remaining)
                 </button>
@@ -580,7 +618,7 @@ export function SongLibraryDashboard({
               ) : (
                 <div className="no-video-placeholder">
                   <Music size={40} />
-                  <h4>No Video Linked Yet</h4>
+                  <h3>No Video Linked Yet</h3>
                   <p>There is no default lyric video linked for this song yet. You can find and save one in seconds!</p>
                   <button
                     type="button"

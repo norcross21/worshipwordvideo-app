@@ -47,6 +47,31 @@ function NativeYouTubeFrame({ videoId, title, autoplay = false, startSeconds, en
   );
 }
 
+function LightweightYouTubePreview(props: PlayerFrameProps) {
+  const { videoId, title } = props;
+  const [activated, setActivated] = useState(false);
+
+  if (activated) return <NativeYouTubeFrame {...props} autoplay loading="eager" />;
+
+  return (
+    <button
+      type="button"
+      className="youtube-player__preview"
+      aria-label={`Play ${title}`}
+      onClick={() => setActivated(true)}
+    >
+      <img
+        src={`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+      <span className="youtube-player__preview-play" aria-hidden="true"><span /></span>
+      <span className="youtube-player__preview-label">Play video</span>
+    </button>
+  );
+}
+
 function EventAwareYouTubePlayer({
   videoId,
   title,
@@ -151,7 +176,9 @@ export function YouTubePlayer(props: YouTubePlayerProps) {
     <div className={`youtube-player ${onEnded ? 'is-event-aware' : ''} ${className ?? ''}`.trim()}>
       {onEnded
         ? <EventAwareYouTubePlayer {...props} />
-        : <NativeYouTubeFrame {...props} />}
+        : props.autoplay
+          ? <NativeYouTubeFrame {...props} />
+          : <LightweightYouTubePreview key={props.videoId} {...props} />}
     </div>
   );
 }
