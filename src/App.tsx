@@ -45,6 +45,8 @@ function LoadingPanel({ label = 'Loading Worship Word Video…' }: { label?: str
 function MainApp() {
   const { user, loading: authLoading, profile, profileLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'playlist' | 'admin'>('all');
+  const [finderReady, setFinderReady] = useState(false);
+  const handleFinderReady = useCallback(() => setFinderReady(true), []);
   const [queue, setQueue] = useState<WorshipQueueItem[]>([]);
   const [queueOwnerId, setQueueOwnerId] = useState<string | null>(null);
   const [activeService, setActiveService] = useState<SavedUserPlaylist | null>(null);
@@ -486,8 +488,9 @@ function MainApp() {
                 activeServiceTitle={activeService?.title ?? null}
                 onPresentVideo={user ? handlePresentSingleVideo : undefined}
                 onVisitorEngaged={!user ? recordGuestEngagement : undefined}
+                onCatalogueReady={handleFinderReady}
               />
-              <SeoDiscoverySection />
+              {finderReady && <SeoDiscoverySection />}
             </>
           )}
         </Suspense>

@@ -51,6 +51,7 @@ interface SongLibraryDashboardProps {
   activeServiceTitle?: string | null;
   onPresentVideo?: (song: WorshipSong) => void;
   onVisitorEngaged?: () => void;
+  onCatalogueReady?: () => void;
 }
 
 const seasonsBySongId = new Map<string, WorshipSeason[]>();
@@ -98,6 +99,7 @@ export function SongLibraryDashboard({
   activeServiceTitle = null,
   onPresentVideo,
   onVisitorEngaged,
+  onCatalogueReady,
 }: SongLibraryDashboardProps) {
   const [songs, setSongs] = useState<WorshipSong[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
@@ -201,6 +203,7 @@ export function SongLibraryDashboard({
             setCatalogueLoading(false);
             setCatalogueComplete(false);
           });
+          onCatalogueReady?.();
         }
         if (hasInitialFinderRequest || initialFilter !== 'all') requestFullCatalogue();
       })
@@ -210,7 +213,7 @@ export function SongLibraryDashboard({
         setCatalogueError('The worship catalogue could not be loaded. Check your connection and try again.');
       });
     return () => { active = false; };
-  }, [catalogueReloadToken, initialFilter, requestFullCatalogue]);
+  }, [catalogueReloadToken, initialFilter, onCatalogueReady, requestFullCatalogue]);
 
   const showSong = (song: WorshipSong) => {
     onVisitorEngaged?.();
