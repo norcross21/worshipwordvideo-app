@@ -4,7 +4,7 @@ import { relative, resolve, sep } from 'node:path';
 const SITE = 'https://www.worshipwordvideo.org';
 const ROOT = process.cwd();
 const PUBLIC_DIR = resolve(ROOT, 'public');
-const GENERATED_SECTIONS = ['languages', 'arrangements', 'seasons', 'formats', 'songs', 'guides'];
+const GENERATED_SECTIONS = ['languages', 'arrangements', 'seasons', 'formats', 'songs', 'videos', 'guides'];
 
 async function findIndexPages(directory: string): Promise<string[]> {
   const pages: string[] = [];
@@ -42,7 +42,10 @@ const generatedPages = (await Promise.all(GENERATED_SECTIONS.map(async (section)
 }))).flat();
 const pages = [resolve(ROOT, 'index.html'), ...generatedPages];
 const sitemap = await readFile(resolve(PUBLIC_DIR, 'sitemap.xml'), 'utf8');
+const videoSitemap = await readFile(resolve(PUBLIC_DIR, 'video-sitemap.xml'), 'utf8');
+const robots = await readFile(resolve(PUBLIC_DIR, 'robots.txt'), 'utf8');
 const sitemapUrls = new Set([...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]));
+const videoSitemapUrls = new Set([...videoSitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]));
 const routes = new Set(pages.map(routeForFile));
 const titles = new Map<string, string>();
 const canonicals = new Map<string, string>();
@@ -101,10 +104,27 @@ for (const file of pages) {
 
   for (const match of html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)) {
     try {
-      JSON.parse(match[1]);
+      const structuredData = JSON.parse(match[1]) as { '@graph'?: Array<Record<string, unknown>> };
+      if (route.startsWith('/videos/') && route !== '/videos/') {
+        const video = structuredData['@graph']?.find((item) => item['@type'] === 'VideoObject');
+        if (!video) errors.push(`${route}: missing VideoObject structured data`);
+        else {
+          for (const property of ['name', 'description', 'thumbnailUrl', 'uploadDate', 'embedUrl']) {
+            if (!video[property]) errors.push(`${route}: VideoObject is missing ${property}`);
+          }
+          if (!/^\d{4}-\d{2}-\d{2}T/.test(String(video.uploadDate ?? ''))) errors.push(`${route}: VideoObject uploadDate must be an original ISO timestamp`);
+          if (!/^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{11}$/.test(String(video.embedUrl ?? ''))) errors.push(`${route}: VideoObject embedUrl is invalid`);
+        }
+      }
     } catch {
       errors.push(`${route}: invalid JSON-LD structured data`);
     }
+  }
+
+  if (route.startsWith('/videos/') && route !== '/videos/') {
+    const iframeCount = (html.match(/<iframe(?:\s|>)/g) ?? []).length;
+    if (iframeCount !== 1) errors.push(`${route}: expected one primary video iframe, found ${iframeCount}`);
+    if (!videoSitemapUrls.has(`${SITE}${route}`)) errors.push(`${route}: missing from the video sitemap`);
   }
 
   for (const match of html.matchAll(/href="(\/[^"#?]*)(?:[?#][^"]*)?"/g)) {
@@ -124,6 +144,20 @@ const sitemapLastModified = [...sitemap.matchAll(/<lastmod>(.*?)<\/lastmod>/g)].
 if (sitemapLastModified.length !== sitemapUrls.size) errors.push('sitemap: every URL must have a lastmod date');
 if (sitemapLastModified.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date))) errors.push('sitemap: lastmod dates must use YYYY-MM-DD');
 
+const watchRoutes = [...routes].filter((route) => route.startsWith('/videos/') && route !== '/videos/');
+if (videoSitemapUrls.size !== watchRoutes.length) errors.push(`video sitemap: expected ${watchRoutes.length} URLs, found ${videoSitemapUrls.size}`);
+for (const url of videoSitemapUrls) {
+  if (!sitemapUrls.has(url)) errors.push(`video sitemap URL is missing from the main sitemap: ${url}`);
+  if (!routes.has(new URL(url).pathname)) errors.push(`video sitemap URL has no generated watch page: ${url}`);
+}
+const videoEntryCount = (videoSitemap.match(/<video:video>/g) ?? []).length;
+if (videoEntryCount !== videoSitemapUrls.size) errors.push('video sitemap: every URL must contain one video entry');
+for (const requiredTag of ['thumbnail_loc', 'title', 'description', 'player_loc', 'duration', 'publication_date']) {
+  const count = (videoSitemap.match(new RegExp(`<video:${requiredTag}(?:\\s|>)`, 'g')) ?? []).length;
+  if (count !== videoSitemapUrls.size) errors.push(`video sitemap: every entry must contain video:${requiredTag}`);
+}
+if (!robots.includes(`Sitemap: ${SITE}/video-sitemap.xml`)) errors.push('robots.txt: video sitemap declaration is missing');
+
 if (errors.length) {
   throw new Error(`SEO validation failed:\n- ${errors.join('\n- ')}`);
 }
@@ -134,6 +168,8 @@ console.log(JSON.stringify({
   uniqueTitles: titles.size,
   uniqueCanonicals: canonicals.size,
   structuredData: 'valid',
+  videoWatchPages: watchRoutes.length,
+  videoSitemapUrls: videoSitemapUrls.size,
   internalLinks: 'valid',
   catalogueVideos: catalogueRows.length,
   starterVideos: starterRows.length,

@@ -36,6 +36,21 @@ h2 { color: #172b61; font-family: Georgia, "Times New Roman", serif; font-size: 
 .seo-card strong { color: #163476; }
 .seo-card span { margin-top: 5px; color: #667085; font-size: .92rem; }
 .seo-help { border: 0; padding: 28px; margin: 18px 0 36px; border-radius: 16px; background: #edf9f6; }
+.seo-watch-hero { padding: clamp(30px, 5vw, 54px) 0 30px; }
+.seo-watch-hero h1 { max-width: 960px; font-size: clamp(1.9rem, 4vw, 3.2rem); line-height: 1.08; }
+.seo-video-frame { width: 100%; margin-top: 28px; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 16px; background: #071334; box-shadow: 0 14px 34px rgba(16, 42, 112, .16); }
+.seo-video-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+.seo-video-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0 46px; }
+.seo-video-facts div { min-width: 0; padding: 15px 17px; border: 1px solid #d9e2e8; border-radius: 12px; background: white; }
+.seo-video-facts strong, .seo-video-facts span { display: block; }
+.seo-video-facts strong { color: #163476; font-size: .82rem; }
+.seo-video-facts span { margin-top: 3px; color: #475467; overflow-wrap: anywhere; }
+.seo-video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.seo-video-card { overflow: hidden; border: 1px solid #dce4e8; border-radius: 14px; background: white; color: #163476; text-decoration: none; }
+.seo-video-card img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #e6ecf2; }
+.seo-video-card span { display: block; padding: 13px 15px 15px; }
+.seo-video-card strong, .seo-video-card small { display: block; }
+.seo-video-card small { margin-top: 5px; color: #667085; line-height: 1.4; }
 .seo-footer { margin-top: 40px; padding: 32px 0 48px; border-top: 1px solid #d0d5dd; color: #667085; font-size: .9rem; }
 .seo-footer nav { display: flex; flex-wrap: wrap; gap: 18px; font-weight: 700; }
-@media (max-width: 720px) { .seo-header { align-items: flex-start; } .seo-header .seo-button { min-height: 40px; padding: 8px 12px; font-size: .86rem; } .seo-brand span { max-width: 120px; line-height: 1.15; } .seo-stats, .seo-card-grid, .seo-link-grid, .seo-song-list { grid-template-columns: 1fr; } h1 { font-size: 2.3rem; } }
+@media (max-width: 720px) { .seo-header { align-items: flex-start; } .seo-header .seo-button { min-height: 40px; padding: 8px 12px; font-size: .86rem; } .seo-brand span { max-width: 120px; line-height: 1.15; } .seo-stats, .seo-card-grid, .seo-link-grid, .seo-song-list, .seo-video-facts, .seo-video-grid { grid-template-columns: 1fr; } h1 { font-size: 2.3rem; } .seo-video-frame { margin-inline: -18px; width: calc(100% + 36px); border-radius: 0; } }

@@ -538,6 +538,7 @@ function MainApp() {
           <p>© {new Date().getFullYear()} Worship Word Video (<a href="https://worshipwordvideo.org" target="_blank" rel="noreferrer">worshipwordvideo.org</a>) — UK Hymn & Worship Lyric Video Finder for Churches.</p>
           <p className="app-footer__sub">The catalogue is currently available without charge. Videos are provided by YouTube and remain subject to YouTube's own terms.</p>
           <div className="app-footer__legal-links">
+            <a href="/videos/">Featured videos</a>
             <a href="/languages/">Languages</a>
             <a href="/formats/">Lyrics & subtitles</a>
             <a href="/songs/">Songs across languages</a>

@@ -9,6 +9,7 @@ import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs
 import { canonicaliseSongLanguage } from '../src/data/songLanguage';
 import { SONG_FAMILIES, songFamilyForSong, type SongFamilyDefinition } from '../src/data/songFamilies';
 import { finderUrl } from '../src/data/finderLocation';
+import VIDEO_WATCH_PAGE_DATA from '../src/data/videoWatchPages.json';
 
 const SITE = 'https://www.worshipwordvideo.org';
 const PUBLIC_DIR = resolve(process.cwd(), 'public');
@@ -23,8 +24,34 @@ interface SeoPage {
   description: string;
   body: string;
   schema: Record<string, unknown> | Array<Record<string, unknown>>;
-  openGraphType?: 'website' | 'article';
+  openGraphType?: 'website' | 'article' | 'video.other';
+  socialImage?: string;
+  socialImageAlt?: string;
+  socialImageWidth?: number;
+  socialImageHeight?: number;
+  videoEmbedUrl?: string;
 }
+
+interface VideoWatchPageRecord {
+  youtubeId: string;
+  path: string;
+  catalogueTitle: string;
+  videoTitle: string;
+  channel: string;
+  language: string;
+  languageCode: string;
+  region?: string;
+  arrangement: string;
+  presentation: string;
+  uploadDate: string;
+  durationSeconds: number;
+  thumbnailUrl: string;
+  familySlug?: string;
+  familyTitle?: string;
+  checkedAt: string;
+}
+
+const VIDEO_WATCH_PAGES = VIDEO_WATCH_PAGE_DATA as VideoWatchPageRecord[];
 
 const PRESENTATION_PAGE_DETAILS: Record<LanguagePresentation, {
   slug: string;
@@ -212,6 +239,8 @@ function breadcrumbSchema(items: Array<{ name: string; path: string }>): Record<
 
 function pageShell(page: SeoPage): string {
   const url = canonicalUrl(page.path);
+  const socialImage = page.socialImage ?? `${SITE}/og-cover.png`;
+  const socialImageAlt = page.socialImageAlt ?? 'Worship Word Video — free worship videos with words for churches';
   const schemas = Array.isArray(page.schema) ? page.schema : [page.schema];
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',
@@ -256,14 +285,19 @@ function pageShell(page: SeoPage): string {
   <meta property="og:description" content="${escapeHtml(page.description)}">
   <meta property="og:url" content="${url}">
 ${page.openGraphType === 'article' ? `  <meta property="article:modified_time" content="${LAST_MODIFIED}">` : ''}
-  <meta property="og:image" content="${SITE}/og-cover.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Worship Word Video — free worship videos with words for churches">
+  <meta property="og:image" content="${socialImage}">
+  <meta property="og:image:width" content="${page.socialImageWidth ?? 1200}">
+  <meta property="og:image:height" content="${page.socialImageHeight ?? 630}">
+  <meta property="og:image:alt" content="${escapeHtml(socialImageAlt)}">
+${page.videoEmbedUrl ? `  <meta property="og:video" content="${page.videoEmbedUrl}">
+  <meta property="og:video:secure_url" content="${page.videoEmbedUrl}">
+  <meta property="og:video:type" content="text/html">
+  <meta property="og:video:width" content="1280">
+  <meta property="og:video:height" content="720">` : ''}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(page.title)}">
   <meta name="twitter:description" content="${escapeHtml(page.description)}">
-  <meta name="twitter:image" content="${SITE}/og-cover.png">
+  <meta name="twitter:image" content="${socialImage}">
   <script type="application/ld+json">${jsonLd}</script>
 </head>
 <body>
@@ -273,7 +307,7 @@ ${page.openGraphType === 'article' ? `  <meta property="article:modified_time" c
   </header>
   <main>${page.body}</main>
   <footer class="seo-footer">
-    <nav aria-label="Useful links"><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/songs/">Songs across languages</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
+    <nav aria-label="Useful links"><a href="/videos/">Featured videos</a><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/songs/">Songs across languages</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
     <p>Worship Word Video is a free directory and playlist-planning tool. Videos remain hosted by YouTube and subject to the uploader's and YouTube's terms. Always preview a video and confirm church licensing before public use.</p>
     <p><a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20enquiry">Contact: stephen@kairoshousing.org.uk</a> · <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a></p>
   </footer>
@@ -566,6 +600,121 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   };
 }
 
+function truncateAtWord(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  const shortened = value.slice(0, Math.max(1, maxLength - 1)).replace(/\s+\S*$/, '').trim();
+  return `${shortened || value.slice(0, Math.max(1, maxLength - 1)).trim()}…`;
+}
+
+function isoDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  return `PT${hours ? `${hours}H` : ''}${minutes ? `${minutes}M` : ''}${remainder || (!hours && !minutes) ? `${remainder}S` : ''}`;
+}
+
+function readableDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}:${remainder.toString().padStart(2, '0')}`;
+}
+
+function videoPageTitle(video: VideoWatchPageRecord): string {
+  const label = video.language === 'English' ? 'English Lyric Video' : `${video.language} Worship Video`;
+  const suffix = ` | ${label}`;
+  const safeSuffix = suffix.length <= 38 ? suffix : ' | Multilingual Worship Video';
+  const title = `${truncateAtWord(video.catalogueTitle, 65 - safeSuffix.length)}${safeSuffix}`;
+  return title.length >= 25 ? title : `${title} for Church`;
+}
+
+function videoDescription(video: VideoWatchPageRecord): string {
+  const article = /^[aeiou]/i.test(video.language) ? 'an' : 'a';
+  const description = `Watch ${video.catalogueTitle}, ${article} ${video.language} worship word video from ${video.channel}. Check the words, arrangement and suitability before church use.`;
+  return truncateAtWord(description, 165);
+}
+
+function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRecord[]): SeoPage {
+  const finderQuery = new URLSearchParams({ q: video.catalogueTitle });
+  if (video.language !== 'English') finderQuery.set('language', video.language);
+  const uploadDateLabel = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(new Date(video.uploadDate));
+  const related = allVideos
+    .filter((candidate) => candidate.youtubeId !== video.youtubeId)
+    .sort((left, right) => {
+      const leftScore = Number(Boolean(left.familySlug && left.familySlug === video.familySlug)) * 3 + Number(left.language === video.language);
+      const rightScore = Number(Boolean(right.familySlug && right.familySlug === video.familySlug)) * 3 + Number(right.language === video.language);
+      return rightScore - leftScore || left.catalogueTitle.localeCompare(right.catalogueTitle);
+    })
+    .slice(0, 6);
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${video.youtubeId}`;
+  const description = videoDescription(video);
+  const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/videos/">Featured videos</a><span>›</span><span>${escapeHtml(video.catalogueTitle)}</span></nav>
+  <article class="seo-watch-hero">
+    <p class="seo-eyebrow">${escapeHtml(video.language)} worship word video</p>
+    <h1>${escapeHtml(video.videoTitle)}</h1>
+    <p class="seo-lead">A playable YouTube worship video catalogued as ${escapeHtml(video.presentation.toLowerCase())}. Preview the complete video before using it in a church service.</p>
+    <div class="seo-video-frame">
+      <iframe src="${embedUrl}" title="${escapeHtml(video.videoTitle)}" width="1280" height="720" loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+    <div class="seo-actions"><a class="seo-button" href="${finderUrl(finderQuery)}">Find related versions</a><a class="seo-button seo-button--quiet" href="https://www.youtube.com/watch?v=${video.youtubeId}" rel="noopener noreferrer">Open on YouTube</a></div>
+  </article>
+  <section class="seo-video-facts" aria-label="Video details">
+    <div><strong>Uploader</strong><span>${escapeHtml(video.channel)}</span></div>
+    <div><strong>Language</strong><span>${escapeHtml(video.language)}</span></div>
+    <div><strong>Format</strong><span>${escapeHtml(video.presentation)}</span></div>
+    <div><strong>Arrangement</strong><span>${escapeHtml(video.arrangement)}</span></div>
+    <div><strong>Duration</strong><span>${readableDuration(video.durationSeconds)}</span></div>
+    <div><strong>Published on YouTube</strong><span>${uploadDateLabel}</span></div>
+  </section>
+  <section class="seo-section"><h2>Before using this video in church</h2><p>This page embeds the uploader's public YouTube video; Worship Word Video does not host the recording or reproduce its lyrics. Watch the entire video, check the visible words and theology, confirm the key and tempo, and make sure your church has the permissions it needs for projection or streaming.</p><p>The language and presentation labels are a carefully checked search aid, not a linguistic or theological endorsement. For translated material, ask a fluent speaker or trusted church leader to review the exact upload.</p></section>
+  ${video.familySlug ? `<section class="seo-section"><h2>Compare this familiar song across languages</h2><p><a class="seo-text-link" href="/songs/${video.familySlug}/">Explore ${escapeHtml(video.familyTitle ?? video.catalogueTitle)} in other languages →</a></p></section>` : ''}
+  <section class="seo-section"><h2>More verified worship watch pages</h2><div class="seo-video-grid">${related.map((item) => `<a class="seo-video-card" href="${item.path}"><img src="${item.thumbnailUrl}" width="480" height="360" loading="lazy" alt=""><span><strong>${escapeHtml(item.catalogueTitle)}</strong><small>${escapeHtml(item.language)} · ${escapeHtml(item.channel)}</small></span></a>`).join('')}</div></section>`;
+  return {
+    path: video.path,
+    title: videoPageTitle(video),
+    description,
+    body,
+    openGraphType: 'video.other',
+    socialImage: video.thumbnailUrl,
+    socialImageAlt: video.videoTitle,
+    socialImageWidth: 480,
+    socialImageHeight: 360,
+    videoEmbedUrl: embedUrl,
+    schema: [
+      {
+        '@type': 'WebPage',
+        '@id': `${canonicalUrl(video.path)}#page`,
+        url: canonicalUrl(video.path),
+        name: video.videoTitle,
+        description,
+        isPartOf: { '@id': `${SITE}/#website` },
+        primaryImageOfPage: { '@type': 'ImageObject', url: video.thumbnailUrl },
+        mainEntity: { '@id': `${canonicalUrl(video.path)}#video` },
+      },
+      {
+        '@type': 'VideoObject',
+        '@id': `${canonicalUrl(video.path)}#video`,
+        name: video.videoTitle,
+        description,
+        thumbnailUrl: [video.thumbnailUrl],
+        uploadDate: video.uploadDate,
+        duration: isoDuration(video.durationSeconds),
+        embedUrl,
+        url: canonicalUrl(video.path),
+        ...(video.languageCode !== 'und' ? { inLanguage: video.languageCode } : {}),
+        isFamilyFriendly: true,
+        potentialAction: { '@type': 'WatchAction', target: canonicalUrl(video.path) },
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Featured videos', path: '/videos/' },
+        { name: video.catalogueTitle, path: video.path },
+      ]),
+    ],
+  };
+}
+
 const GUIDE_PAGES: SeoPage[] = [
   {
     path: '/guides/worship-word-lyrics/',
@@ -772,6 +921,7 @@ async function generate(): Promise<void> {
     .map((family) => [family, songsByFamily.get(family.slug) ?? []] as const)
     .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 2);
   const songFamilyPages = songFamilies.map(([family, songs]) => songFamilyPage(family, songs));
+  const videoPages = VIDEO_WATCH_PAGES.map((video) => videoWatchPage(video, VIDEO_WATCH_PAGES));
 
   const languageIndex: SeoPage = {
     path: '/languages/',
@@ -828,6 +978,28 @@ async function generate(): Promise<void> {
     ],
   };
 
+  const videoIndex: SeoPage = {
+    path: '/videos/',
+    title: 'Featured Worship Lyric Videos | Verified Watch Pages',
+    description: `Watch ${videoPages.length} curated English and multilingual YouTube worship videos with words, verified embeds and clear language and presentation labels.`,
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Featured videos</span></nav><article class="seo-hero"><p class="seo-eyebrow">Dedicated worship watch pages</p><h1>Featured worship lyric videos</h1><p class="seo-lead">Watch ${videoPages.length} carefully selected English and multilingual worship videos on dedicated pages. Every featured embed was checked as playable, and its original YouTube publication date was verified for accurate video search data.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search the complete catalogue</a><a class="seo-button seo-button--quiet" href="/languages/">Browse every language collection</a></div></article><section class="seo-stats"><div><strong>${videoPages.length}</strong><span>verified watch pages</span></div><div><strong>${new Set(VIDEO_WATCH_PAGES.map((video) => video.language)).size}</strong><span>languages represented</span></div><div><strong>${VIDEO_WATCH_PAGES.filter((video) => video.familySlug).length}</strong><span>familiar-song versions</span></div></section><section class="seo-section"><h2>Watch a featured word video</h2><div class="seo-video-grid">${VIDEO_WATCH_PAGES.map((video) => `<a class="seo-video-card" href="${video.path}"><img src="${video.thumbnailUrl}" width="480" height="360" loading="lazy" alt=""><span><strong>${escapeHtml(video.catalogueTitle)}</strong><small>${escapeHtml(video.language)} · ${escapeHtml(video.channel)}</small></span></a>`).join('')}</div></section><section class="seo-section seo-help"><h2>Why the watch-page collection is selective</h2><p>The complete finder contains tens of thousands of searchable links. This smaller collection is reserved for videos whose current YouTube embed and original publication date could both be verified. That keeps the video sitemap and structured data accurate instead of making unsupported claims for every catalogue result.</p></section>`,
+    schema: [
+      {
+        '@type': 'CollectionPage',
+        name: 'Featured worship lyric video watch pages',
+        url: `${SITE}/videos/`,
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: videoPages.length,
+          itemListElement: VIDEO_WATCH_PAGES.map((video, index) => ({
+            '@type': 'ListItem', position: index + 1, url: canonicalUrl(video.path), name: video.videoTitle,
+          })),
+        },
+      },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Featured videos', path: '/videos/' }]),
+    ],
+  };
+
   const guideIndex: SeoPage = {
     path: '/guides/',
     title: 'Practical Worship Video Guides for Churches',
@@ -850,6 +1022,8 @@ async function generate(): Promise<void> {
     ...presentationPages,
     songFamilyIndex,
     ...songFamilyPages,
+    videoIndex,
+    ...videoPages,
     guideIndex,
     ...GUIDE_PAGES,
   ];
@@ -859,12 +1033,14 @@ async function generate(): Promise<void> {
     removeStaleGeneratedDirectories('seasons', new Set(seasonPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('formats', new Set(presentationPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('songs', new Set(songFamilyPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
+    removeStaleGeneratedDirectories('videos', new Set(videoPages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeStaleGeneratedDirectories('guides', new Set(GUIDE_PAGES.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
     removeDuplicateIndexFiles('languages'),
     removeDuplicateIndexFiles('arrangements'),
     removeDuplicateIndexFiles('seasons'),
     removeDuplicateIndexFiles('formats'),
     removeDuplicateIndexFiles('songs'),
+    removeDuplicateIndexFiles('videos'),
     removeDuplicateIndexFiles('guides'),
   ]);
   await Promise.all(pages.map(writePage));
@@ -872,7 +1048,21 @@ async function generate(): Promise<void> {
   const urls = [`${SITE}/`, ...pages.map((page) => canonicalUrl(page.path))];
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url) => `  <url><loc>${escapeHtml(url)}</loc><lastmod>${LAST_MODIFIED}</lastmod></url>`).join('\n')}\n</urlset>\n`;
   await writeFile(resolve(PUBLIC_DIR, 'sitemap.xml'), sitemap, 'utf8');
-  await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\n\nSitemap: ${SITE}/sitemap.xml\n`, 'utf8');
+  const videoSitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${VIDEO_WATCH_PAGES.map((video) => `  <url>
+    <loc>${escapeHtml(canonicalUrl(video.path))}</loc>
+    <video:video>
+      <video:thumbnail_loc>${escapeHtml(video.thumbnailUrl)}</video:thumbnail_loc>
+      <video:title>${escapeHtml(truncateAtWord(video.videoTitle, 100))}</video:title>
+      <video:description>${escapeHtml(videoDescription(video))}</video:description>
+      <video:player_loc allow_embed="yes">${escapeHtml(`https://www.youtube-nocookie.com/embed/${video.youtubeId}`)}</video:player_loc>
+      <video:duration>${video.durationSeconds}</video:duration>
+      <video:publication_date>${escapeHtml(video.uploadDate)}</video:publication_date>
+      <video:family_friendly>yes</video:family_friendly>
+      <video:requires_subscription>no</video:requires_subscription>
+    </video:video>
+  </url>`).join('\n')}\n</urlset>\n`;
+  await writeFile(resolve(PUBLIC_DIR, 'video-sitemap.xml'), videoSitemap, 'utf8');
+  await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\n\nSitemap: ${SITE}/sitemap.xml\nSitemap: ${SITE}/video-sitemap.xml\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'seo-urls.json'), `${JSON.stringify(urls, null, 2)}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'indexnow-key.txt'), `${INDEXNOW_KEY}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nThe catalogue contains ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos across ${namedLanguageCount} named languages. Public features include song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; start and stop timing; and clean second-screen projection.\n\n## Important public collections\n\n- [Worship word lyrics guide](${SITE}/guides/worship-word-lyrics/): How churches can find and review worship videos with words on screen.\n- [Churches without musicians guide](${SITE}/guides/worship-videos-for-churches-without-musicians/): Practical help for services using carefully prepared videos.\n- [Well-known songs across languages](${SITE}/songs/): Familiar worship songs with versions in multiple languages.\n- [Languages](${SITE}/languages/): Dedicated collections for languages with at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos.\n- [Lyrics and subtitle formats](${SITE}/formats/): Native-language words, translated subtitles and bilingual formats.\n- [Church seasons](${SITE}/seasons/): Worship videos for Christmas, Easter and other church seasons.\n- [Worship arrangements](${SITE}/arrangements/): Contemporary, choral, acoustic and other musical treatments.\n- [Church guides](${SITE}/guides/): Planning, projection, copyright and multilingual-review guidance.\n\n## Site information\n\n- [Worship Word Video](${SITE}/): Canonical homepage and public song finder.\n- [Terms, privacy and copyright guidance](${SITE}/?legal=1): Important guidance for churches using third-party YouTube videos.\n- [XML sitemap](${SITE}/sitemap.xml): Current index of canonical public pages.\n\nThe site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use. Contact: stephen@kairoshousing.org.uk.\n`, 'utf8');
@@ -880,7 +1070,7 @@ async function generate(): Promise<void> {
   const feedItems = GUIDE_PAGES.map((page) => `<item><title>${escapeHtml(page.title)}</title><link>${canonicalUrl(page.path)}</link><guid>${canonicalUrl(page.path)}</guid><description>${escapeHtml(page.description)}</description><pubDate>${FEED_DATE}</pubDate></item>`).join('');
   await writeFile(resolve(PUBLIC_DIR, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Worship Word Video Guides</title><link>${SITE}/guides/</link><description>Practical worship video guidance for churches.</description><language>en-gb</language>${feedItems}</channel></rss>`, 'utf8');
 
-  console.log(JSON.stringify({ generatedPages: pages.length, languagePages: languagePages.length, arrangementPages: arrangementPages.length, seasonPages: seasonPages.length, presentationPages: presentationPages.length, songFamilyPages: songFamilyPages.length, guidePages: GUIDE_PAGES.length, sitemapUrls: urls.length }, null, 2));
+  console.log(JSON.stringify({ generatedPages: pages.length, languagePages: languagePages.length, arrangementPages: arrangementPages.length, seasonPages: seasonPages.length, presentationPages: presentationPages.length, songFamilyPages: songFamilyPages.length, videoPages: videoPages.length, videoLanguages: new Set(VIDEO_WATCH_PAGES.map((video) => video.language)).size, guidePages: GUIDE_PAGES.length, sitemapUrls: urls.length }, null, 2));
 }
 
 await generate();

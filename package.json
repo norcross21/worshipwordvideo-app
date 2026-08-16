@@ -7,6 +7,7 @@
     "dev": "npm run seo:generate && vite",
     "seo:generate": "tsx scripts/generate-seo.ts",
     "seo:validate": "tsx scripts/validate-seo.ts",
+    "seo:videos:refresh": "tsx scripts/refresh-video-watch-pages.ts",
     "seo:submit:indexnow": "node scripts/submit-indexnow.mjs",
     "email:configure": "node scripts/configure-supabase-email.mjs",
     "email:configure:templates": "node scripts/configure-supabase-email.mjs --templates-only",

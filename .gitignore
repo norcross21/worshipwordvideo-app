@@ -24,8 +24,10 @@ public/arrangements/
 public/seasons/
 public/formats/
 public/songs/
+public/videos/
 public/guides/
 public/sitemap.xml
+public/video-sitemap.xml
 public/robots.txt
 public/seo-urls.json
 public/feed.xml
