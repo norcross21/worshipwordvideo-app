@@ -364,7 +364,7 @@ body:has(.modal-backdrop) {
 }
 
 .app-loading {
-  min-height: 75svh;
+  min-height: 100svh;
   display: grid;
   place-items: center;
   color: var(--color-text-muted);
@@ -2841,6 +2841,10 @@ button {
     height: auto;
     min-height: 0;
     max-height: none;
+  }
+
+  .song-list-panel.is-loading {
+    min-height: 100svh;
   }
 
   .song-list-panel__scroll {

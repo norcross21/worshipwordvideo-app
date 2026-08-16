@@ -51,7 +51,6 @@ interface SongLibraryDashboardProps {
   activeServiceTitle?: string | null;
   onPresentVideo?: (song: WorshipSong) => void;
   onVisitorEngaged?: () => void;
-  onCatalogueReady?: () => void;
 }
 
 const seasonsBySongId = new Map<string, WorshipSeason[]>();
@@ -99,7 +98,6 @@ export function SongLibraryDashboard({
   activeServiceTitle = null,
   onPresentVideo,
   onVisitorEngaged,
-  onCatalogueReady,
 }: SongLibraryDashboardProps) {
   const [songs, setSongs] = useState<WorshipSong[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
@@ -203,7 +201,6 @@ export function SongLibraryDashboard({
             setCatalogueLoading(false);
             setCatalogueComplete(false);
           });
-          onCatalogueReady?.();
         }
         if (hasInitialFinderRequest || initialFilter !== 'all') requestFullCatalogue();
       })
@@ -213,7 +210,7 @@ export function SongLibraryDashboard({
         setCatalogueError('The worship catalogue could not be loaded. Check your connection and try again.');
       });
     return () => { active = false; };
-  }, [catalogueReloadToken, initialFilter, onCatalogueReady, requestFullCatalogue]);
+  }, [catalogueReloadToken, initialFilter, requestFullCatalogue]);
 
   const showSong = (song: WorshipSong) => {
     onVisitorEngaged?.();
@@ -461,7 +458,7 @@ export function SongLibraryDashboard({
       {/* Main Grid: Left List (35%) & Right Detail (65%) */}
       <div className={`music-dashboard__grid ${mobileDetailOpen ? 'is-mobile-detail' : ''}`}>
         {/* Left Side: Song Catalog List */}
-        <div className="song-list-panel">
+        <div className={`song-list-panel ${catalogueLoading ? 'is-loading' : ''}`}>
           <div className="song-list-panel__header">
             <h2>Results</h2>
             <span className="song-count-badge" aria-live="polite">{catalogueLoading ? 'Loading…' : catalogueHydrating ? <>{filteredSongs.length.toLocaleString()}+ <span className="song-count-label">videos · adding full library</span></> : isSearchPending ? 'Searching…' : <>{filteredSongs.length.toLocaleString()}{catalogueComplete ? '' : '+'} <span className="song-count-label">videos</span>{!catalogueComplete && <span className="sr-only"> ready; search or filter to load the complete library</span>}</>}</span>
