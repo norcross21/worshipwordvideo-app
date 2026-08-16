@@ -53,7 +53,7 @@ const [catalogueText, starterCatalogueText] = await Promise.all([
   readFile(cataloguePath, 'utf8'),
   readFile(starterCataloguePath, 'utf8'),
 ]);
-const catalogue = JSON.parse(catalogueText) as { version?: number; dictionaries?: { language?: string[] }; songs?: unknown[][] };
+const catalogue = JSON.parse(catalogueText) as { version?: number; checkedOn?: string; dictionaries?: { language?: string[] }; songs?: unknown[][] };
 const starterCatalogue = JSON.parse(starterCatalogueText) as { version?: number; songs?: unknown[][] };
 const catalogueRows = catalogue.songs ?? [];
 const starterRows = starterCatalogue.songs ?? [];
@@ -86,6 +86,7 @@ for (const file of pages) {
   if (canonical && !sitemapUrls.has(canonical)) errors.push(`${route}: canonical is missing from the sitemap`);
   if (title && (decodedLength(title) < 25 || decodedLength(title) > 65)) errors.push(`${route}: title length should be 25–65 characters`);
   if (description && (decodedLength(description) < 70 || decodedLength(description) > 165)) errors.push(`${route}: description length should be 70–165 characters`);
+  if (/href="\/\?/.test(html)) errors.push(`${route}: finder links must use fragment parameters, not crawlable query parameters`);
 
   if (title) {
     const earlier = titles.get(title);
@@ -118,6 +119,10 @@ for (const url of sitemapUrls) {
   const route = new URL(url).pathname;
   if (!routes.has(route)) errors.push(`sitemap URL has no generated page: ${url}`);
 }
+
+const sitemapLastModified = [...sitemap.matchAll(/<lastmod>(.*?)<\/lastmod>/g)].map((match) => match[1]);
+if (sitemapLastModified.length !== sitemapUrls.size) errors.push('sitemap: every URL must have a lastmod date');
+if (sitemapLastModified.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date))) errors.push('sitemap: lastmod dates must use YYYY-MM-DD');
 
 if (errors.length) {
   throw new Error(`SEO validation failed:\n- ${errors.join('\n- ')}`);

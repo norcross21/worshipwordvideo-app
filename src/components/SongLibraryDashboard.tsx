@@ -37,6 +37,7 @@ import {
   shortPresentationLabel,
 } from '../data/songPresentation';
 import { inferWorshipSeasons, WORSHIP_SEASONS, type WorshipSeason } from '../data/songSeason';
+import { finderParameter } from '../data/finderLocation';
 import { YouTubePlayer } from './YouTubePlayer';
 import { youtubeWatchUrl } from '../data/youtube';
 import { firstPlayableSong } from '../data/songSelection';
@@ -70,7 +71,7 @@ function seasonsForSong(song: WorshipSong): WorshipSeason[] {
 }
 
 function initialQueryParameter(name: string): string {
-  return new URLSearchParams(window.location.search).get(name)?.trim() ?? '';
+  return finderParameter(window.location.search, window.location.hash, name);
 }
 
 const initialSearchQuery = initialQueryParameter('q');

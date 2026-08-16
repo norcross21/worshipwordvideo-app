@@ -8,11 +8,12 @@ import { WORSHIP_VIDEO_AUDIT } from '../src/data/worshipVideoAudit';
 import type { LanguagePresentation, WorshipSong } from '../src/data/worshipSongs';
 import { canonicaliseSongLanguage } from '../src/data/songLanguage';
 import { SONG_FAMILIES, songFamilyForSong, type SongFamilyDefinition } from '../src/data/songFamilies';
+import { finderUrl } from '../src/data/finderLocation';
 
 const SITE = 'https://www.worshipwordvideo.org';
 const PUBLIC_DIR = resolve(process.cwd(), 'public');
-const LAST_MODIFIED = '2026-08-12';
-const FEED_DATE = 'Wed, 12 Aug 2026 00:00:00 GMT';
+const LAST_MODIFIED = new Date().toISOString().slice(0, 10);
+const FEED_DATE = new Date(`${LAST_MODIFIED}T00:00:00Z`).toUTCString();
 const INDEXNOW_KEY = 'b2b960d2c713e3e71a89a4f6e34345d1';
 const MIN_LANGUAGE_PAGE_VIDEOS = 3;
 
@@ -286,7 +287,7 @@ function songRows(songs: WorshipSong[], language?: string): string {
     if (language) query.set('language', language);
     const presentation = inferLanguagePresentation(song);
     return `<li>
-      <a href="/?${query.toString()}#main-content"><strong>${escapeHtml(song.title)}</strong></a>
+      <a href="${finderUrl(query)}"><strong>${escapeHtml(song.title)}</strong></a>
       ${song.englishTitle && song.englishTitle !== song.title ? `<span class="seo-translation">English: ${escapeHtml(song.englishTitle)}</span>` : ''}
       <span>${escapeHtml(song.artist)} · ${escapeHtml(presentation)}</span>
     </li>`;
@@ -306,7 +307,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
     <p class="seo-eyebrow">Multilingual worship catalogue</p>
     <h1>${escapeHtml(language)} worship videos with words</h1>
     <p class="seo-lead">Explore ${count.toLocaleString('en-GB')} playable Christian worship and hymn videos catalogued for ${escapeHtml(language)}-speaking churches, international congregations and services where English is a second language.</p>
-    <div class="seo-actions"><a class="seo-button" href="/?${appQuery.toString()}#main-content">Search all ${escapeHtml(language)} videos</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div>
+    <div class="seo-actions"><a class="seo-button" href="${finderUrl(appQuery)}">Search all ${escapeHtml(language)} videos</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div>
   </article>
   <section class="seo-stats" aria-label="Catalogue summary">
     <div><strong>${count.toLocaleString('en-GB')}</strong><span>playable videos</span></div>
@@ -321,7 +322,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
   <section class="seo-section">
     <h2>Example ${escapeHtml(language)} worship word videos</h2>
     <ul class="seo-song-list">${songRows(examples, language)}</ul>
-    <p><a class="seo-text-link" href="/?${appQuery.toString()}#main-content">View the complete filtered catalogue →</a></p>
+    <p><a class="seo-text-link" href="${finderUrl(appQuery)}">View the complete filtered catalogue →</a></p>
   </section>
   <section class="seo-section seo-help">
     <h2>Use a video confidently in church</h2>
@@ -376,10 +377,10 @@ function arrangementPage(arrangement: string, songs: WorshipSong[]): SeoPage {
   const query = new URLSearchParams({ arrangement });
   const description = `Find ${count.toLocaleString('en-GB')} ${arrangement.toLowerCase()} worship and hymn videos with on-screen words or subtitles. Build and project a free church playlist.`;
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/arrangements/">Worship styles</a><span>›</span><span>${escapeHtml(arrangement)}</span></nav>
-  <article class="seo-hero"><p class="seo-eyebrow">Worship style collection</p><h1>${escapeHtml(arrangement)} videos with words</h1><p class="seo-lead">Search ${count.toLocaleString('en-GB')} playable ${escapeHtml(arrangement.toLowerCase())} videos selected for church use, with lyrics, words or subtitles indicated by the uploader.</p><div class="seo-actions"><a class="seo-button" href="/?${query.toString()}#main-content">Open this collection</a><a class="seo-button seo-button--quiet" href="/guides/church-youtube-lyric-videos/">Video selection guide</a></div></article>
+  <article class="seo-hero"><p class="seo-eyebrow">Worship style collection</p><h1>${escapeHtml(arrangement)} videos with words</h1><p class="seo-lead">Search ${count.toLocaleString('en-GB')} playable ${escapeHtml(arrangement.toLowerCase())} videos selected for church use, with lyrics, words or subtitles indicated by the uploader.</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Open this collection</a><a class="seo-button seo-button--quiet" href="/guides/church-youtube-lyric-videos/">Video selection guide</a></div></article>
   <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable videos</span></div><div><strong>${languages.length}</strong><span>language labels</span></div><div><strong>Free</strong><span>playlist planning</span></div></section>
   <section class="seo-section"><h2>Languages represented</h2><p>${escapeHtml(formatList(languages, 8))}.</p><p>Arrangement labels are taken from uploader wording where possible and otherwise conservatively inferred from titles and catalogue metadata. Preview every video to confirm that the performance style suits your service.</p></section>
-  <section class="seo-section"><h2>Examples in this collection</h2><ul class="seo-song-list">${songRows(songs)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Search the full ${escapeHtml(arrangement.toLowerCase())} collection →</a></p></section>`;
+  <section class="seo-section"><h2>Examples in this collection</h2><ul class="seo-song-list">${songRows(songs)}</ul><p><a class="seo-text-link" href="${finderUrl(query)}">Search the full ${escapeHtml(arrangement.toLowerCase())} collection →</a></p></section>`;
   return {
     path: `/arrangements/${slug}/`,
     title: `${titleLabel} Worship Videos with Lyrics | Churches`,
@@ -414,10 +415,10 @@ function seasonPage(season: WorshipSeason, songs: WorshipSong[]): SeoPage {
   const description = `Find ${count.toLocaleString('en-GB')} ${season} worship songs and hymns with on-screen lyrics, words or subtitles for church services and projection.`;
   const examples = songs.slice(0, 18);
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/seasons/">Church seasons</a><span>›</span><span>${escapeHtml(season)}</span></nav>
-  <article class="seo-hero"><p class="seo-eyebrow">Seasonal church worship</p><h1>${escapeHtml(season)} worship songs with lyrics and words</h1><p class="seo-lead">Explore ${count.toLocaleString('en-GB')} playable worship and hymn videos associated with ${escapeHtml(season)}, with on-screen lyrics, words or subtitles indicated in the catalogue.</p><div class="seo-actions"><a class="seo-button" href="/?${query.toString()}#main-content">Search ${escapeHtml(season)} videos</a><a class="seo-button seo-button--quiet" href="/guides/church-youtube-lyric-videos/">Preview checklist</a></div></article>
+  <article class="seo-hero"><p class="seo-eyebrow">Seasonal church worship</p><h1>${escapeHtml(season)} worship songs with lyrics and words</h1><p class="seo-lead">Explore ${count.toLocaleString('en-GB')} playable worship and hymn videos associated with ${escapeHtml(season)}, with on-screen lyrics, words or subtitles indicated in the catalogue.</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Search ${escapeHtml(season)} videos</a><a class="seo-button seo-button--quiet" href="/guides/church-youtube-lyric-videos/">Preview checklist</a></div></article>
   <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable videos</span></div><div><strong>${languages.length}</strong><span>language labels</span></div><div><strong>${arrangements.length}</strong><span>musical arrangements</span></div></section>
   <section class="seo-section"><h2>Plan ${escapeHtml(season)} worship</h2><p>Use this collection to begin a service plan, then preview the exact recording for theology, verse order, key, tempo, audio quality and readable word timing. Seasonal labels are inferred conservatively from song titles, familiar hymn names and public catalogue metadata.</p><p>The collection includes ${escapeHtml(formatList(arrangements, 5))}. Languages represented include ${escapeHtml(formatList(languages, 6))}.</p></section>
-  <section class="seo-section"><h2>Example ${escapeHtml(season)} worship lyric videos</h2><ul class="seo-song-list">${songRows(examples)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Open the complete ${escapeHtml(season)} collection →</a></p></section>
+  <section class="seo-section"><h2>Example ${escapeHtml(season)} worship lyric videos</h2><ul class="seo-song-list">${songRows(examples)}</ul><p><a class="seo-text-link" href="${finderUrl(query)}">Open the complete ${escapeHtml(season)} collection →</a></p></section>
   <section class="seo-section seo-help"><h2>Prepare it for church</h2><ol><li>Preview the complete video and check the visible words.</li><li>Confirm that the arrangement and language suit your congregation.</li><li>Members can save the running order and tidy any silent beginning or ending.</li><li>Rehearse the service using the same internet connection and projection screen.</li></ol></section>`;
   return {
     path: `/seasons/${slug}/`,
@@ -460,10 +461,10 @@ function presentationPage(presentation: LanguagePresentation, songs: WorshipSong
   const query = new URLSearchParams({ presentation });
   const examples = songs.slice(0, 18);
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/formats/">Lyrics & subtitle formats</a><span>›</span><span>${escapeHtml(presentation)}</span></nav>
-  <article class="seo-hero"><p class="seo-eyebrow">Words and language format</p><h1>${escapeHtml(details.heading)}</h1><p class="seo-lead">${escapeHtml(details.explanation)} Search ${count.toLocaleString('en-GB')} playable catalogue entries in this format.</p><div class="seo-actions"><a class="seo-button" href="/?${query.toString()}#main-content">Search this format</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Multilingual worship guide</a></div></article>
+  <article class="seo-hero"><p class="seo-eyebrow">Words and language format</p><h1>${escapeHtml(details.heading)}</h1><p class="seo-lead">${escapeHtml(details.explanation)} Search ${count.toLocaleString('en-GB')} playable catalogue entries in this format.</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Search this format</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Multilingual worship guide</a></div></article>
   <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable videos</span></div><div><strong>${languages.length}</strong><span>language labels</span></div><div><strong>${arrangements.length}</strong><span>musical arrangements</span></div></section>
   <section class="seo-section"><h2>What this format label means</h2><p>${escapeHtml(details.explanation)} Labels are based on public uploader wording and conservative catalogue checks. Preview the exact video and ask a fluent speaker to review translated words before using it in public worship.</p><p>Languages represented include ${escapeHtml(formatList(languages, 8))}. Common arrangements include ${escapeHtml(formatList(arrangements, 5))}.</p></section>
-  <section class="seo-section"><h2>Example worship videos in this format</h2><ul class="seo-song-list">${songRows(examples)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Search all ${count.toLocaleString('en-GB')} matching videos →</a></p></section>
+  <section class="seo-section"><h2>Example worship videos in this format</h2><ul class="seo-song-list">${songRows(examples)}</ul><p><a class="seo-text-link" href="${finderUrl(query)}">Search all ${count.toLocaleString('en-GB')} matching videos →</a></p></section>
   <section class="seo-section seo-help"><h2>Check before your service</h2><p>Catalogue wording helps narrow a large YouTube search, but it is not a guarantee of translation accuracy, theology, video availability or permission for public use. Watch the complete upload and confirm the licences needed by your church.</p></section>`;
   return {
     path: `/formats/${details.slug}/`,
@@ -524,13 +525,13 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   const languageCards = languages.map(([language, languageSongs]) => {
     const languageQuery = new URLSearchParams({ q: family.title, language });
     const formats = countBy(languageSongs, inferLanguagePresentation);
-    return `<a class="seo-card" href="/?${languageQuery.toString()}#main-content"><strong>${escapeHtml(language)}</strong><span>${languageSongs.length.toLocaleString('en-GB')} playable ${languageSongs.length === 1 ? 'version' : 'versions'} · ${escapeHtml(formatList(formats, 2))}</span></a>`;
+    return `<a class="seo-card" href="${finderUrl(languageQuery)}"><strong>${escapeHtml(language)}</strong><span>${languageSongs.length.toLocaleString('en-GB')} playable ${languageSongs.length === 1 ? 'version' : 'versions'} · ${escapeHtml(formatList(formats, 2))}</span></a>`;
   }).join('');
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/songs/">Songs across languages</a><span>›</span><span>${escapeHtml(family.title)}</span></nav>
-  <article class="seo-hero"><p class="seo-eyebrow">Well-known worship across languages</p><h1>${escapeHtml(family.title)} in different languages</h1><p class="seo-lead">Compare ${count.toLocaleString('en-GB')} playable versions across ${languages.length.toLocaleString('en-GB')} languages. Use the language and presentation labels to distinguish native-language vocals, translated subtitles, English subtitles and bilingual versions where the uploader's metadata supports that description.</p><div class="seo-actions"><a class="seo-button" href="/?${query.toString()}#main-content">Search every ${escapeHtml(family.title)} video</a><a class="seo-button seo-button--quiet" href="/formats/">Understand lyrics and subtitle labels</a></div></article>
+  <article class="seo-hero"><p class="seo-eyebrow">Well-known worship across languages</p><h1>${escapeHtml(family.title)} in different languages</h1><p class="seo-lead">Compare ${count.toLocaleString('en-GB')} playable versions across ${languages.length.toLocaleString('en-GB')} languages. Use the language and presentation labels to distinguish native-language vocals, translated subtitles, English subtitles and bilingual versions where the uploader's metadata supports that description.</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Search every ${escapeHtml(family.title)} video</a><a class="seo-button seo-button--quiet" href="/formats/">Understand lyrics and subtitle labels</a></div></article>
   <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable word videos</span></div><div><strong>${languages.length.toLocaleString('en-GB')}</strong><span>languages represented</span></div><div><strong>${presentationFormatCount.toLocaleString('en-GB')}</strong><span>lyrics and subtitle formats</span></div></section>
   <section class="seo-section"><h2>Choose a language version</h2><div class="seo-card-grid">${languageCards}</div></section>
-  <section class="seo-section"><h2>Example ${escapeHtml(family.title)} lyric and subtitle videos</h2><ul class="seo-song-list">${songRows(orderedSongs)}</ul><p><a class="seo-text-link" href="/?${query.toString()}#main-content">Open all ${count.toLocaleString('en-GB')} matching videos in the finder →</a></p></section>
+  <section class="seo-section"><h2>Example ${escapeHtml(family.title)} lyric and subtitle videos</h2><ul class="seo-song-list">${songRows(orderedSongs)}</ul><p><a class="seo-text-link" href="${finderUrl(query)}">Open all ${count.toLocaleString('en-GB')} matching videos in the finder →</a></p></section>
   <section class="seo-section seo-help"><h2>Check the exact version before church</h2><p>These are links to public YouTube uploads, not copies of the song or lyrics. A familiar English title can refer to a translation, adaptation, cover or subtitled original. Preview the complete video, ask a fluent speaker to review translated words and theology, and confirm the licences needed for your service.</p></section>`;
   return {
     path: `/songs/${family.slug}/`,

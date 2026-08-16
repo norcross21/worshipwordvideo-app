@@ -2,6 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": true,
+  "redirects": [
+    { "source": "/languages/burmese/", "destination": "/languages/burmese-myanmar/", "permanent": true },
+    { "source": "/languages/farsi/", "destination": "/languages/persian-farsi/", "permanent": true },
+    { "source": "/languages/persian/", "destination": "/languages/persian-farsi/", "permanent": true },
+    { "source": "/languages/filipino/", "destination": "/languages/tagalog-filipino/", "permanent": true },
+    { "source": "/languages/tagalog/", "destination": "/languages/tagalog-filipino/", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/catalogue/(.*)",
