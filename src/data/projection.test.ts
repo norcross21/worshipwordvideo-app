@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   chooseProjectionScreen,
+  openProjectionWindow,
   projectionPopupFeatures,
+  projectionScreenKey,
   projectionScreenOptions,
   publishProjectionState,
   readProjectionState,
+  registerProjectionSurface,
   type ProjectionScreenInfo,
 } from './projection';
 
@@ -27,7 +30,10 @@ const projector: ProjectionScreenInfo = {
 };
 
 describe('projection window helpers', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    registerProjectionSurface(null);
+    vi.unstubAllGlobals();
+  });
 
   it('places the projection on the external screen rather than the dashboard screen', () => {
     expect(chooseProjectionScreen({ screens: [laptop, projector], currentScreen: laptop })).toBe(projector);
@@ -66,6 +72,31 @@ describe('projection window helpers', () => {
     expect(features).toContain('left=1440');
     expect(features).toContain('width=1920');
     expect(features).toContain('height=1080');
+  });
+
+  it('uses one-click targeted fullscreen on the chosen external display when Chrome supports it', async () => {
+    const values = new Map<string, string>();
+    const requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    const open = vi.fn();
+    registerProjectionSurface({ requestFullscreen } as unknown as HTMLElement);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    });
+    vi.stubGlobal('document', { fullscreenEnabled: true });
+    vi.stubGlobal('window', {
+      getScreenDetails: vi.fn().mockResolvedValue({ screens: [laptop, projector], currentScreen: laptop }),
+      open,
+      screen: laptop,
+    });
+
+    const launch = await openProjectionWindow(new URL('https://example.test/?projection=1'), {
+      preferredScreenKey: projectionScreenKey(projector),
+    });
+
+    expect(launch.result).toBe('fullscreen');
+    expect(requestFullscreen).toHaveBeenCalledWith(expect.objectContaining({ screen: projector, navigationUI: 'hide' }));
+    expect(open).not.toHaveBeenCalled();
   });
 
   it('keeps the receiver launch id while the controller changes videos', () => {

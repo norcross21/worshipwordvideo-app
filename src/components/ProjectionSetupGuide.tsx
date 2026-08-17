@@ -29,7 +29,7 @@ export function ProjectionSetupGuide({
     setOpening(false);
   };
 
-  const isOpen = launchResult === 'opened' || launchResult === 'placed';
+  const isOpen = launchResult === 'fullscreen' || launchResult === 'opened' || launchResult === 'placed';
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -45,11 +45,13 @@ export function ProjectionSetupGuide({
 
         <div className="projection-guide__body">
           <section>
-            <span className={`projection-guide__large-icon ${launchResult === 'placed' ? 'is-success' : ''}`}><MonitorUp size={30} /></span>
+            <span className={`projection-guide__large-icon ${launchResult === 'fullscreen' || launchResult === 'placed' ? 'is-success' : ''}`}><MonitorUp size={30} /></span>
             <h4>{opening
               ? 'Finding the church screen…'
-              : launchResult === 'placed'
-                ? 'Church screen connected'
+              : launchResult === 'fullscreen'
+                ? 'Full screen is live'
+                : launchResult === 'placed'
+                  ? 'Church screen connected'
                 : isOpen
                   ? 'Clean screen opened'
                   : launchResult === 'single-screen'
@@ -82,6 +84,13 @@ export function ProjectionSetupGuide({
               <>
                 <p>The clean window now fills the other display. The first video starts there automatically and every choice on this controller stays linked.</p>
                 <div className="projection-guide__ready-check"><CheckCircle2 size={18} /><span>The congregation sees only the video. Keep this dashboard on your main screen for Previous, Restart and Next.</span></div>
+              </>
+            )}
+
+            {launchResult === 'fullscreen' && (
+              <>
+                <p>The worship video is now full screen on the selected display. Your dashboard and private controls stay here.</p>
+                <div className="projection-guide__ready-check"><CheckCircle2 size={18} /><span>Next, Previous and Restart update the congregation screen immediately.</span></div>
               </>
             )}
 

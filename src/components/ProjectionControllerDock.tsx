@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Maximize2, MonitorUp, RotateCcw, SkipBack, SkipForward, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { ChevronDown, MonitorUp, Power, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
 import {
   PROJECTION_HEARTBEAT_INTERVAL_MS,
   closeProjectionWindow,
+  getProjectionScreenChoices,
   openProjectionWindow,
   publishProjectionState,
   readProjectionState,
   subscribeToProjectionCommands,
   subscribeToProjectionState,
   type ProjectionLaunchResult,
+  type ProjectionScreenChoice,
   type ProjectionState,
 } from '../data/projection';
 
@@ -29,6 +31,8 @@ export function ProjectionControllerDock() {
   const [now, setNow] = useState(Date.now());
   const [screenMessage, setScreenMessage] = useState('');
   const [moving, setMoving] = useState(false);
+  const [screenChoices, setScreenChoices] = useState<ProjectionScreenChoice[]>([]);
+  const [showScreenChoices, setShowScreenChoices] = useState(false);
   const item = projection.playingIndex == null ? null : projection.queue[projection.playingIndex] ?? null;
   const connected = Boolean(item && lastHeartbeat && now - lastHeartbeat < CONNECTED_GRACE_MS);
 
@@ -38,7 +42,7 @@ export function ProjectionControllerDock() {
     if (!projection.launchId || command.launchId !== projection.launchId) return;
     if (command.type === 'ready' || command.type === 'heartbeat') {
       setLastHeartbeat(Date.now());
-      if (command.type === 'ready') setScreenMessage('Church screen connected.');
+      if (command.type === 'ready') setScreenMessage('');
     }
     if (command.type === 'closed') {
       setLastHeartbeat(0);
@@ -63,7 +67,7 @@ export function ProjectionControllerDock() {
     });
   }, []);
 
-  const launchScreen = useCallback(async (cycleScreen = false) => {
+  const launchScreen = useCallback(async (cycleScreen = false, preferredScreenKey?: string) => {
     const current = readProjectionState();
     if (current.playingIndex == null || !current.queue[current.playingIndex]) return;
     const launchId = current.launchId || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -76,9 +80,11 @@ export function ProjectionControllerDock() {
       });
     }
     setMoving(true);
-    const launch = await openProjectionWindow(projectionUrl(launchId), { cycleScreen });
+    setShowScreenChoices(false);
+    const launch = await openProjectionWindow(projectionUrl(launchId), { cycleScreen, preferredScreenKey });
     setMoving(false);
     const messages: Record<ProjectionLaunchResult, string> = {
+      fullscreen: 'Full-screen worship is live on the selected display. Keep these controls on this screen.',
       placed: cycleScreen
         ? 'The church screen was moved to the next connected display.'
         : 'The church screen was placed automatically on the connected display.',
@@ -87,13 +93,33 @@ export function ProjectionControllerDock() {
       blocked: 'Chrome blocked the church-screen window. Allow pop-ups for this site, then choose Reopen screen.',
     };
     setScreenMessage(messages[launch.result]);
-    if (launch.result === 'placed' || launch.result === 'opened') {
+    if (launch.result === 'fullscreen' || launch.result === 'placed' || launch.result === 'opened') {
       publishProjectionState({
         queue: current.queue,
         playingIndex: current.playingIndex,
         playbackRevision: current.playbackRevision + 1,
         launchId,
       });
+    }
+  }, []);
+
+  const discoverScreens = useCallback(async () => {
+    setMoving(true);
+    setScreenMessage('');
+    try {
+      const choices = await getProjectionScreenChoices();
+      setScreenChoices(choices);
+      if (!choices.length) {
+        setScreenMessage('No extended display was detected. Connect the projector and choose Extended Display in your computer settings.');
+        setShowScreenChoices(false);
+      } else {
+        setShowScreenChoices(true);
+      }
+    } catch {
+      setScreenMessage('Chrome needs Window management permission. Open the site controls beside the address bar, allow Window management, then try again.');
+      setShowScreenChoices(false);
+    } finally {
+      setMoving(false);
     }
   }, []);
 
@@ -108,21 +134,21 @@ export function ProjectionControllerDock() {
     });
     setLastHeartbeat(0);
     setScreenMessage('');
+    setShowScreenChoices(false);
   }, []);
 
   const position = projection.playingIndex ?? 0;
-  const statusLabel = useMemo(() => connected ? 'CHURCH SCREEN CONNECTED' : 'CHURCH SCREEN LINKED', [connected]);
   if (!item) return null;
 
   return (
     <section className="global-projection-controller" aria-label="Church screen controller">
       <div className="global-projection-controller__status">
-        <span className={connected ? 'is-connected' : 'is-waiting'}><i aria-hidden="true" /> {statusLabel}</span>
+        <span className={connected ? 'is-connected' : 'is-waiting'}><i aria-hidden="true" /> {connected ? 'Screen live' : 'Screen ready'}</span>
         <strong>{item.title}</strong>
         <small>{item.artist}{projection.queue.length > 1 ? ` · ${position + 1} of ${projection.queue.length}` : ''}</small>
       </div>
 
-      <div className="global-projection-controller__controls">
+      <div className="global-projection-controller__transport" aria-label="Video controls">
         {projection.queue.length > 1 && (
           <button type="button" disabled={position <= 0} onClick={() => selectIndex(position - 1)}><SkipBack size={16} /> Previous</button>
         )}
@@ -130,9 +156,27 @@ export function ProjectionControllerDock() {
         {projection.queue.length > 1 && (
           <button type="button" disabled={position >= projection.queue.length - 1} onClick={() => selectIndex(position + 1)}>Next <SkipForward size={16} /></button>
         )}
-        <button type="button" disabled={moving} onClick={() => void launchScreen(false)}><MonitorUp size={16} /> {connected ? 'Show screen' : 'Reopen screen'}</button>
-        <button type="button" disabled={moving} onClick={() => void launchScreen(true)}><Maximize2 size={16} /> Move display</button>
-        <button type="button" className="is-stop" onClick={stopProjection}><X size={16} /> Stop</button>
+      </div>
+
+      <div className="global-projection-controller__screen-actions">
+        <button type="button" className="is-primary" disabled={moving} onClick={() => void launchScreen(false)}><MonitorUp size={16} /> {connected ? 'Reopen screen' : 'Open screen'}</button>
+        <button type="button" className="is-display-picker" disabled={moving} aria-haspopup="menu" aria-expanded={showScreenChoices} onClick={() => void discoverScreens()}>
+          Displays <ChevronDown size={15} />
+        </button>
+        <button type="button" className="is-stop" onClick={stopProjection}><Power size={16} /> End</button>
+
+        {showScreenChoices && (
+          <div className="global-projection-controller__display-menu" role="menu" aria-label="Choose church display">
+            <strong>Choose the church screen</strong>
+            <span>Chrome will remember it for next time.</span>
+            {screenChoices.map((choice) => (
+              <button key={choice.key} type="button" role="menuitem" onClick={() => void launchScreen(false, choice.key)}>
+                <MonitorUp size={16} />
+                <span><strong>{choice.label}</strong><small>{choice.isInternal ? 'Built-in display' : 'External display'}</small></span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {screenMessage && <p className="global-projection-controller__message" role="status">{screenMessage}</p>}
