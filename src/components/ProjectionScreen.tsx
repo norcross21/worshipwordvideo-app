@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Maximize2, MonitorUp, X } from 'lucide-react';
 import {
+  PROJECTION_HEARTBEAT_INTERVAL_MS,
   publishProjectionCommand,
   publishProjectionState,
   readProjectionState,
@@ -9,36 +10,28 @@ import {
 import { formatPlaybackTime } from '../data/worshipQueue';
 import { YouTubePlayer } from './YouTubePlayer';
 
+function placementFromUrl(): { left: number; top: number; width: number; height: number } | null {
+  const parameters = new URLSearchParams(window.location.search);
+  const values = ['left', 'top', 'width', 'height'].map((key) => Number(parameters.get(key)));
+  return parameters.get('placed') === '1' && values.every(Number.isFinite)
+    ? { left: values[0], top: values[1], width: values[2], height: values[3] }
+    : null;
+}
+
 export function ProjectionScreen() {
   const [projection, setProjection] = useState(readProjectionState);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
-  const [starting, setStarting] = useState(false);
   const [fullscreenError, setFullscreenError] = useState('');
-  const [serviceStarted, setServiceStarted] = useState(() => readProjectionState().playingIndex != null);
-  const autoAttemptedRef = useRef(false);
-  const parameters = new URLSearchParams(window.location.search);
-  const launchId = parameters.get('launch') ?? '';
-  const wasPlaced = parameters.get('placed') === '1';
+  const hadVideoRef = useRef(readProjectionState().playingIndex != null);
+  const urlLaunchId = new URLSearchParams(window.location.search).get('launch') ?? '';
+  const activeLaunchId = projection.launchId || urlLaunchId;
   const item = projection.playingIndex == null ? null : projection.queue[projection.playingIndex] ?? null;
   const itemTitle = item?.title;
-
-  const startService = useCallback(() => {
-    if (!projection.queue.length) return;
-    const next = {
-      ...projection,
-      playingIndex: 0,
-      playbackRevision: projection.playbackRevision + 1,
-      updatedAt: Date.now(),
-    };
-    setProjection(next);
-    setServiceStarted(true);
-    publishProjectionCommand('start', launchId);
-  }, [launchId, projection]);
 
   const enterFullscreen = useCallback(async (silent = false): Promise<boolean> => {
     if (document.fullscreenElement) return true;
     if (!document.fullscreenEnabled) {
-      if (!silent) setFullscreenError('This browser does not offer page full screen. The clean presentation window will remain maximised instead.');
+      if (!silent) setFullscreenError('Page full screen is unavailable. The clean presentation window will remain maximised instead.');
       return false;
     }
     try {
@@ -46,55 +39,79 @@ export function ProjectionScreen() {
       setFullscreenError('');
       return true;
     } catch {
-      if (!silent) setFullscreenError('Full screen was blocked. Click the button once more or use your browser’s full-screen command.');
+      if (!silent) setFullscreenError('Your browser requires a click before true full screen. The clean window is still ready to use.');
       return false;
     }
   }, []);
 
-  const enterFullscreenAndStart = async () => {
-    setStarting(true);
-    await enterFullscreen();
-    startService();
-    setStarting(false);
-  };
-
   useEffect(() => subscribeToProjectionState(setProjection), []);
+
   useEffect(() => {
     document.body.classList.add('projection-body');
     const robotsMeta = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     const previousRobots = robotsMeta?.content;
     robotsMeta?.setAttribute('content', 'noindex, nofollow');
     const updateFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    const announceClose = () => {
-      publishProjectionState({ queue: [], playingIndex: null, playbackRevision: Date.now() });
-      publishProjectionCommand('closed', launchId);
-    };
     document.addEventListener('fullscreenchange', updateFullscreen);
-    window.addEventListener('beforeunload', announceClose);
     return () => {
       document.body.classList.remove('projection-body');
       if (robotsMeta && previousRobots) robotsMeta.content = previousRobots;
       document.removeEventListener('fullscreenchange', updateFullscreen);
-      window.removeEventListener('beforeunload', announceClose);
     };
-  }, [launchId]);
+  }, []);
+
+  useEffect(() => {
+    const placement = placementFromUrl();
+    if (!placement) return;
+    const place = () => {
+      try {
+        window.moveTo(placement.left, placement.top);
+        window.resizeTo(placement.width, placement.height);
+      } catch {
+        // The opener already attempted placement; unsupported browsers keep the fallback window.
+      }
+    };
+    place();
+    const retry = window.setTimeout(place, 400);
+    return () => window.clearTimeout(retry);
+  }, []);
+
+  useEffect(() => {
+    if (!activeLaunchId) return;
+    const announceReady = () => publishProjectionCommand('ready', activeLaunchId);
+    const announceHeartbeat = () => publishProjectionCommand('heartbeat', activeLaunchId);
+    announceReady();
+    const heartbeat = window.setInterval(announceHeartbeat, PROJECTION_HEARTBEAT_INTERVAL_MS);
+    window.addEventListener('focus', announceReady);
+    window.addEventListener('pageshow', announceReady);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') announceReady();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.clearInterval(heartbeat);
+      window.removeEventListener('focus', announceReady);
+      window.removeEventListener('pageshow', announceReady);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [activeLaunchId]);
+
   useEffect(() => {
     document.title = itemTitle ? `${itemTitle} · Projection` : 'Worship projection';
   }, [itemTitle]);
+
   useEffect(() => {
-    if (item) setServiceStarted(true);
+    if (item) hadVideoRef.current = true;
   }, [item]);
+
   useEffect(() => {
-    if (autoAttemptedRef.current || item) return;
-    autoAttemptedRef.current = true;
-    void enterFullscreen(true).then((entered) => {
-      if (entered) startService();
-    });
-  }, [enterFullscreen, item, startService]);
+    if (!item || new URLSearchParams(window.location.search).get('placed') !== '1') return;
+    void enterFullscreen(true);
+  }, [enterFullscreen, item]);
 
   const closeProjection = () => {
-    publishProjectionState({ queue: [], playingIndex: null, playbackRevision: Date.now() });
-    publishProjectionCommand('closed', launchId);
+    publishProjectionState({ queue: [], playingIndex: null, playbackRevision: Date.now(), launchId: activeLaunchId });
+    publishProjectionCommand('closed', activeLaunchId);
     window.close();
   };
 
@@ -110,7 +127,7 @@ export function ProjectionScreen() {
             startSeconds={item.startSeconds}
             endSeconds={item.endSeconds}
             className="projection-screen__player"
-            onEnded={() => publishProjectionCommand('ended', launchId, item.id)}
+            onEnded={() => publishProjectionCommand('ended', activeLaunchId, item.id)}
           />
           <div className="projection-screen__caption">
             <strong>{item.title}</strong>
@@ -120,18 +137,15 @@ export function ProjectionScreen() {
       ) : (
         <div className="projection-screen__waiting">
           <MonitorUp size={52} />
-          <h1>{serviceStarted ? 'Service complete' : 'Church screen ready'}</h1>
-          <p>{serviceStarted
-            ? 'The final worship video has finished. The service controls remain private on the main computer.'
-            : wasPlaced
-              ? 'One final confirmation keeps the browser secure. The service starts immediately after this screen enters full screen.'
-              : 'Place this clean window on the church display if needed. The service starts immediately after full screen opens.'}</p>
-          {!serviceStarted && !isFullscreen && (
-            <button type="button" autoFocus className="projection-screen__fullscreen-primary" onClick={() => void enterFullscreenAndStart()} disabled={starting}>
-              <Maximize2 size={22} /> {starting ? 'Starting presentation…' : 'Full screen and start'}
+          <h1>{hadVideoRef.current ? 'Service complete' : 'Church screen connected'}</h1>
+          <p>{hadVideoRef.current
+            ? 'The final worship video has finished. Choose another video from the private controller whenever you are ready.'
+            : 'Choose a video on the private controller. It will appear here automatically.'}</p>
+          {!isFullscreen && (
+            <button type="button" className="projection-screen__fullscreen-primary" onClick={() => void enterFullscreen()}>
+              <Maximize2 size={22} /> Optional full screen
             </button>
           )}
-          {!serviceStarted && <small>Press Enter to use the highlighted button.</small>}
           {fullscreenError && <div className="projection-screen__error" role="alert">{fullscreenError}</div>}
         </div>
       )}

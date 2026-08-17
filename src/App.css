@@ -5039,7 +5039,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .projection-guide__body section { display: grid; width: 100%; justify-items: center; gap: 0.75rem; }
 
 .projection-guide__body h4 { margin: 0; color: #0b2f59; font-size: 1rem; }
-.projection-guide__body > p { max-width: 460px; margin: 0; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.55; }
+.projection-guide__body section > p { max-width: 460px; margin: 0; color: var(--color-text-muted); font-size: 0.76rem; line-height: 1.55; }
 .projection-guide__large-icon { display: grid; width: 58px; height: 58px; place-items: center; border-radius: 16px; color: #ffffff; background: var(--color-brand-navy); }
 .projection-guide__large-icon.is-success { background: #0877b9; }
 
@@ -5074,14 +5074,14 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #149780;
-  box-shadow: 0 0 0 0 rgb(20 151 128 / 45%);
+  background: #0877b9;
+  box-shadow: 0 0 0 0 rgb(8 119 185 / 45%);
   animation: projection-ready-pulse 1.5s infinite;
 }
 
 @keyframes projection-ready-pulse {
-  70% { box-shadow: 0 0 0 8px rgb(20 151 128 / 0%); }
-  100% { box-shadow: 0 0 0 0 rgb(20 151 128 / 0%); }
+  70% { box-shadow: 0 0 0 8px rgb(8 119 185 / 0%); }
+  100% { box-shadow: 0 0 0 0 rgb(8 119 185 / 0%); }
 }
 
 .projection-controller {
@@ -5091,19 +5091,20 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   gap: 1rem;
   margin-bottom: 1rem;
   padding: 0.9rem 1rem;
-  border: 1px solid #7fc7bd;
+  border: 1px solid #9ebbd6;
   border-radius: 12px;
-  background: linear-gradient(135deg, #eaf9f6, #f8fbff);
+  background: linear-gradient(135deg, #edf5fc, #f8fbff);
   box-shadow: 0 10px 26px rgb(10 53 83 / 8%);
 }
 
 .projection-controller__status { display: grid; min-width: 0; gap: 0.12rem; }
-.projection-controller__status > span { color: #087565; font-size: 0.63rem; font-weight: 900; letter-spacing: 0.08em; }
+.projection-controller__status > span { color: #0877b9; font-size: 0.63rem; font-weight: 900; letter-spacing: 0.08em; }
+.projection-controller__status > span.is-connecting { color: #8a5b12; }
 .projection-controller__status strong { overflow: hidden; color: #0b2f59; font-size: 0.9rem; text-overflow: ellipsis; white-space: nowrap; }
 .projection-controller__status small { overflow: hidden; color: #63788e; font-size: 0.68rem; text-overflow: ellipsis; white-space: nowrap; }
 .projection-controller__controls { display: flex; flex: 0 0 auto; gap: 0.4rem; }
 .projection-controller__controls button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.55rem 0.7rem; border: 1px solid #a9bfd2; border-radius: 8px; color: #163d65; background: #fff; font: inherit; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
-.projection-controller__controls button:hover:not(:disabled) { border-color: #0a7f72; color: #07665d; background: #eefaf7; }
+.projection-controller__controls button:hover:not(:disabled) { border-color: #0877b9; color: #075c91; background: #eef7fd; }
 .projection-controller__controls button:disabled { opacity: 0.4; cursor: not-allowed; }
 .projection-controller__controls button.is-stop { border-color: #e1aaaa; color: #a62b2b; }
 
@@ -5114,10 +5115,10 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   gap: 0.45rem;
   margin-top: 0.4rem;
   padding: 0.9rem 1.25rem;
-  border: 1px solid #3cc2b2;
+  border: 1px solid #3d9bd0;
   border-radius: 11px;
   color: #ffffff;
-  background: #087c70;
+  background: #075c91;
   font: inherit;
   font-size: 1rem;
   font-weight: 850;
@@ -5125,7 +5126,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 }
 
 .projection-screen__fullscreen-primary:hover,
-.projection-screen__fullscreen-primary:focus-visible { outline: 3px solid rgb(67 217 199 / 45%); outline-offset: 3px; background: #0a9585; }
+.projection-screen__fullscreen-primary:focus-visible { outline: 3px solid rgb(61 155 208 / 45%); outline-offset: 3px; background: #0877b9; }
 .projection-screen__fullscreen-primary:disabled { opacity: 0.7; cursor: wait; }
 
 .admin-table__actions { width: 52px; text-align: right !important; }

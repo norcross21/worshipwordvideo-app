@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { chooseProjectionScreen, projectionPopupFeatures, type ProjectionScreenInfo } from './projection';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  chooseProjectionScreen,
+  projectionPopupFeatures,
+  publishProjectionState,
+  readProjectionState,
+  type ProjectionScreenInfo,
+} from './projection';
 
 const laptop: ProjectionScreenInfo = {
   availLeft: 0,
@@ -20,6 +26,8 @@ const projector: ProjectionScreenInfo = {
 };
 
 describe('projection window helpers', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it('places the projection on the external screen rather than the dashboard screen', () => {
     expect(chooseProjectionScreen({ screens: [laptop, projector], currentScreen: laptop })).toBe(projector);
   });
@@ -39,5 +47,28 @@ describe('projection window helpers', () => {
     expect(features).toContain('left=1440');
     expect(features).toContain('width=1920');
     expect(features).toContain('height=1080');
+  });
+
+  it('keeps the receiver launch id while the controller changes videos', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    });
+    vi.stubGlobal('window', { location: { origin: 'https://example.test' } });
+
+    publishProjectionState({ queue: [], playingIndex: null, playbackRevision: 1, launchId: 'screen-session' });
+    const changed = publishProjectionState({ queue: [], playingIndex: null, playbackRevision: 2 });
+
+    expect(changed.launchId).toBe('screen-session');
+    expect(readProjectionState().playbackRevision).toBe(2);
+  });
+
+  it('upgrades projection state saved by the older receiver', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => JSON.stringify({ queue: [], playingIndex: null, playbackRevision: 7, updatedAt: 12 }),
+    });
+
+    expect(readProjectionState()).toMatchObject({ launchId: '', playbackRevision: 7, updatedAt: 12 });
   });
 });

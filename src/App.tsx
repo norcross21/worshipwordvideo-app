@@ -21,12 +21,8 @@ import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/su
 import { accountSetupIsCurrent, accountSetupPromptKey } from './lib/accountSetup';
 import { configureUsageAnalytics, recordUsageEvent } from './lib/usageAnalytics';
 import {
-  PROJECTION_WINDOW_NAME,
-  chooseProjectionScreen,
-  projectionPopupFeatures,
+  openProjectionWindow,
   publishProjectionState,
-  type ProjectionScreenInfo,
-  type WindowWithScreenDetails,
 } from './data/projection';
 
 const SongLibraryDashboard = lazy(() => import('./components/SongLibraryDashboard').then((module) => ({ default: module.SongLibraryDashboard })));
@@ -359,63 +355,32 @@ function MainApp() {
     if (!user || !song.youtubeId) return;
     const item = worshipQueueItem(song);
     const playbackRevision = Date.now();
-    publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision });
+    const launchId = `single-${playbackRevision}`;
+    publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision, launchId });
 
     const url = new URL(window.location.href);
     url.search = '';
     url.searchParams.set('projection', '1');
-    url.searchParams.set('launch', `single-${playbackRevision}`);
+    url.searchParams.set('launch', launchId);
     url.hash = '';
-    const initialPlacement: ProjectionScreenInfo = {
-      availLeft: window.screenX + 40,
-      availTop: window.screenY + 40,
-      availWidth: Math.min(1280, window.screen.availWidth),
-      availHeight: Math.min(720, window.screen.availHeight),
-    };
-    const popup = window.open('', PROJECTION_WINDOW_NAME, projectionPopupFeatures(initialPlacement));
-    if (!popup) {
+    const launch = await openProjectionWindow(url);
+    if (launch.result === 'blocked') {
       setToastMessage('Your browser blocked the presentation window. Allow pop-ups for this site, then try again.');
       window.setTimeout(() => setToastMessage(''), 4000);
       return;
     }
+    if (launch.result === 'single-screen') {
+      setToastMessage('Connect a second display and choose Extend, then try Send to screen again.');
+      window.setTimeout(() => setToastMessage(''), 4000);
+      return;
+    }
     recordUsageEvent('projection_open');
-
-    let alreadyOpen = false;
-    try {
-      alreadyOpen = new URL(popup.location.href).searchParams.get('projection') === '1';
-    } catch {
-      alreadyOpen = true;
-    }
-
-    if (!alreadyOpen) {
-      try {
-        popup.document.title = 'Preparing church screen…';
-        popup.document.body.style.cssText = 'display:grid;place-items:center;min-height:100vh;margin:0;color:#fff;background:#06162d;font:700 22px system-ui,sans-serif';
-        popup.document.body.textContent = 'Preparing the church screen…';
-      } catch {
-        // The projection URL still loads if the temporary blank window is restricted.
-      }
-      const multiScreenWindow = window as WindowWithScreenDetails;
-      if (multiScreenWindow.getScreenDetails) {
-        try {
-          const details = await multiScreenWindow.getScreenDetails();
-          const target = chooseProjectionScreen(details);
-          if (target) {
-            popup.moveTo(target.availLeft, target.availTop);
-            popup.resizeTo(target.availWidth, target.availHeight);
-            url.searchParams.set('placed', '1');
-          }
-        } catch {
-          // The clean window still opens when automatic screen placement is unavailable.
-        }
-      }
-      popup.location.replace(url.toString());
-    } else {
-      // Re-publish after focusing so an already-open church screen changes immediately.
-      publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision: playbackRevision + 1 });
-    }
-    popup.focus();
-    setToastMessage(`Showing “${song.title}” on the church screen.`);
+    // Send once more after the receiver is focused so reloads and strict privacy
+    // modes cannot miss the newly selected video.
+    publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision: playbackRevision + 1, launchId });
+    setToastMessage(launch.result === 'placed'
+      ? `Showing “${song.title}” on the second screen.`
+      : `Showing “${song.title}” in the linked church-screen window.`);
     window.setTimeout(() => setToastMessage(''), 3000);
   };
 
