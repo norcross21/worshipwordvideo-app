@@ -17,7 +17,6 @@ import './App.css';
 import { ProjectionScreen } from './components/ProjectionScreen';
 import { ServiceWorkspaceBar } from './components/ServiceWorkspaceBar';
 import { ProjectionControllerDock } from './components/ProjectionControllerDock';
-import { ProjectionFullscreenSurface } from './components/ProjectionFullscreenSurface';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
 import { accountSetupIsCurrent, accountSetupPromptKey } from './lib/accountSetup';
@@ -380,11 +379,9 @@ function MainApp() {
     // Send once more after the receiver is focused so reloads and strict privacy
     // modes cannot miss the newly selected video.
     publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision: playbackRevision + 1, launchId });
-    setToastMessage(launch.result === 'fullscreen'
-      ? `Showing “${song.title}” full screen on the selected church display.`
-      : launch.result === 'placed'
-        ? `Showing “${song.title}” on the second screen.`
-        : `Showing “${song.title}” in the linked church-screen window.`);
+    setToastMessage(launch.result === 'placed'
+      ? `Showing “${song.title}” on the second screen.`
+      : `Showing “${song.title}” in the linked church-screen window.`);
     window.setTimeout(() => setToastMessage(''), 3000);
   };
 
@@ -406,8 +403,6 @@ function MainApp() {
       />
 
       {user && <ProjectionControllerDock />}
-      {user && <ProjectionFullscreenSurface />}
-
       {!authLoading && !user && (
         <section className="member-value-bar" aria-label="Member account benefits">
           <div className="member-value-bar__message">

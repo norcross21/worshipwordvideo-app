@@ -84,16 +84,15 @@ export function ProjectionControllerDock() {
     const launch = await openProjectionWindow(projectionUrl(launchId), { cycleScreen, preferredScreenKey });
     setMoving(false);
     const messages: Record<ProjectionLaunchResult, string> = {
-      fullscreen: 'Full-screen worship is live on the selected display. Keep these controls on this screen.',
       placed: cycleScreen
         ? 'The church screen was moved to the next connected display.'
-        : 'The church screen was placed automatically on the connected display.',
+        : 'The clean video window is on the church display. This controller stays on your laptop.',
       opened: 'The clean screen is linked. This Chrome installation did not allow automatic display placement.',
       'single-screen': 'Chrome detected only one display. Connect the church screen and choose Extended Display, then try again.',
       blocked: 'Chrome blocked the church-screen window. Allow pop-ups for this site, then choose Reopen screen.',
     };
     setScreenMessage(messages[launch.result]);
-    if (launch.result === 'fullscreen' || launch.result === 'placed' || launch.result === 'opened') {
+    if (launch.result === 'placed' || launch.result === 'opened') {
       publishProjectionState({
         queue: current.queue,
         playingIndex: current.playingIndex,

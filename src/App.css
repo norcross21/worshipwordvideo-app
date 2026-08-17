@@ -5165,14 +5165,6 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .global-projection-controller__display-menu > button strong { font-size: 0.72rem; }
 .global-projection-controller__display-menu > button small { color: #6d8094; font-size: 0.62rem; }
 
-.projection-fullscreen-surface { position: fixed; top: -10px; left: -10px; width: 1px; height: 1px; overflow: hidden; color: #fff; background: #000; }
-.projection-fullscreen-surface:fullscreen { display: grid; position: fixed; inset: 0; width: 100vw; height: 100vh; place-items: center; overflow: hidden; background: #000; }
-.projection-fullscreen-surface__player { width: 100vw; height: 100vh; aspect-ratio: auto; background: #000; }
-.projection-fullscreen-surface__player iframe { width: 100%; height: 100%; border: 0; }
-.projection-fullscreen-surface__caption { position: fixed; right: 0.8rem; bottom: 0.7rem; display: flex; gap: 0.5rem; padding: 0.3rem 0.5rem; border-radius: 6px; color: #dbe4ee; background: rgb(0 0 0 / 55%); font-size: 0.66rem; opacity: 0; transition: opacity 160ms ease; }
-.projection-fullscreen-surface:hover .projection-fullscreen-surface__caption { opacity: 1; }
-.projection-fullscreen-surface__waiting { font-size: clamp(1.4rem, 4vw, 3rem); font-weight: 800; }
-
 .projection-screen__fullscreen-primary {
   display: inline-flex;
   min-height: 58px;

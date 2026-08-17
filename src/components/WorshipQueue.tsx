@@ -311,9 +311,7 @@ export function WorshipQueue({
     }
     publishProjectionState({ queue, playingIndex: 0, playbackRevision: nextRevision, launchId });
     recordUsageEvent('projection_open');
-    setProjectionMessage(launch.result === 'fullscreen'
-      ? 'Full-screen worship is live on the selected display. Keep this page open as the controller.'
-      : launch.result === 'placed'
+    setProjectionMessage(launch.result === 'placed'
         ? 'Opening automatically on the church screen…'
         : 'The clean screen is linked. Playback starts without another confirmation.');
     return launch.result;

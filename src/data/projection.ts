@@ -11,11 +11,11 @@ const PROJECTION_MESSAGE_SOURCE = 'worship-word-video-projection-link';
 export const PROJECTION_WINDOW_NAME = 'worship-word-video-projection-v2';
 export const PROJECTION_HEARTBEAT_INTERVAL_MS = 3_000;
 const PROJECTION_TARGET_SCREEN_KEY = 'worship_word_video_projection_target_v1';
+const PROJECTION_TARGET_GEOMETRY_KEY = 'worship_word_video_projection_geometry_v1';
 
 let statePublisherChannel: BroadcastChannel | null = null;
 let commandPublisherChannel: BroadcastChannel | null = null;
 let activeProjectionWindow: Window | null = null;
-let activeProjectionSurface: HTMLElement | null = null;
 
 export interface ProjectionScreenInfo {
   label?: string;
@@ -62,7 +62,7 @@ interface ProjectionMessageEnvelope<T> {
   payload: T;
 }
 
-export type ProjectionLaunchResult = 'fullscreen' | 'opened' | 'placed' | 'single-screen' | 'blocked';
+export type ProjectionLaunchResult = 'opened' | 'placed' | 'single-screen' | 'blocked';
 
 export interface ProjectionWindowLaunch {
   result: ProjectionLaunchResult;
@@ -109,10 +109,6 @@ export function projectionScreenKey(screen: ProjectionScreenInfo): string {
     screen.availWidth,
     screen.availHeight,
   ].join('|');
-}
-
-export function registerProjectionSurface(element: HTMLElement | null): void {
-  activeProjectionSurface = element;
 }
 
 export function projectionScreenOptions(details: ProjectionScreenDetails): ProjectionScreenInfo[] {
@@ -168,6 +164,31 @@ export function projectionPopupFeatures(screen?: ProjectionScreenInfo): string {
   return features.join(',');
 }
 
+function isProjectionScreenInfo(value: unknown): value is ProjectionScreenInfo {
+  if (!value || typeof value !== 'object') return false;
+  const screen = value as Partial<ProjectionScreenInfo>;
+  return [screen.availLeft, screen.availTop, screen.availWidth, screen.availHeight]
+    .every((part) => typeof part === 'number' && Number.isFinite(part));
+}
+
+function readRememberedProjectionScreen(): ProjectionScreenInfo | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(PROJECTION_TARGET_GEOMETRY_KEY) ?? 'null') as unknown;
+    return isProjectionScreenInfo(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberProjectionScreen(screen: ProjectionScreenInfo): void {
+  try {
+    localStorage.setItem(PROJECTION_TARGET_SCREEN_KEY, projectionScreenKey(screen));
+    localStorage.setItem(PROJECTION_TARGET_GEOMETRY_KEY, JSON.stringify(screen));
+  } catch {
+    // Placement still works for the current launch.
+  }
+}
+
 function placePopup(popup: Window, screen: ProjectionScreenInfo): void {
   try {
     popup.moveTo(screen.availLeft, screen.availTop);
@@ -193,45 +214,18 @@ function popupAlreadyShowsProjection(popup: Window): boolean {
  */
 export async function openProjectionWindow(url: URL, options: ProjectionWindowOptions = {}): Promise<ProjectionWindowLaunch> {
   const multiScreenWindow = window as WindowWithScreenDetails;
-  let target: ProjectionScreenInfo | null = null;
-
-  if (multiScreenWindow.getScreenDetails) {
-    try {
-      const details = await multiScreenWindow.getScreenDetails();
-      const availableTargets = projectionScreenOptions(details);
-      const rememberedKey = (() => {
-        try { return localStorage.getItem(PROJECTION_TARGET_SCREEN_KEY) ?? ''; } catch { return ''; }
-      })();
-      const preferredKey = options.preferredScreenKey || rememberedKey;
-      const rememberedIndex = availableTargets.findIndex((screen) => projectionScreenKey(screen) === preferredKey);
-      const targetIndex = options.cycleScreen && availableTargets.length > 1
-        ? (Math.max(rememberedIndex, 0) + 1) % availableTargets.length
-        : rememberedIndex >= 0 ? rememberedIndex : 0;
-      target = availableTargets[targetIndex] ?? chooseProjectionScreen(details);
-      if (!target && details.screens.length < 2) {
-        return { result: 'single-screen', popup: null, reused: false };
-      }
-
-      if (target) {
-        try { localStorage.setItem(PROJECTION_TARGET_SCREEN_KEY, projectionScreenKey(target)); } catch { /* Fullscreen still works for this launch. */ }
-        if (activeProjectionSurface && document.fullscreenEnabled) {
-          const fullscreenOptions = { navigationUI: 'hide', screen: target } as FullscreenOptions;
-          await activeProjectionSurface.requestFullscreen(fullscreenOptions);
-          return { result: 'fullscreen', popup: null, reused: false };
-        }
-      }
-    } catch {
-      // A denied permission or unsupported fullscreen request falls through to
-      // the clean popup. Chrome may require a second click after a denial.
-    }
-  }
-
-  const initialPlacement: ProjectionScreenInfo = {
+  const rememberedScreen = readRememberedProjectionScreen();
+  const initialPlacement: ProjectionScreenInfo = rememberedScreen ?? {
     availLeft: window.screenX + 32,
     availTop: window.screenY + 32,
     availWidth: Math.min(1280, window.screen.availWidth),
     availHeight: Math.min(720, window.screen.availHeight),
   };
+
+  // Open synchronously from the click so Chrome recognises this as a permitted
+  // popup. Only this clean receiver is moved; the controller document is never
+  // fullscreened or repositioned. A remembered display opens in the right place
+  // immediately, before the asynchronous screen check completes.
   const popup = window.open('', PROJECTION_WINDOW_NAME, projectionPopupFeatures(initialPlacement));
   if (!popup) return { result: 'blocked', popup: null, reused: false };
 
@@ -247,40 +241,31 @@ export async function openProjectionWindow(url: URL, options: ProjectionWindowOp
     }
   }
 
+  let target: ProjectionScreenInfo | null = rememberedScreen;
   let result: ProjectionLaunchResult = target ? 'placed' : 'opened';
-  if (target) {
-    url.searchParams.set('placed', '1');
-    url.searchParams.set('left', String(Math.round(target.availLeft)));
-    url.searchParams.set('top', String(Math.round(target.availTop)));
-    url.searchParams.set('width', String(Math.round(target.availWidth)));
-    url.searchParams.set('height', String(Math.round(target.availHeight)));
-    placePopup(popup, target);
-  } else if (multiScreenWindow.getScreenDetails) {
+  if (multiScreenWindow.getScreenDetails) {
     try {
       const details = await multiScreenWindow.getScreenDetails();
       const availableTargets = projectionScreenOptions(details);
       const rememberedKey = (() => {
         try { return localStorage.getItem(PROJECTION_TARGET_SCREEN_KEY) ?? ''; } catch { return ''; }
       })();
-      const rememberedIndex = availableTargets.findIndex((screen) => projectionScreenKey(screen) === rememberedKey);
+      const desiredKey = options.preferredScreenKey || rememberedKey;
+      const rememberedIndex = availableTargets.findIndex((screen) => projectionScreenKey(screen) === desiredKey);
       const targetIndex = options.cycleScreen && availableTargets.length > 1
         ? (Math.max(rememberedIndex, 0) + 1) % availableTargets.length
         : rememberedIndex >= 0 ? rememberedIndex : 0;
       target = availableTargets[targetIndex] ?? chooseProjectionScreen(details);
       if (target) {
         result = 'placed';
-        try { localStorage.setItem(PROJECTION_TARGET_SCREEN_KEY, projectionScreenKey(target)); } catch { /* Placement still works for this launch. */ }
-        url.searchParams.set('placed', '1');
-        url.searchParams.set('left', String(Math.round(target.availLeft)));
-        url.searchParams.set('top', String(Math.round(target.availTop)));
-        url.searchParams.set('width', String(Math.round(target.availWidth)));
-        url.searchParams.set('height', String(Math.round(target.availHeight)));
-        placePopup(popup, target);
+        rememberProjectionScreen(target);
       } else if (details.screens.length < 2) {
         result = 'single-screen';
+        target = null;
       }
     } catch {
-      // Firefox, Safari and denied permissions keep the clean popup fallback.
+      // A stored position remains usable if permission was previously granted.
+      // Other browsers retain the clean, manually full-screenable popup.
     }
   }
 
@@ -288,6 +273,15 @@ export async function openProjectionWindow(url: URL, options: ProjectionWindowOp
     popup.close();
     if (activeProjectionWindow === popup) activeProjectionWindow = null;
     return { result, popup: null, reused };
+  }
+
+  if (target) {
+    url.searchParams.set('placed', '1');
+    url.searchParams.set('left', String(Math.round(target.availLeft)));
+    url.searchParams.set('top', String(Math.round(target.availTop)));
+    url.searchParams.set('width', String(Math.round(target.availWidth)));
+    url.searchParams.set('height', String(Math.round(target.availHeight)));
+    placePopup(popup, target);
   }
 
   if (!reused) popup.location.replace(url.toString());
@@ -303,11 +297,6 @@ export async function openProjectionWindow(url: URL, options: ProjectionWindowOp
 }
 
 export function closeProjectionWindow(): void {
-  try {
-    if (activeProjectionSurface && document.fullscreenElement === activeProjectionSurface) void document.exitFullscreen();
-  } catch {
-    // The fullscreen view may already have been closed with Escape.
-  }
   try {
     if (activeProjectionWindow && !activeProjectionWindow.closed) activeProjectionWindow.close();
   } catch {

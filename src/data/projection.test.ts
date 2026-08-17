@@ -7,7 +7,6 @@ import {
   projectionScreenOptions,
   publishProjectionState,
   readProjectionState,
-  registerProjectionSurface,
   type ProjectionScreenInfo,
 } from './projection';
 
@@ -30,10 +29,7 @@ const projector: ProjectionScreenInfo = {
 };
 
 describe('projection window helpers', () => {
-  afterEach(() => {
-    registerProjectionSurface(null);
-    vi.unstubAllGlobals();
-  });
+  afterEach(() => vi.unstubAllGlobals());
 
   it('places the projection on the external screen rather than the dashboard screen', () => {
     expect(chooseProjectionScreen({ screens: [laptop, projector], currentScreen: laptop })).toBe(projector);
@@ -74,29 +70,48 @@ describe('projection window helpers', () => {
     expect(features).toContain('height=1080');
   });
 
-  it('uses one-click targeted fullscreen on the chosen external display when Chrome supports it', async () => {
+  it('moves only a clean popup to the chosen display and remembers its position', async () => {
     const values = new Map<string, string>();
-    const requestFullscreen = vi.fn().mockResolvedValue(undefined);
-    const open = vi.fn();
-    registerProjectionSurface({ requestFullscreen } as unknown as HTMLElement);
+    const popup = {
+      closed: false,
+      close: vi.fn(),
+      document: { title: '', body: { style: { cssText: '' }, textContent: '' } },
+      focus: vi.fn(),
+      location: { origin: 'https://example.test', href: 'about:blank', replace: vi.fn() },
+      moveTo: vi.fn(),
+      resizeTo: vi.fn(),
+    };
+    const open = vi.fn().mockReturnValue(popup);
+    const getScreenDetails = vi.fn().mockResolvedValue({ screens: [laptop, projector], currentScreen: laptop });
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => values.set(key, value),
     });
-    vi.stubGlobal('document', { fullscreenEnabled: true });
     vi.stubGlobal('window', {
-      getScreenDetails: vi.fn().mockResolvedValue({ screens: [laptop, projector], currentScreen: laptop }),
+      getScreenDetails,
       open,
       screen: laptop,
+      screenX: 0,
+      screenY: 0,
+      location: { origin: 'https://example.test' },
+      setTimeout: vi.fn(),
     });
 
     const launch = await openProjectionWindow(new URL('https://example.test/?projection=1'), {
       preferredScreenKey: projectionScreenKey(projector),
     });
 
-    expect(launch.result).toBe('fullscreen');
-    expect(requestFullscreen).toHaveBeenCalledWith(expect.objectContaining({ screen: projector, navigationUI: 'hide' }));
-    expect(open).not.toHaveBeenCalled();
+    expect(launch.result).toBe('placed');
+    expect(open.mock.invocationCallOrder[0]).toBeLessThan(getScreenDetails.mock.invocationCallOrder[0]);
+    expect(popup.moveTo).toHaveBeenCalledWith(1440, 0);
+    expect(popup.resizeTo).toHaveBeenCalledWith(1920, 1080);
+    expect(popup.location.replace).toHaveBeenCalledWith(expect.stringContaining('projection=1'));
+
+    getScreenDetails.mockRejectedValueOnce(new Error('permission unavailable'));
+    const rememberedLaunch = await openProjectionWindow(new URL('https://example.test/?projection=1'));
+    expect(rememberedLaunch.result).toBe('placed');
+    expect(open.mock.calls[1]?.[2]).toContain('left=1440');
+    expect(open.mock.calls[1]?.[2]).toContain('width=1920');
   });
 
   it('keeps the receiver launch id while the controller changes videos', () => {
