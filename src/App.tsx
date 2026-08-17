@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AuthProvider, CURRENT_TERMS_VERSION, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { LegalModal } from './components/LegalModal';
+import { VersionRefreshButton } from './components/VersionRefreshButton';
 import {
   getActiveServiceId,
   getWorshipQueue,
@@ -530,6 +531,7 @@ function MainApp() {
             <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy & Copyright</button>
             <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a>
           </div>
+          {adminRole === 'master_admin' && <VersionRefreshButton />}
         </div>
       </footer>
     </div>

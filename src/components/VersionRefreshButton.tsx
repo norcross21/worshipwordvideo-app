@@ -38,16 +38,18 @@ export function VersionRefreshButton({ buildTime = __BUILD_TIMESTAMP__ }: Versio
         }
       }
 
-      // 3. Clear sessionStorage
+      // 3. Clear temporary tab state. Account sessions are stored separately,
+      // so the master admin remains signed in after the update.
       sessionStorage.clear();
 
       setRefreshed(true);
 
-      // 4. Force hard reload from server
+      // 4. Force a fresh HTML request. Vite's hashed asset names then fetch the
+      // exact JavaScript and CSS belonging to this Vercel deployment.
       setTimeout(() => {
         const url = new URL(window.location.href);
-        url.searchParams.set('_v', Date.now().toString());
-        window.location.href = url.toString();
+        url.searchParams.set('_admin_update', Date.now().toString());
+        window.location.replace(url.toString());
       }, 500);
     } catch (err) {
       console.error('Failed to clear cache:', err);
@@ -69,7 +71,7 @@ export function VersionRefreshButton({ buildTime = __BUILD_TIMESTAMP__ }: Versio
             ? 'Updating to latest version...'
             : refreshed
             ? 'Updated! Reloading...'
-            : `v1.2.0 (${formattedDate()}) • Click to fetch latest version`}
+            : `Build ${formattedDate()} · Fetch latest version`}
         </span>
       </button>
     </div>
