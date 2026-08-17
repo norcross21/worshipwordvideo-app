@@ -158,7 +158,8 @@ WORD_PATTERNS = [
         r"tradu[cç][aã]o|traducci[oó]n|traduction|текст|слова|ترجمه|زیرنویس|كلمات|مترجم|"
         r"가사|자막|歌詞|字幕|歌词|lời bài hát|phụ đề|"
         r"sözleri|liedtext|liedtekst|dalsz[oö]veg|versuri|stihovi|stihovi|sångtext|sangtekst|"
-        r"στίχοι|מילים|Բառեր|ტექსტი|متن سرود|گیت کے بول|"
+        r"στίχοι|מילים|Բառեր|ტექსტი|متن|با متن|الفاظ|کلمو|وشە(?:کان)?|بە نووسین|دەق|"
+        r"(?:bi\s+)?niv[iî]s|peyv|گیت کے بول|"
         r"गीत के बोल|लिरिक्स|গানের কথা|লিরিক্স|பாடல் வரிகள்|పాట సాహిత్యం|"
         r"ഗാനവരികൾ|ಹಾಡಿನ ಸಾಹಿತ್ಯ|गीताचे बोल|ગીતના શબ્દો|गीतको बोल|ගී පද|ਬੋਲ|ግጥሚ|"
         r"เนื้อเพลง|lirik|lirieke|ọ̀?rọ̀?|"
@@ -250,7 +251,7 @@ CHRISTIAN_SIGNAL = re.compile(
     r"ಕ್ರೈಸ್ತ|ಆರಾಧನೆ|ନବୀନ|ଖ୍ରୀଷ୍ଟିୟ|ଯୀଶୁ|খ্ৰীষ্টান|যীচু|นมัสการ|คริสเตียน|"
     r"គ្រីស្ទាន|ព្រះយេស៊ូវ|ຄຣິສຕຽນ|ພຣະເຢຊູ|ခရစ်ယာန်|ယေရှု|"
     r"አምልኮ|ክርስቲያን|ክርስትያን|"
-    r"хришћан|християн|مسیحي|مسیحی",
+    r"хришћан|християн|مسیحي|مسیحی|مەسیح|عیسا|xiristiyan|mes[iî]h|maseehi|masihi",
     re.I,
 )
 
@@ -262,7 +263,7 @@ SONG_CONTEXT = re.compile(
     r"lirik|versuri|napisy|tekst|sözleri|uwielbienie|pie[sś][nń]|c[aâ]ntare|[iî]nchinare|"
     r"chv[aá]la|p[ií]se[nň]|piese[nň]|dics[oő][ií]t[oő]|[eé]nek|pjesma|slavljenje|"
     r"tap[iı]nma|ilahi|adhurimi|lavd[eë]rimi|addoli|adhradh)\b|"
-    r"песн|пісн|поклон|хвал|суруд|پرستش|ترنيمة|تسبيح|"
+    r"песн|пісн|поклон|хвал|суруд|پرستش|سرود|ترنيمة|تسبيح|سندره|گۆرانی|stran(?:a|ên)|geet|zabur|tarana|"
     r"orin|abụ|egwu|waƙa|wakar|faarfannaa|sirba|hees|nzembo|indirimbo|nyimbo|"
     r"rwiyo|nziyo|ennyimba|dwom|cân|amhrán|waiata|pese|hiva|sere|ylistyslaulu|hengellinen laulu|"
     r"lovs[aå]ng|salme|lofgjörð|sálmur|giesmė|dziesma|ülistuslaul|hymnus|canticum|"
@@ -319,7 +320,9 @@ LOCAL_LANGUAGE_SIGNALS: dict[str, re.Pattern[str]] = {
     "zh": re.compile(r"中文|国语|國語|普通话|普通話|敬拜|赞美|讚美", re.I),
     "yue": re.compile(r"粵語|粤语|廣東話|广东话", re.I),
     "am": re.compile(r"አማርኛ|የአምልኮ|የክርስቲያን", re.I),
-    "ti": re.compile(r"ትግርኛ|መዝሙር", re.I),
+    # Tigrinya and Amharic share the Ethiopic script. Require the language
+    # name or forms that are materially more specific than "hymn" alone.
+    "ti": re.compile(r"tigrinya|tigrigna|ትግርኛ|ኣምልኾ|ክርስትያን|ግጥሚ", re.I),
     "om": re.compile(r"afaan oromoo|oromo|faarfannaa|waaqeffannaa", re.I),
     "so": re.compile(r"somali|hees|cibaado|masiixi", re.I),
     "vi": re.compile(r"ti[eế]ng vi[eệ]t|lời bài hát|phụ đề|th[aá]nh ca", re.I),
@@ -346,9 +349,11 @@ LOCAL_LANGUAGE_SIGNALS: dict[str, re.Pattern[str]] = {
     "sq": re.compile(r"shqip|shqiptar|adhurimi|lavdërimi", re.I),
     "hy": re.compile(r"հայերեն|քրիստոնեական|երկրպագության|փառաբանություն", re.I),
     "ka": re.compile(r"ქართული|ქრისტიანული|სადიდებელი|თაყვანისცემა", re.I),
-    "ku": re.compile(r"kurd[iî]|xiristiyan|perestiy|پەرستن|مەسیحی", re.I),
+    "ku": re.compile(r"kurd[iî]|soran[iî]|kurmanj[iî]|xiristiyan|perestiy|پەرستن|گۆرانی|کوردی|مەسیح", re.I),
     "prs": re.compile(r"دری|سرود|پرستشی|مسیحی", re.I),
-    "ps": re.compile(r"پښتو|مسیحي|عبادت|ستاینه", re.I),
+    # Generic words such as worship and Christian occur in neighbouring
+    # languages. Pashto needs its name or distinctive Pashto letters.
+    "ps": re.compile(r"pashto|پښتو|[ځڅډړږښګڼټېۍ]", re.I),
     "bs": re.compile(r"bosansk|tekst pjesme|slavljenje", re.I),
     "sl": re.compile(r"slovensk|besedilo|slaviln", re.I),
     "mk": re.compile(r"македонск|христијан", re.I),
@@ -403,6 +408,9 @@ SCRIPT_SIGNALS: dict[str, re.Pattern[str]] = {
     "sr": re.compile(r"[ЉљЊњЋћЂђЈј]"),
     "el": re.compile(r"[Α-ω]"),
     "fa": re.compile(r"[پچژگ]"), "ur": re.compile(r"[ٹڈڑںھے]"),
+    "ps": re.compile(r"[ځڅډړږښګڼټېۍ]"),
+    "ku": re.compile(r"[ڕڵۆێە]"),
+    "ti": re.compile(r"[ቐኸዀጐጰጸፀኣ]"),
     "pa": re.compile(r"[\u0a00-\u0a7f]"),
     "bn": re.compile(r"[\u0980-\u09ff]"), "ta": re.compile(r"[\u0b80-\u0bff]"),
     "te": re.compile(r"[\u0c00-\u0c7f]"), "kn": re.compile(r"[\u0c80-\u0cff]"),
@@ -481,7 +489,10 @@ def has_language_signal(title: str, channel: str, language: str, code: str) -> b
     if language == "English":
         return True
     aliases = [part.strip().lower() for part in re.split(r"/", language)]
-    lowered = value.lower()
+    # Uploaders commonly use hashtags such as #farsi_subtitle. Treat an
+    # underscore or hyphen as a separator rather than allowing Python's word
+    # boundary rules to hide an otherwise explicit language name.
+    lowered = re.sub(r"[_-]+", " ", value.lower())
     if any(re.search(rf"\b{re.escape(alias)}\b", lowered) for alias in aliases):
         return True
     local = LOCAL_LANGUAGE_SIGNALS.get(code)

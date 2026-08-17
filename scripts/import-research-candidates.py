@@ -49,6 +49,18 @@ REVIEWED_CHANNEL_LANGUAGE_PATHS = {
     # Per-title script/name matches can also establish the label directly.
     Path("/tmp/wwv-channel-html-candidates.json"),
 }
+# A language inferred for a whole channel is not strong enough for these
+# collections. Arabic-script languages can be confused with one another,
+# Tigrinya shares the Ethiopic script with Amharic, and multilingual worship
+# channels often publish English videos too. Require evidence on each title or
+# uploader name before assigning one of these public labels.
+PER_TITLE_LANGUAGE_EVIDENCE = {
+    "Arabic",
+    "Persian / Farsi",
+    "Kurdish",
+    "Pashto",
+    "Tigrinya",
+}
 MIN_CHANNEL_PAGE_VIEWS = 100
 
 # These candidates were found through a named-language query, but YouTube's
@@ -212,7 +224,7 @@ def inferred_familiar_title(source_title: str, language: str) -> str | None:
 
 
 def explicitly_named_language(title: str) -> tuple[str, str, str] | None:
-    lowered = title.lower()
+    lowered = re.sub(r"[_-]+", " ", title.lower())
     matches: list[tuple[str, str, str]] = []
     for language, code, region in research.LANGUAGES:
         if language == "English":
@@ -242,6 +254,15 @@ def main() -> None:
         for path in REVIEWED_CHANNEL_LANGUAGE_PATHS
         for item in cached_candidates(path)
         if item.get("youtubeId") and item.get("language") not in {None, "Language not stated"}
+        and (
+            str(item.get("language")) not in PER_TITLE_LANGUAGE_EVIDENCE
+            or research.has_language_signal(
+                str(item.get("sourceTitle") or ""),
+                str(item.get("sourceChannel") or ""),
+                str(item.get("language")),
+                str(item.get("languageCode") or "und"),
+            )
+        )
     }
     base_rows = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else []
     base_rows = [
@@ -251,6 +272,13 @@ def main() -> None:
         and research.is_existing_quality_row(str(row[1]), str(row[2]), str(row[3]), str(row[4]))
     ][:target]
     for row in base_rows:
+        named_language = explicitly_named_language(str(row[1]))
+        if (
+            str(row[3]) in PER_TITLE_LANGUAGE_EVIDENCE
+            and named_language
+            and named_language[0] != str(row[3])
+        ):
+            row[3], row[4], row[5] = named_language
         if str(row[3]) == "Language not stated" and str(row[0]) in reviewed_channel_languages:
             row[3], row[4], row[5] = reviewed_channel_languages[str(row[0])]
         if str(row[3]) == "Language not stated":
@@ -297,13 +325,24 @@ def main() -> None:
                 continue
             requested_code = str(item.get("languageCode") or "und")
             requested_region = str(item.get("region") or "International / verify before use")
+            has_per_title_language_evidence = research.has_language_signal(
+                title, channel, requested_language, requested_code
+            )
+            if (
+                path in REVIEWED_CHANNEL_LANGUAGE_PATHS
+                and requested_language in PER_TITLE_LANGUAGE_EVIDENCE
+                and not has_per_title_language_evidence
+            ):
+                continue
             reviewed_channel_language = (
                 path in REVIEWED_CHANNEL_LANGUAGE_PATHS
                 and requested_language != "Language not stated"
+                and (
+                    requested_language not in PER_TITLE_LANGUAGE_EVIDENCE
+                    or has_per_title_language_evidence
+                )
             )
-            if source_kind == "search-cache" and requested_language != "Language not stated" and research.has_language_signal(
-                title, channel, requested_language, requested_code
-            ):
+            if source_kind == "search-cache" and requested_language != "Language not stated" and has_per_title_language_evidence:
                 language_votes[channel][(requested_language, requested_code, requested_region)] += 1
             candidate = {
                 **item,
@@ -400,10 +439,18 @@ def main() -> None:
             language, code, region = named_language
             stated_language = True
         else:
+            has_per_title_language_evidence = research.has_language_signal(
+                title, channel, requested_language, code
+            )
+            may_use_channel_inference = requested_language not in PER_TITLE_LANGUAGE_EVIDENCE
             stated_language = requested_language != "Language not stated" and (
-                research.has_language_signal(title, channel, requested_language, code)
-                or bool(item.get("reviewedChannelLanguage"))
-                or (item.get("sourceKind") == "channel-page" and channel_default == (requested_language, code, region))
+                has_per_title_language_evidence
+                or (may_use_channel_inference and bool(item.get("reviewedChannelLanguage")))
+                or (
+                    may_use_channel_inference
+                    and item.get("sourceKind") == "channel-page"
+                    and channel_default == (requested_language, code, region)
+                )
             )
             language = requested_language if stated_language else "Language not stated"
             if not stated_language:

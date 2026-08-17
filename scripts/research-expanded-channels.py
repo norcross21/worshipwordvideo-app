@@ -128,6 +128,15 @@ def main() -> None:
         (value.split("=", 1)[1] for value in sys.argv if value.startswith("--language=")),
         None,
     )
+    selected_languages = {
+        value.strip().casefold()
+        for value in (selected_language or "").split(",")
+        if value.strip()
+    }
+    channel_limit = next(
+        (int(value.split("=", 1)[1]) for value in sys.argv if value.startswith("--max-channels=")),
+        MAX_CHANNELS,
+    )
     previous: list[dict] = []
     previous_channels: set[str] = set()
     if OUTPUT.exists():
@@ -141,12 +150,12 @@ def main() -> None:
 
     if "--new-channels" in sys.argv:
         rows_by_url = {url: rows for url, rows in rows_by_url.items() if url not in previous_channels}
-    if selected_language:
+    if selected_languages:
         rows_by_url = {
             url: rows for url, rows in rows_by_url.items()
-            if lead_language(rows).casefold() == selected_language.casefold()
+            if lead_language(rows).casefold() in selected_languages
         }
-    ranked = balanced_channel_ranking(rows_by_url)
+    ranked = balanced_channel_ranking(rows_by_url)[:max(1, min(channel_limit, MAX_CHANNELS))]
     jobs = [
         (channel_url, str(rows[0].get("sourceChannel") or "").strip(), dominant_language(rows))
         for channel_url, rows in ranked
