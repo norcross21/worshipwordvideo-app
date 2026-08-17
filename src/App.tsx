@@ -19,7 +19,7 @@ import { ServiceWorkspaceBar } from './components/ServiceWorkspaceBar';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
 import { accountSetupIsCurrent, accountSetupPromptKey } from './lib/accountSetup';
-import { recordUsageEvent } from './lib/usageAnalytics';
+import { configureUsageAnalytics, recordUsageEvent } from './lib/usageAnalytics';
 import {
   PROJECTION_WINDOW_NAME,
   chooseProjectionScreen,
@@ -43,7 +43,15 @@ function LoadingPanel({ label = 'Loading Worship Word Video…' }: { label?: str
 }
 
 function MainApp() {
-  const { user, loading: authLoading, profile, profileLoading } = useAuth();
+  const {
+    user,
+    session,
+    loading: authLoading,
+    profile,
+    profileLoading,
+    adminRole,
+    adminLoading,
+  } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'playlist' | 'admin'>('all');
   const [queue, setQueue] = useState<WorshipQueueItem[]>([]);
   const [queueOwnerId, setQueueOwnerId] = useState<string | null>(null);
@@ -69,8 +77,13 @@ function MainApp() {
   });
 
   useEffect(() => {
-    if (!authLoading) recordUsageEvent('visit', 'page');
-  }, [authLoading]);
+    if (authLoading || adminLoading) return;
+    configureUsageAnalytics({
+      accessToken: session?.access_token ?? null,
+      suppressed: adminRole === 'master_admin',
+    });
+    recordUsageEvent('visit', 'page');
+  }, [adminLoading, adminRole, authLoading, session?.access_token]);
 
   useEffect(() => {
     if (authLoading) return;

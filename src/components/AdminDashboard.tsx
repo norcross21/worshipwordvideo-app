@@ -104,6 +104,10 @@ export function AdminDashboard() {
 
   useEffect(() => { void loadMetrics(); }, [loadMetrics]);
 
+  const refreshDashboard = useCallback(async () => {
+    await Promise.all([loadMembers(), loadMetrics()]);
+  }, [loadMembers, loadMetrics]);
+
   const confirmedCount = useMemo(() => members.filter((item) => item.email_confirmed_at).length, [members]);
   const marketingCount = useMemo(() => members.filter((item) => item.kairos_marketing_opt_in).length, [members]);
   const recentCount = useMemo(() => {
@@ -218,7 +222,7 @@ export function AdminDashboard() {
         <div><span className="eyebrow"><ShieldCheck size={14} /> Master administrator</span><h2 id="admin-title">Member management</h2><p>Protected account oversight for stephen@kairoshousing.org.uk. Passwords and login secrets are never available here.</p></div>
         <div className="admin-dashboard__actions">
           <button type="button" className="btn-secondary" onClick={downloadMembers} disabled={!visibleMembers.length}><Download size={15} /> Export</button>
-          <button type="button" className="btn-secondary" onClick={() => void loadMembers()} disabled={loading}><RefreshCw size={15} /> Refresh</button>
+          <button type="button" className="btn-secondary" onClick={() => void refreshDashboard()} disabled={loading || metricsLoading}><RefreshCw size={15} /> Refresh</button>
         </div>
       </div>
 
