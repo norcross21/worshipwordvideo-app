@@ -58,7 +58,7 @@ export function ProjectionSetupGuide({
 
             {!launchResult && !opening && (
               <>
-                <p>Connect the projector, TV or second monitor and set it to <strong>Extend</strong>. One click opens a separate clean window; Chrome and Edge can place it on the other display automatically after permission is granted.</p>
+                <p>Connect the projector, TV or second monitor and set it to <strong>Extend</strong>. One click opens a clean presentation window and Chrome places it on the other display after window-management permission is granted.</p>
                 <div className="projection-guide__platform-card">
                   <Laptop size={22} />
                   <div>
@@ -80,18 +80,18 @@ export function ProjectionSetupGuide({
 
             {launchResult === 'placed' && (
               <>
-                <p>The clean window has been moved and sized on the other display. The first video starts there automatically and every choice on this controller stays linked.</p>
+                <p>The clean window now fills the other display. The first video starts there automatically and every choice on this controller stays linked.</p>
                 <div className="projection-guide__ready-check"><CheckCircle2 size={18} /><span>The congregation sees only the video. Keep this dashboard on your main screen for Previous, Restart and Next.</span></div>
               </>
             )}
 
             {launchResult === 'opened' && (
               <>
-                <p>This browser opened and linked the clean window but cannot choose a display automatically. Playback no longer needs a second click.</p>
+                <p>The clean window is linked, but Chrome did not provide automatic display access. Use the site controls beside the address bar to allow pop-ups and window management for worshipwordvideo.org, then choose Reopen screen on the controller.</p>
                 <div className="projection-guide__platform-card">
                   <Laptop size={22} />
                   <div>
-                    <strong>Move it without dragging</strong>
+                    <strong>Immediate fallback without dragging</strong>
                     <span>{platform === 'mac'
                       ? 'On the clean window, use the Window menu and choose Move to your projector or display.'
                       : 'With the clean window active, press Windows + Shift + Left or Right Arrow.'}</span>
@@ -105,7 +105,7 @@ export function ProjectionSetupGuide({
 
             {!isOpen && !opening && (
               <button type="button" className="btn-primary projection-guide__primary" onClick={() => void launch()}>
-                <MonitorUp size={17} /> {launchResult ? 'Try opening again' : 'Open church screen'}
+                <MonitorUp size={17} /> {launchResult ? 'Try opening again' : 'Open automatically on church screen'}
               </button>
             )}
             {isOpen && <button type="button" className="btn-secondary projection-guide__primary" onClick={onClose}>Return to controller</button>}

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   chooseProjectionScreen,
   projectionPopupFeatures,
+  projectionScreenOptions,
   publishProjectionState,
   readProjectionState,
   type ProjectionScreenInfo,
@@ -38,6 +39,24 @@ describe('projection window helpers', () => {
 
   it('returns no target when only the dashboard screen is available', () => {
     expect(chooseProjectionScreen({ screens: [laptop], currentScreen: laptop })).toBeNull();
+  });
+
+  it('offers every external display in a predictable order for the controller', () => {
+    const sideProjector: ProjectionScreenInfo = {
+      label: 'Side screen',
+      availLeft: -1920,
+      availTop: 0,
+      availWidth: 1920,
+      availHeight: 1080,
+      isPrimary: false,
+      isInternal: false,
+    };
+    const mainProjector = { ...projector, label: 'Main projector' };
+
+    expect(projectionScreenOptions({
+      screens: [laptop, mainProjector, sideProjector],
+      currentScreen: laptop,
+    })).toEqual([sideProjector, mainProjector]);
   });
 
   it('requests a minimal correctly positioned popup', () => {

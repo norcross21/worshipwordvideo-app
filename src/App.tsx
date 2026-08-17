@@ -16,6 +16,7 @@ import { Sparkles } from 'lucide-react';
 import './App.css';
 import { ProjectionScreen } from './components/ProjectionScreen';
 import { ServiceWorkspaceBar } from './components/ServiceWorkspaceBar';
+import { ProjectionControllerDock } from './components/ProjectionControllerDock';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
 import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
 import { accountSetupIsCurrent, accountSetupPromptKey } from './lib/accountSetup';
@@ -400,6 +401,8 @@ function MainApp() {
         onOpenAccount={() => setShowAccountModal(true)}
         onOpenDonate={() => setShowDonateModal(true)}
       />
+
+      {user && <ProjectionControllerDock />}
 
       {!authLoading && !user && (
         <section className="member-value-bar" aria-label="Member account benefits">

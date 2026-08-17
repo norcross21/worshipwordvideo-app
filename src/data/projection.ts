@@ -5,14 +5,19 @@ const PROJECTION_CHANNEL_NAME = 'worship-word-video-projection';
 const PROJECTION_COMMAND_STORAGE_KEY = 'worship_word_video_projection_command_v1';
 const PROJECTION_COMMAND_CHANNEL_NAME = 'worship-word-video-projection-command';
 const PROJECTION_MESSAGE_SOURCE = 'worship-word-video-projection-link';
-export const PROJECTION_WINDOW_NAME = 'worship-word-video-projection';
+// v2 deliberately avoids reusing an older Chrome tab that may have been opened
+// by the first projection implementation. Chrome will now create/reuse a clean
+// popup window instead of bringing the old dashboard tab back to the front.
+export const PROJECTION_WINDOW_NAME = 'worship-word-video-projection-v2';
 export const PROJECTION_HEARTBEAT_INTERVAL_MS = 3_000;
+const PROJECTION_TARGET_SCREEN_KEY = 'worship_word_video_projection_target_v1';
 
 let statePublisherChannel: BroadcastChannel | null = null;
 let commandPublisherChannel: BroadcastChannel | null = null;
 let activeProjectionWindow: Window | null = null;
 
 export interface ProjectionScreenInfo {
+  label?: string;
   availLeft: number;
   availTop: number;
   availWidth: number;
@@ -64,6 +69,11 @@ export interface ProjectionWindowLaunch {
   reused: boolean;
 }
 
+export interface ProjectionWindowOptions {
+  /** Move a linked receiver to the next available external display. */
+  cycleScreen?: boolean;
+}
+
 export const EMPTY_PROJECTION_STATE: ProjectionState = {
   queue: [],
   playingIndex: null,
@@ -81,15 +91,30 @@ function sameScreen(left: ProjectionScreenInfo, right: ProjectionScreenInfo): bo
   );
 }
 
-/** Select a screen other than the dashboard, preferring an external display. */
-export function chooseProjectionScreen(details: ProjectionScreenDetails): ProjectionScreenInfo | null {
+function screenKey(screen: ProjectionScreenInfo): string {
+  return [
+    screen.label ?? '',
+    screen.availLeft,
+    screen.availTop,
+    screen.availWidth,
+    screen.availHeight,
+  ].join('|');
+}
+
+export function projectionScreenOptions(details: ProjectionScreenDetails): ProjectionScreenInfo[] {
   const alternatives = details.currentScreen
     ? details.screens.filter((screen) => !sameScreen(screen, details.currentScreen!))
     : details.screens.filter((screen) => !screen.isPrimary);
-  return alternatives.find((screen) => screen.isInternal === false)
-    ?? alternatives.find((screen) => !screen.isPrimary)
-    ?? alternatives[0]
-    ?? null;
+  return alternatives.sort((left, right) => {
+    if (left.isInternal !== right.isInternal) return left.isInternal === false ? -1 : 1;
+    if (left.isPrimary !== right.isPrimary) return left.isPrimary ? 1 : -1;
+    return left.availLeft - right.availLeft || left.availTop - right.availTop;
+  });
+}
+
+/** Select a screen other than the dashboard, preferring an external display. */
+export function chooseProjectionScreen(details: ProjectionScreenDetails): ProjectionScreenInfo | null {
+  return projectionScreenOptions(details)[0] ?? null;
 }
 
 /** Ask browsers for a true minimal popup rather than another dashboard tab. */
@@ -139,7 +164,7 @@ function popupAlreadyShowsProjection(popup: Window): boolean {
  * move it to an external display when the browser grants access. Repeated calls
  * reuse the named receiver so choosing another song never creates stray windows.
  */
-export async function openProjectionWindow(url: URL): Promise<ProjectionWindowLaunch> {
+export async function openProjectionWindow(url: URL, options: ProjectionWindowOptions = {}): Promise<ProjectionWindowLaunch> {
   const initialPlacement: ProjectionScreenInfo = {
     availLeft: window.screenX + 32,
     availTop: window.screenY + 32,
@@ -167,9 +192,18 @@ export async function openProjectionWindow(url: URL): Promise<ProjectionWindowLa
   if (multiScreenWindow.getScreenDetails) {
     try {
       const details = await multiScreenWindow.getScreenDetails();
-      target = chooseProjectionScreen(details);
+      const availableTargets = projectionScreenOptions(details);
+      const rememberedKey = (() => {
+        try { return localStorage.getItem(PROJECTION_TARGET_SCREEN_KEY) ?? ''; } catch { return ''; }
+      })();
+      const rememberedIndex = availableTargets.findIndex((screen) => screenKey(screen) === rememberedKey);
+      const targetIndex = options.cycleScreen && availableTargets.length > 1
+        ? (Math.max(rememberedIndex, 0) + 1) % availableTargets.length
+        : rememberedIndex >= 0 ? rememberedIndex : 0;
+      target = availableTargets[targetIndex] ?? chooseProjectionScreen(details);
       if (target) {
         result = 'placed';
+        try { localStorage.setItem(PROJECTION_TARGET_SCREEN_KEY, screenKey(target)); } catch { /* Placement still works for this launch. */ }
         url.searchParams.set('placed', '1');
         url.searchParams.set('left', String(Math.round(target.availLeft)));
         url.searchParams.set('top', String(Math.round(target.availTop)));

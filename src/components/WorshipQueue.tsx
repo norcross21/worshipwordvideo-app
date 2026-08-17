@@ -23,11 +23,11 @@ import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
 import { ProjectionSetupGuide } from './ProjectionSetupGuide';
 import {
-  closeProjectionWindow,
   openProjectionWindow,
   publishProjectionState,
   readProjectionState,
   subscribeToProjectionCommands,
+  subscribeToProjectionState,
   type ProjectionLaunchResult,
 } from '../data/projection';
 import type { SavedUserPlaylist } from '../lib/supabase';
@@ -70,7 +70,6 @@ export function WorshipQueue({
   const [projectionMessage, setProjectionMessage] = useState('');
   const [showProjectionGuide, setShowProjectionGuide] = useState(false);
   const [projectionActive, setProjectionActive] = useState(false);
-  const [projectionConnected, setProjectionConnected] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [readiness, setReadiness] = useState<{ issues: string[]; warnings: string[] } | null>(null);
   const projectionWindowRef = useRef<Window | null>(null);
@@ -133,7 +132,6 @@ export function WorshipQueue({
     if (command.launchId !== projectionLaunchIdRef.current) return;
     if (command.type === 'ready' || command.type === 'heartbeat') {
       setProjectionActive(true);
-      setProjectionConnected(true);
       const stored = readProjectionState();
       const storedItem = stored.playingIndex == null ? null : stored.queue[stored.playingIndex];
       if (storedItem) {
@@ -158,14 +156,12 @@ export function WorshipQueue({
     }
     if (command.type === 'start' && queue.length) {
       setProjectionActive(true);
-      setProjectionConnected(true);
       selectVideo(0);
       setShowProjectionGuide(false);
       setProjectionMessage('Live on the church screen. Use the private controls here to change videos.');
     }
     if (command.type === 'closed') {
       setProjectionActive(false);
-      setProjectionConnected(false);
       playingIndexRef.current = null;
       setPlayingIndex(null);
       setAutoAdvance(false);
@@ -175,13 +171,35 @@ export function WorshipQueue({
     if (command.type === 'ended') handleVideoEnded(command.itemId);
   }), [handleVideoEnded, queue.length, selectVideo]);
 
+  useEffect(() => subscribeToProjectionState((state) => {
+    if (!state.launchId) return;
+    if (state.playingIndex == null) {
+      if (state.launchId !== projectionLaunchIdRef.current) return;
+      projectionLaunchIdRef.current = '';
+      playingIndexRef.current = null;
+      setPlayingIndex(null);
+      setProjectionActive(false);
+      setAutoAdvance(false);
+      return;
+    }
+    const projectedItem = state.queue[state.playingIndex];
+    if (!projectedItem) return;
+    const matchingIndex = queueRef.current.findIndex((entry) => entry.id === projectedItem.id);
+    if (matchingIndex < 0) return;
+    projectionLaunchIdRef.current = state.launchId;
+    playingIndexRef.current = matchingIndex;
+    playbackRevisionRef.current = state.playbackRevision;
+    setPlayingIndex(matchingIndex);
+    setPlaybackRevision(state.playbackRevision);
+    setProjectionActive(true);
+  }), []);
+
   useEffect(() => {
     if (!projectionActive) return;
     const checkWindow = window.setInterval(() => {
       if (!projectionWindowRef.current?.closed) return;
       projectionWindowRef.current = null;
       setProjectionActive(false);
-      setProjectionConnected(false);
       playingIndexRef.current = null;
       setPlayingIndex(null);
       setAutoAdvance(false);
@@ -271,14 +289,12 @@ export function WorshipQueue({
     setPlayingIndex(0);
     setPlaybackRevision(nextRevision);
     setProjectionActive(true);
-    setProjectionConnected(false);
     publishProjectionState({ queue, playingIndex: 0, playbackRevision: nextRevision, launchId });
 
     const launch = await openProjectionWindow(url);
     if (launch.result === 'blocked') {
       projectionLaunchIdRef.current = '';
       setProjectionActive(false);
-      setProjectionConnected(false);
       playingIndexRef.current = null;
       setPlayingIndex(null);
       setProjectionMessage('Your browser blocked the projection window. Allow pop-ups for this site, then try again.');
@@ -288,7 +304,6 @@ export function WorshipQueue({
     if (launch.result === 'single-screen') {
       projectionWindowRef.current = null;
       setProjectionActive(false);
-      setProjectionConnected(false);
       playingIndexRef.current = null;
       setPlayingIndex(null);
       setProjectionMessage('Only one display was detected. Connect the church screen and choose Extend, then try again.');
@@ -398,36 +413,6 @@ export function WorshipQueue({
             <button type="button" disabled={playingIndex! <= 0} onClick={() => selectVideo(playingIndex! - 1)}><SkipBack size={16} /> Previous</button>
             <button type="button" onClick={() => selectVideo(playingIndex!)}><RotateCcw size={16} /> Restart video</button>
             <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => selectVideo(playingIndex! + 1)}>Next <SkipForward size={16} /></button>
-          </div>
-        </div>
-      )}
-
-      {playingItem && projectionActive && (
-        <div className="projection-controller" role="region" aria-label="Private projection controls">
-          <div className="projection-controller__status">
-            <span className={projectionConnected ? 'is-connected' : 'is-connecting'}>{projectionConnected ? 'CHURCH SCREEN CONNECTED' : 'CONNECTING CHURCH SCREEN'}{autoAdvance ? ' · AUTO-NEXT ON' : ''}</span>
-            <strong>{playingItem.title}</strong><small>{playingItem.artist}</small>
-          </div>
-          <div className="projection-controller__controls">
-            <button type="button" disabled={playingIndex! <= 0} onClick={() => selectVideo(playingIndex! - 1)}><SkipBack size={16} /> Previous</button>
-            <button type="button" onClick={() => selectVideo(playingIndex!)}><RotateCcw size={16} /> Restart</button>
-            <button type="button" disabled={playingIndex! >= queue.length - 1} onClick={() => selectVideo(playingIndex! + 1)}>Next <SkipForward size={16} /></button>
-            {!projectionConnected && <button type="button" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={16} /> Reconnect</button>}
-            <button type="button" className="is-stop" onClick={() => {
-              closeProjectionWindow();
-              projectionWindowRef.current = null;
-              setProjectionActive(false);
-              setProjectionConnected(false);
-              playingIndexRef.current = null;
-              setPlayingIndex(null);
-              const nextRevision = playbackRevisionRef.current + 1;
-              playbackRevisionRef.current = nextRevision;
-              setPlaybackRevision(nextRevision);
-              setAutoAdvance(false);
-              publishProjectionState({ queue, playingIndex: null, playbackRevision: nextRevision, launchId: projectionLaunchIdRef.current });
-              projectionLaunchIdRef.current = '';
-              setProjectionMessage('Projection stopped.');
-            }}><X size={16} /> Stop projection</button>
           </div>
         </div>
       )}
