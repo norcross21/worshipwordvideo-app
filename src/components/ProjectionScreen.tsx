@@ -3,8 +3,8 @@ import { Maximize2, MonitorUp, X } from 'lucide-react';
 import {
   PROJECTION_HEARTBEAT_INTERVAL_MS,
   publishProjectionCommand,
-  publishProjectionState,
   readProjectionState,
+  subscribeToProjectionCommands,
   subscribeToProjectionState,
 } from '../data/projection';
 import { formatPlaybackTime } from '../data/worshipQueue';
@@ -45,6 +45,12 @@ export function ProjectionScreen() {
   }, []);
 
   useEffect(() => subscribeToProjectionState(setProjection), []);
+
+  useEffect(() => subscribeToProjectionCommands((command) => {
+    if (!activeLaunchId || command.launchId !== activeLaunchId || command.type !== 'close') return;
+    publishProjectionCommand('closed', activeLaunchId);
+    window.close();
+  }), [activeLaunchId]);
 
   useEffect(() => {
     document.body.classList.add('projection-body');
@@ -105,19 +111,18 @@ export function ProjectionScreen() {
   }, [item]);
 
   useEffect(() => {
-    if (!item || new URLSearchParams(window.location.search).get('placed') !== '1') return;
+    if (!item || projection.stopped || new URLSearchParams(window.location.search).get('placed') !== '1') return;
     void enterFullscreen(true);
-  }, [enterFullscreen, item]);
+  }, [enterFullscreen, item, projection.stopped]);
 
   const closeProjection = () => {
-    publishProjectionState({ queue: [], playingIndex: null, playbackRevision: Date.now(), launchId: activeLaunchId });
     publishProjectionCommand('closed', activeLaunchId);
     window.close();
   };
 
   return (
     <main className="projection-screen" aria-label="Church projection screen">
-      {item ? (
+      {item && !projection.stopped ? (
         <div className="projection-screen__stage">
           <YouTubePlayer
             key={`${item.id}-${item.startSeconds ?? 0}-${item.endSeconds ?? 0}-${projection.playbackRevision}`}
@@ -137,10 +142,12 @@ export function ProjectionScreen() {
       ) : (
         <div className="projection-screen__waiting">
           <MonitorUp size={52} />
-          <h1>{hadVideoRef.current ? 'Service complete' : 'Church screen connected'}</h1>
-          <p>{hadVideoRef.current
-            ? 'The final worship video has finished. Choose another video from the private controller whenever you are ready.'
-            : 'Choose a video on the private controller. It will appear here automatically.'}</p>
+          <h1>{projection.stopped ? 'Video stopped' : hadVideoRef.current ? 'Service complete' : 'Church screen connected'}</h1>
+          <p>{projection.stopped
+            ? 'The church screen is ready. Choose Restart, Previous or Next on the private controller.'
+            : hadVideoRef.current
+              ? 'The final worship video has finished. Choose another video from the private controller whenever you are ready.'
+              : 'Choose a video on the private controller. It will appear here automatically.'}</p>
           {!isFullscreen && (
             <button type="button" className="projection-screen__fullscreen-primary" onClick={() => void enterFullscreen()}>
               <Maximize2 size={22} /> Optional full screen

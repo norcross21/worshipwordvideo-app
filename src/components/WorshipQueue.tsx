@@ -35,7 +35,6 @@ import {
   WORSHIP_QUEUE_LIMIT,
   formatPlaybackTime,
   moveWorshipQueueItem,
-  nextWorshipQueueIndex,
   parsePlaybackTime,
   playbackTimingError,
   type WorshipQueueItem,
@@ -70,7 +69,6 @@ export function WorshipQueue({
   const [projectionMessage, setProjectionMessage] = useState('');
   const [showProjectionGuide, setShowProjectionGuide] = useState(false);
   const [projectionActive, setProjectionActive] = useState(false);
-  const [autoAdvance, setAutoAdvance] = useState(false);
   const [readiness, setReadiness] = useState<{ issues: string[]; warnings: string[] } | null>(null);
   const projectionWindowRef = useRef<Window | null>(null);
   const projectionLaunchIdRef = useRef('');
@@ -89,31 +87,25 @@ export function WorshipQueue({
     playbackRevisionRef.current = nextRevision;
     setPlayingIndex(index);
     setPlaybackRevision(nextRevision);
-    // Send the choice immediately. The effect below keeps later trims and reorders in sync.
-    publishProjectionState({ queue, playingIndex: index, playbackRevision: nextRevision, launchId: projectionLaunchIdRef.current });
-  }, [activeService, queue]);
-
-  const handleVideoEnded = useCallback((endedItemId?: string) => {
-    if (!autoAdvance || playingIndex == null) return;
-    if (endedItemId && endedItemId !== playingItem?.id) return;
-    const nextIndex = nextWorshipQueueIndex(playingIndex, queue.length);
-    if (nextIndex == null) {
-      playingIndexRef.current = null;
-      setPlayingIndex(null);
-      const nextRevision = playbackRevisionRef.current + 1;
-      playbackRevisionRef.current = nextRevision;
-      setPlaybackRevision(nextRevision);
-      publishProjectionState({ queue, playingIndex: null, playbackRevision: nextRevision, launchId: projectionLaunchIdRef.current });
-      setAutoAdvance(false);
-      setProjectionMessage('Service complete. Auto-next has switched itself off.');
-      return;
+    const currentProjection = readProjectionState();
+    const hasPresentationSession = Boolean(currentProjection.launchId && currentProjection.playingIndex != null);
+    // The persisted controller state is authoritative. A service component can
+    // retain an older launch ref after the operator presents a separate single
+    // video, and must never pull the receiver back into that retired session.
+    const launchId = hasPresentationSession ? currentProjection.launchId : projectionLaunchIdRef.current;
+    if (projectionActive || hasPresentationSession) {
+      projectionLaunchIdRef.current = launchId;
+      publishProjectionState({
+        queue,
+        playingIndex: index,
+        playbackRevision: nextRevision,
+        launchId,
+        stopped: false,
+      });
     }
-    selectVideo(nextIndex);
-    setProjectionMessage(`Auto-next: starting ${queue[nextIndex].title}.`);
-  }, [autoAdvance, playingIndex, playingItem?.id, queue, selectVideo]);
+  }, [activeService, projectionActive, queue]);
 
   useEffect(() => {
-    setAutoAdvance(false);
     setReadiness(null);
   }, [activeService?.id]);
 
@@ -122,38 +114,46 @@ export function WorshipQueue({
   }, [playingIndex, queue]);
 
   useEffect(() => {
-    if (!activeService || playingIndex == null || !queue[playingIndex]) return;
-    publishProjectionState({ queue, playingIndex, playbackRevision, launchId: projectionLaunchIdRef.current });
-  }, [activeService, queue, playingIndex, playbackRevision]);
+    if (!activeService || !projectionActive || playingIndex == null || !queue[playingIndex]) return;
+    const current = readProjectionState();
+    publishProjectionState({
+      queue,
+      playingIndex,
+      playbackRevision,
+      launchId: projectionLaunchIdRef.current || current.launchId,
+      stopped: current.stopped,
+    });
+  }, [activeService, projectionActive, queue, playingIndex, playbackRevision]);
 
   useEffect(() => subscribeToProjectionCommands((command) => {
     if (!command.launchId) return;
-    if (!projectionLaunchIdRef.current) projectionLaunchIdRef.current = command.launchId;
-    if (command.launchId !== projectionLaunchIdRef.current) return;
     if (command.type === 'ready' || command.type === 'heartbeat') {
-      setProjectionActive(true);
       const stored = readProjectionState();
+      if (stored.launchId !== command.launchId) return;
       const storedItem = stored.playingIndex == null ? null : stored.queue[stored.playingIndex];
-      if (storedItem) {
-        const matchingIndex = queueRef.current.findIndex((entry) => entry.id === storedItem.id);
-        if (matchingIndex >= 0) {
-          playingIndexRef.current = matchingIndex;
-          playbackRevisionRef.current = stored.playbackRevision;
-          setPlayingIndex(matchingIndex);
-          setPlaybackRevision(stored.playbackRevision);
-        }
-      }
+      const matchingIndex = storedItem ? queueRef.current.findIndex((entry) => entry.id === storedItem.id) : -1;
+      if (matchingIndex < 0) return;
+      projectionLaunchIdRef.current = command.launchId;
+      setProjectionActive(true);
+      playingIndexRef.current = matchingIndex;
+      playbackRevisionRef.current = stored.playbackRevision;
+      setPlayingIndex(matchingIndex);
+      setPlaybackRevision(stored.playbackRevision);
       if (command.type === 'ready') {
         publishProjectionState({
           queue: queueRef.current,
-          playingIndex: playingIndexRef.current,
+          playingIndex: matchingIndex,
           playbackRevision: playbackRevisionRef.current,
           launchId: projectionLaunchIdRef.current,
+          stopped: stored.stopped,
+          autoAdvance: stored.autoAdvance,
         });
         setShowProjectionGuide(false);
         setProjectionMessage('Church screen connected. Every video choice here will update it automatically.');
       }
+      return;
     }
+    if (command.launchId !== projectionLaunchIdRef.current) return;
     if (command.type === 'start' && queue.length) {
       setProjectionActive(true);
       selectVideo(0);
@@ -164,12 +164,10 @@ export function WorshipQueue({
       setProjectionActive(false);
       playingIndexRef.current = null;
       setPlayingIndex(null);
-      setAutoAdvance(false);
       setShowProjectionGuide(false);
       setProjectionMessage('The church projection window was closed.');
     }
-    if (command.type === 'ended') handleVideoEnded(command.itemId);
-  }), [handleVideoEnded, queue.length, selectVideo]);
+  }), [queue.length, selectVideo]);
 
   useEffect(() => subscribeToProjectionState((state) => {
     if (!state.launchId) return;
@@ -179,7 +177,6 @@ export function WorshipQueue({
       playingIndexRef.current = null;
       setPlayingIndex(null);
       setProjectionActive(false);
-      setAutoAdvance(false);
       return;
     }
     const projectedItem = state.queue[state.playingIndex];
@@ -202,7 +199,6 @@ export function WorshipQueue({
       setProjectionActive(false);
       playingIndexRef.current = null;
       setPlayingIndex(null);
-      setAutoAdvance(false);
       setProjectionMessage('The church-screen window was closed. Choose Present to open it again.');
     }, 1_500);
     return () => window.clearInterval(checkWindow);
@@ -215,7 +211,16 @@ export function WorshipQueue({
     if (playingIndex === index) {
       playingIndexRef.current = null;
       setPlayingIndex(null);
-      publishProjectionState({ queue: [], playingIndex: null, playbackRevision: playbackRevisionRef.current + 1, launchId: projectionLaunchIdRef.current });
+      if (projectionActive) {
+        publishProjectionState({
+          queue: queue.filter((_, itemIndex) => itemIndex !== index),
+          playingIndex: null,
+          playbackRevision: playbackRevisionRef.current + 1,
+          launchId: projectionLaunchIdRef.current,
+          stopped: true,
+          autoAdvance: false,
+        });
+      }
     }
     else if (playingIndex != null && playingIndex > index) setPlayingIndex(playingIndex - 1);
   };
@@ -228,8 +233,16 @@ export function WorshipQueue({
       const nextRevision = playbackRevisionRef.current + 1;
       playbackRevisionRef.current = nextRevision;
       setPlaybackRevision(nextRevision);
-      publishProjectionState({ queue: [], playingIndex: null, playbackRevision: nextRevision, launchId: projectionLaunchIdRef.current });
-      setAutoAdvance(false);
+      if (projectionActive) {
+        publishProjectionState({
+          queue: [],
+          playingIndex: null,
+          playbackRevision: nextRevision,
+          launchId: projectionLaunchIdRef.current,
+          stopped: true,
+          autoAdvance: false,
+        });
+      }
     }
   };
 
@@ -289,7 +302,7 @@ export function WorshipQueue({
     setPlayingIndex(0);
     setPlaybackRevision(nextRevision);
     setProjectionActive(true);
-    publishProjectionState({ queue, playingIndex: 0, playbackRevision: nextRevision, launchId });
+    publishProjectionState({ queue, playingIndex: 0, playbackRevision: nextRevision, launchId, stopped: false, autoAdvance: false });
 
     const launch = await openProjectionWindow(url);
     if (launch.result === 'blocked') {
@@ -309,20 +322,12 @@ export function WorshipQueue({
       setProjectionMessage('Only one display was detected. Connect the church screen and choose Extend, then try again.');
       return launch.result;
     }
-    publishProjectionState({ queue, playingIndex: 0, playbackRevision: nextRevision, launchId });
+    publishProjectionState({ queue, playingIndex: 0, playbackRevision: nextRevision, launchId, stopped: false, autoAdvance: false });
     recordUsageEvent('projection_open');
     setProjectionMessage(launch.result === 'placed'
         ? 'Opening automatically on the church screen…'
         : 'The clean screen is linked. Playback starts without another confirmation.');
     return launch.result;
-  };
-
-  const toggleAutoAdvance = () => {
-    const next = !autoAdvance;
-    setAutoAdvance(next);
-    setProjectionMessage(next
-      ? 'Auto-next is on. Each finished video will start the next one automatically.'
-      : 'Auto-next is off. Videos will stop until you choose Next.');
   };
 
   const checkService = () => {
@@ -355,11 +360,6 @@ export function WorshipQueue({
             <>
               <button type="button" className="worship-queue__btn-project" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={15} /> Present</button>
               <button type="button" className="worship-queue__btn-check" onClick={checkService}><CheckCircle2 size={15} /> Check service</button>
-              {queue.length > 1 && (
-                <button type="button" className={`worship-queue__auto-next-button ${autoAdvance ? 'is-on' : ''}`} aria-pressed={autoAdvance} onClick={toggleAutoAdvance} title="Choose whether each finished video starts the next one">
-                  <SkipForward size={15} /> Auto-next {autoAdvance ? 'on' : 'off'}
-                </button>
-              )}
               <button type="button" className="worship-queue__btn-icon-danger" onClick={clearQueue} title="Clear playlist" aria-label="Clear playlist"><Trash2 size={15} /><span>Clear</span></button>
             </>
           )}
@@ -395,7 +395,6 @@ export function WorshipQueue({
               const nextRevision = playbackRevisionRef.current + 1;
               playbackRevisionRef.current = nextRevision;
               setPlaybackRevision(nextRevision);
-              publishProjectionState({ queue, playingIndex: null, playbackRevision: nextRevision, launchId: projectionLaunchIdRef.current });
             }} title="Close player" aria-label="Close player"><X size={18} /></button>
           </div>
           <div className="worship-queue__video-container">
@@ -406,7 +405,6 @@ export function WorshipQueue({
               autoplay
               startSeconds={playingItem.startSeconds}
               endSeconds={playingItem.endSeconds}
-              onEnded={() => handleVideoEnded(playingItem.id)}
             />
           </div>
           <div className="worship-queue__player-controls">

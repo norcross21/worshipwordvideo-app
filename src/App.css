@@ -5134,12 +5134,13 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .global-projection-controller__transport button:hover:not(:disabled),
 .global-projection-controller__screen-actions > button:hover:not(:disabled) { color: #003b84; background: #e9f2fb; }
 .global-projection-controller button:disabled { opacity: 0.42; cursor: not-allowed; }
+.global-projection-controller__transport button.is-active { color: #003b84; background: #dcecff; }
 .global-projection-controller__screen-actions > button.is-primary { border-color: #0039a6; color: #fff; background: #0039a6; box-shadow: 0 4px 10px rgb(0 57 166 / 18%); }
 .global-projection-controller__screen-actions > button.is-primary:hover:not(:disabled) { color: #fff; background: #002f89; }
 .global-projection-controller__screen-actions > button.is-display-picker { border-color: #c4d3e4; background: #fff; }
-.global-projection-controller__screen-actions > button.is-stop { width: 38px; padding: 0; border-color: transparent; color: #a62b2b; }
-.global-projection-controller__screen-actions > button.is-stop svg { margin: 0; }
-.global-projection-controller__screen-actions > button.is-stop { font-size: 0; }
+.global-projection-controller__screen-actions > button.is-close-screen { border-color: #cbd8e5; color: #445f78; background: #fff; }
+.global-projection-controller__screen-actions > button.is-stop { border-color: #efc2c2; color: #a62b2b; background: #fff8f8; }
+.global-projection-controller__screen-actions > button.is-stop:hover:not(:disabled) { color: #8e2020; background: #ffeded; }
 
 .global-projection-controller__message { grid-column: 1 / -1; margin: -0.15rem 0 0; padding: 0.38rem 0.55rem; border-radius: 7px; color: #526a82; background: #f2f6fa; font-size: 0.68rem; line-height: 1.35; }
 
@@ -5220,6 +5221,11 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 
 .video-trim-editor__capture-actions { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 
+@media (max-width: 1080px) {
+  .global-projection-controller { grid-template-columns: minmax(180px, 1fr) auto; }
+  .global-projection-controller__screen-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
 @media (max-width: 700px) {
   .active-service-bar { grid-template-columns: auto minmax(0, 1fr); }
   .active-service-bar button { grid-column: 1 / -1; width: 100%; justify-content: center; }
@@ -5233,10 +5239,11 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   .worship-queue__empty-actions { align-items: stretch; flex-direction: column; }
   .global-projection-controller { position: static; width: calc(100% - 1rem); grid-template-columns: 1fr; align-items: stretch; }
   .global-projection-controller__transport,
-  .global-projection-controller__screen-actions { justify-content: stretch; }
+  .global-projection-controller__screen-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: stretch; }
+  .global-projection-controller__screen-actions { grid-column: auto; }
   .global-projection-controller__transport button,
-  .global-projection-controller__screen-actions > button { flex: 1 1 auto; }
-  .global-projection-controller__screen-actions > button.is-stop { flex: 0 0 38px; }
+  .global-projection-controller__screen-actions > button { width: 100%; min-width: 0; white-space: normal; }
+  .global-projection-controller__transport button:last-child { grid-column: 1 / -1; }
   .global-projection-controller__display-menu { right: 0; }
 }
 

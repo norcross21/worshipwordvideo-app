@@ -2,11 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   chooseProjectionScreen,
   openProjectionWindow,
+  projectionEndedTransition,
   projectionPopupFeatures,
   projectionScreenKey,
   projectionScreenOptions,
   publishProjectionState,
   readProjectionState,
+  type ProjectionState,
   type ProjectionScreenInfo,
 } from './projection';
 
@@ -26,6 +28,19 @@ const projector: ProjectionScreenInfo = {
   availHeight: 1080,
   isPrimary: false,
   isInternal: false,
+};
+
+const presentationState: ProjectionState = {
+  queue: [
+    { id: 'one', title: 'First song', artist: 'Artist', youtubeId: 'video-one' },
+    { id: 'two', title: 'Second song', artist: 'Artist', youtubeId: 'video-two' },
+  ],
+  playingIndex: 0,
+  playbackRevision: 1,
+  stopped: false,
+  autoAdvance: true,
+  launchId: 'service-session',
+  updatedAt: 1,
 };
 
 describe('projection window helpers', () => {
@@ -122,11 +137,41 @@ describe('projection window helpers', () => {
     });
     vi.stubGlobal('window', { location: { origin: 'https://example.test' } });
 
-    publishProjectionState({ queue: [], playingIndex: null, playbackRevision: 1, launchId: 'screen-session' });
+    publishProjectionState({ queue: [], playingIndex: null, playbackRevision: 1, launchId: 'screen-session', stopped: true, autoAdvance: true });
     const changed = publishProjectionState({ queue: [], playingIndex: null, playbackRevision: 2 });
 
     expect(changed.launchId).toBe('screen-session');
+    expect(changed.stopped).toBe(true);
+    expect(changed.autoAdvance).toBe(true);
     expect(readProjectionState().playbackRevision).toBe(2);
+  });
+
+  it('advances a playlist centrally when auto-next is on', () => {
+    expect(projectionEndedTransition(presentationState)).toEqual({
+      playingIndex: 1,
+      stopped: false,
+      autoAdvance: true,
+      completed: false,
+    });
+  });
+
+  it('stops at the final playlist video and turns auto-next off', () => {
+    expect(projectionEndedTransition({ ...presentationState, playingIndex: 1 })).toEqual({
+      playingIndex: 1,
+      stopped: true,
+      autoAdvance: false,
+      completed: true,
+    });
+  });
+
+  it('does not auto-advance a single video or an opted-out playlist', () => {
+    expect(projectionEndedTransition({ ...presentationState, queue: presentationState.queue.slice(0, 1) })).toEqual({
+      playingIndex: 0,
+      stopped: true,
+      autoAdvance: false,
+      completed: true,
+    });
+    expect(projectionEndedTransition({ ...presentationState, autoAdvance: false })).toBeNull();
   });
 
   it('upgrades projection state saved by the older receiver', () => {
@@ -134,6 +179,12 @@ describe('projection window helpers', () => {
       getItem: () => JSON.stringify({ queue: [], playingIndex: null, playbackRevision: 7, updatedAt: 12 }),
     });
 
-    expect(readProjectionState()).toMatchObject({ launchId: '', playbackRevision: 7, updatedAt: 12 });
+    expect(readProjectionState()).toMatchObject({
+      launchId: '',
+      playbackRevision: 7,
+      stopped: false,
+      autoAdvance: false,
+      updatedAt: 12,
+    });
   });
 });

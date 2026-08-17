@@ -358,7 +358,14 @@ function MainApp() {
     const item = worshipQueueItem(song);
     const playbackRevision = Date.now();
     const launchId = `single-${playbackRevision}`;
-    publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision, launchId });
+    publishProjectionState({
+      queue: [item],
+      playingIndex: 0,
+      playbackRevision,
+      launchId,
+      stopped: false,
+      autoAdvance: false,
+    });
 
     const url = new URL(window.location.href);
     url.search = '';
@@ -379,7 +386,14 @@ function MainApp() {
     recordUsageEvent('projection_open');
     // Send once more after the receiver is focused so reloads and strict privacy
     // modes cannot miss the newly selected video.
-    publishProjectionState({ queue: [item], playingIndex: 0, playbackRevision: playbackRevision + 1, launchId });
+    publishProjectionState({
+      queue: [item],
+      playingIndex: 0,
+      playbackRevision: playbackRevision + 1,
+      launchId,
+      stopped: false,
+      autoAdvance: false,
+    });
     setToastMessage(launch.result === 'placed'
       ? `Showing “${song.title}” on the second screen.`
       : `Showing “${song.title}” in the linked church-screen window.`);

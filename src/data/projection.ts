@@ -36,7 +36,7 @@ export type WindowWithScreenDetails = Window & {
   getScreenDetails?: () => Promise<ProjectionScreenDetails>;
 };
 
-export type ProjectionCommandType = 'start' | 'ready' | 'heartbeat' | 'closed' | 'ended';
+export type ProjectionCommandType = 'start' | 'ready' | 'heartbeat' | 'close' | 'closed' | 'ended';
 
 export interface ProjectionCommand {
   id: string;
@@ -50,11 +50,17 @@ export interface ProjectionState {
   queue: WorshipQueueItem[];
   playingIndex: number | null;
   playbackRevision: number;
+  stopped: boolean;
+  autoAdvance: boolean;
   launchId: string;
   updatedAt: number;
 }
 
-type ProjectionStateInput = Omit<ProjectionState, 'updatedAt' | 'launchId'> & { launchId?: string };
+type ProjectionStateInput = Omit<ProjectionState, 'updatedAt' | 'launchId' | 'stopped' | 'autoAdvance'> & {
+  launchId?: string;
+  stopped?: boolean;
+  autoAdvance?: boolean;
+};
 
 interface ProjectionMessageEnvelope<T> {
   source: typeof PROJECTION_MESSAGE_SOURCE;
@@ -84,13 +90,32 @@ export interface ProjectionScreenChoice {
   isInternal: boolean;
 }
 
+export interface ProjectionEndedTransition {
+  playingIndex: number;
+  stopped: boolean;
+  autoAdvance: boolean;
+  completed: boolean;
+}
+
 export const EMPTY_PROJECTION_STATE: ProjectionState = {
   queue: [],
   playingIndex: null,
   playbackRevision: 0,
+  stopped: false,
+  autoAdvance: false,
   launchId: '',
   updatedAt: 0,
 };
+
+/** Decide what the universal controller should do when the receiver reports an ended video. */
+export function projectionEndedTransition(state: ProjectionState): ProjectionEndedTransition | null {
+  if (!state.autoAdvance || state.playingIndex == null || !state.queue[state.playingIndex]) return null;
+  const nextIndex = state.playingIndex + 1;
+  if (nextIndex < state.queue.length) {
+    return { playingIndex: nextIndex, stopped: false, autoAdvance: true, completed: false };
+  }
+  return { playingIndex: state.playingIndex, stopped: true, autoAdvance: false, completed: true };
+}
 
 function sameScreen(left: ProjectionScreenInfo, right: ProjectionScreenInfo): boolean {
   return left === right || (
@@ -323,6 +348,8 @@ export function readProjectionState(): ProjectionState {
           queue: parsed.queue,
           playingIndex: parsed.playingIndex ?? null,
           playbackRevision: parsed.playbackRevision ?? 0,
+          stopped: parsed.stopped ?? false,
+          autoAdvance: parsed.autoAdvance ?? false,
           launchId: parsed.launchId ?? '',
           updatedAt: parsed.updatedAt ?? 0,
         }
@@ -336,6 +363,8 @@ export function publishProjectionState(state: ProjectionStateInput): ProjectionS
   const previous = readProjectionState();
   const next: ProjectionState = {
     ...state,
+    stopped: state.stopped ?? previous.stopped,
+    autoAdvance: state.autoAdvance ?? previous.autoAdvance,
     launchId: state.launchId ?? previous.launchId,
     updatedAt: Date.now(),
   };
@@ -368,7 +397,12 @@ export function subscribeToProjectionState(onState: (state: ProjectionState) => 
   const deliver = (state: ProjectionState) => {
     if (!validProjectionState(state) || state.updatedAt < latestUpdate) return;
     latestUpdate = state.updatedAt;
-    onState({ ...state, launchId: state.launchId ?? '' });
+    onState({
+      ...state,
+      stopped: state.stopped ?? false,
+      autoAdvance: state.autoAdvance ?? false,
+      launchId: state.launchId ?? '',
+    });
   };
   const handleStorage = (event: StorageEvent) => {
     if (event.key === PROJECTION_STORAGE_KEY) deliver(readProjectionState());
