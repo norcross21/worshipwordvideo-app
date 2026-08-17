@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { POST } from './usage';
+import { POST } from '../../api/usage';
 
 const originalUrl = process.env.VITE_SUPABASE_URL;
 const originalKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
