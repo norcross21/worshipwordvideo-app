@@ -545,6 +545,7 @@ function MainApp() {
             <a href="/seasons/">Church seasons</a>
             <a href="/arrangements/">Worship styles</a>
             <a href="/guides/">Church guides</a>
+            <a href="/about/">About & catalogue method</a>
             <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20enquiry">Contact: stephen@kairoshousing.org.uk</a>
             <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy & Copyright</button>
             <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a>

@@ -45,6 +45,12 @@ h2 { color: #172b61; font-family: Georgia, "Times New Roman", serif; font-size: 
 .seo-video-facts strong, .seo-video-facts span { display: block; }
 .seo-video-facts strong { color: #163476; font-size: .82rem; }
 .seo-video-facts span { margin-top: 3px; color: #475467; overflow-wrap: anywhere; }
+.seo-verification { max-width: 1100px; }
+.seo-check-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.seo-check-grid div { padding: 18px; border: 1px solid #cfdbe8; border-radius: 12px; background: #f7f9fc; }
+.seo-check-grid strong, .seo-check-grid span { display: block; }
+.seo-check-grid strong { color: #163476; }
+.seo-check-grid span { margin-top: 7px; color: #475467; font-size: .94rem; }
 .seo-video-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .seo-video-card { overflow: hidden; border: 1px solid #dce4e8; border-radius: 14px; background: white; color: #163476; text-decoration: none; }
 .seo-video-card img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #e6ecf2; }
@@ -53,4 +59,4 @@ h2 { color: #172b61; font-family: Georgia, "Times New Roman", serif; font-size: 
 .seo-video-card small { margin-top: 5px; color: #667085; line-height: 1.4; }
 .seo-footer { margin-top: 40px; padding: 32px 0 48px; border-top: 1px solid #d0d5dd; color: #667085; font-size: .9rem; }
 .seo-footer nav { display: flex; flex-wrap: wrap; gap: 18px; font-weight: 700; }
-@media (max-width: 720px) { .seo-header { align-items: flex-start; } .seo-header .seo-button { min-height: 40px; padding: 8px 12px; font-size: .86rem; } .seo-brand span { max-width: 120px; line-height: 1.15; } .seo-stats, .seo-card-grid, .seo-link-grid, .seo-song-list, .seo-video-facts, .seo-video-grid { grid-template-columns: 1fr; } h1 { font-size: 2.3rem; } .seo-video-frame { margin-inline: -18px; width: calc(100% + 36px); border-radius: 0; } }
+@media (max-width: 720px) { .seo-header { align-items: flex-start; } .seo-header .seo-button { min-height: 40px; padding: 8px 12px; font-size: .86rem; } .seo-brand span { max-width: 120px; line-height: 1.15; } .seo-stats, .seo-card-grid, .seo-link-grid, .seo-song-list, .seo-video-facts, .seo-video-grid, .seo-check-grid { grid-template-columns: 1fr; } h1 { font-size: 2.3rem; } .seo-video-frame { margin-inline: -18px; width: calc(100% + 36px); border-radius: 0; } }

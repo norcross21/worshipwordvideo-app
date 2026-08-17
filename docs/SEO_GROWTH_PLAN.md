@@ -1,12 +1,12 @@
 # Worship Word Video: SEO and Discovery Plan
 
-Last updated: 10 August 2026
+Last updated: 17 August 2026
 
 ## Current Google position
 
-- Google is indexing the home page and many of the dedicated language collections. A public `site:worshipwordvideo.org` check shows the home page first and language pages across several result pages.
+- Google is indexing the home page and many dedicated collection pages. Search Console recorded 17 clicks from 206 impressions between 8 and 15 August 2026, an 8.3% click-through rate and an average position of 11.8. This is encouraging early evidence, but the period is too short and the volume too small to forecast stable traffic.
 - The broad searches **worship word lyrics**, **worship lyric videos for churches** and **free worship lyric videos for church** do not yet show Worship Word Video prominently on the first page. The site has index coverage, but it has not yet built enough relevance and authority for those competitive searches.
-- Google's displayed home-page result is stale and still mentions 15,000 videos and 85 languages. The previous source metadata also lagged behind at 25,000 videos and 87 languages. The page now uses durable wording—tens of thousands of videos and more than 100 named languages—so future catalogue growth will not make the search result inaccurate again.
+- The page uses durable wording—tens of thousands of videos and more than 100 named languages—so future catalogue growth will not make search snippets inaccurate again.
 - Exact query impressions, clicks, click-through rate and average position must be read from the verified Google Search Console property. Public checks are useful evidence, but they are not a substitute for Search Console's measurements.
 
 ## Bing and other discovery systems
@@ -34,16 +34,18 @@ The exact phrase “worship word lyrics” is now present in the home-page title
 
 ## What is implemented in the site
 
-- More than 158 validated canonical pages in the current sitemap, each backed by visible catalogue information or original church guidance. The exact total is regenerated from the current catalogue during every production build.
+- 400 validated canonical URLs in the current sitemap, each backed by visible catalogue information or original church guidance. The exact total is regenerated from the current catalogue during every production build.
 - Descriptive home-page title, meta description, canonical URL, robots directives and large social share card.
 - Schema.org `WebSite`, `Organization`, `WebApplication`, `CollectionPage`, `ItemList`, `BreadcrumbList`, `Article` and `HowTo` structured data where those types describe visible page content.
 - Useful initial HTML before the React application loads, so crawlers that do not execute JavaScript can still understand the service and follow its main links.
-- 98 substantial language collection pages generated from the current catalogue. Very small or unidentified language groups are not published as SEO pages.
+- 105 substantial language collection pages generated from the current catalogue. Very small or unidentified language groups are not published as SEO pages.
 - 11 worship-arrangement pages covering contemporary, gospel, choir, traditional hymn, live, acoustic and other useful styles.
 - Six church-season pages for Advent, Christmas, Lent and Holy Week, Easter, Pentecost, Harvest and Thanksgiving.
 - Six lyrics-and-subtitle-format pages that clearly distinguish English words, translated subtitles, native-language words, English subtitles and bilingual videos.
 - Curated song-family pages cover hundreds of named-language word/subtitle videos. They include Goodness of God, Way Maker, The Blessing, Holy Forever, Living Hope, Here I Am to Worship, In Christ Alone and other familiar songs whose catalogue evidence supports at least three named languages.
-- The live catalogue covers 52,337 unique playable videos across 114 named languages. Nineteen named-language collections now contain at least 500 playable videos. Focused language-depth searches look for familiar translated worship songs, native-language lyrics and native-language performances with English subtitles.
+- The catalogue contains 72,529 unique playable video records across more than 100 named languages. Focused language-depth searches look for familiar translated worship songs, native-language lyrics and native-language performances with English subtitles.
+- 157 individually verified video watch pages cover 103 languages. Each page links back to its language and song-family collections, states the words/subtitle evidence used, records the latest playback check and explains the boundary between catalogue verification and fluent-language or theological review.
+- A public About and catalogue-method page identifies the creator, purpose, contact address, YouTube/copyright boundaries, review method and relationship to Kairos Housing.
 - Six original church guides covering worship word lyrics, churches without musicians, video selection, multilingual worship, second-screen projection and a careful fluent-speaker review process.
 - Multilingual song-family counts exclude entries labelled **Language not stated**, rather than presenting an unknown language as a confirmed translation.
 - The public finder now uses maintained YouTube audit titles as word evidence where the short catalogue title omits “lyrics” or “subtitles”. Its **Well-known songs** filter uses chart and multi-hymnal evidence rather than behaving like a duplicate words filter.
@@ -58,10 +60,10 @@ These require ownership of external accounts and cannot be completed safely by a
 
 ### 1. Google Search Console
 
-Completed on 9 August 2026:
+Completed by 17 August 2026:
 
 - `worshipwordvideo.org` is registered as a Domain property.
-- `https://www.worshipwordvideo.org/sitemap.xml` was submitted under **Sitemaps** and processed successfully, with 95 pages discovered.
+- `https://www.worshipwordvideo.org/sitemap.xml` and `https://www.worshipwordvideo.org/video-sitemap.xml` were submitted under **Sitemaps**. The production release now exposes 400 canonical URLs and 157 verified video entries; Search Console will update its discovered totals after Google recrawls them.
 
 Ongoing actions:
 

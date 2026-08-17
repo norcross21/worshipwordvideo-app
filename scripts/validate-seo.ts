@@ -4,7 +4,7 @@ import { relative, resolve, sep } from 'node:path';
 const SITE = 'https://www.worshipwordvideo.org';
 const ROOT = process.cwd();
 const PUBLIC_DIR = resolve(ROOT, 'public');
-const GENERATED_SECTIONS = ['languages', 'arrangements', 'seasons', 'formats', 'songs', 'videos', 'guides'];
+const GENERATED_SECTIONS = ['languages', 'arrangements', 'seasons', 'formats', 'songs', 'videos', 'guides', 'about'];
 
 async function findIndexPages(directory: string): Promise<string[]> {
   const pages: string[] = [];
@@ -56,11 +56,20 @@ const [catalogueText, starterCatalogueText] = await Promise.all([
   readFile(cataloguePath, 'utf8'),
   readFile(starterCataloguePath, 'utf8'),
 ]);
+const watchPageData = JSON.parse(await readFile(resolve(ROOT, 'src', 'data', 'videoWatchPages.json'), 'utf8')) as Array<{
+  youtubeId: string;
+  path: string;
+  videoTitle: string;
+  channel: string;
+  language: string;
+  checkedAt: string;
+}>;
 const catalogue = JSON.parse(catalogueText) as { version?: number; checkedOn?: string; dictionaries?: { language?: string[] }; songs?: unknown[][] };
 const starterCatalogue = JSON.parse(starterCatalogueText) as { version?: number; songs?: unknown[][] };
 const catalogueRows = catalogue.songs ?? [];
 const starterRows = starterCatalogue.songs ?? [];
 const catalogueVideoIds = catalogueRows.map((row) => row[4]).filter((value): value is string => typeof value === 'string');
+const watchPageLanguages = new Set(watchPageData.map((video) => video.language));
 
 if (catalogue.version !== 2 || starterCatalogue.version !== 2) errors.push('catalogue: compact version 2 payload expected');
 if (catalogueRows.length < 50_000) errors.push(`catalogue: expected at least 50,000 playable videos, found ${catalogueRows.length}`);
@@ -69,6 +78,19 @@ if (Buffer.byteLength(starterCatalogueText) > 750_000) errors.push('catalogue: s
 if (Buffer.byteLength(catalogueText) > 12_000_000) errors.push('catalogue: complete payload exceeds the 12 MB performance budget');
 if (catalogueVideoIds.some((id) => !/^[A-Za-z0-9_-]{11}$/.test(id))) errors.push('catalogue: invalid YouTube video ID found');
 if (new Set(catalogueVideoIds).size !== catalogueVideoIds.length) errors.push('catalogue: repeated YouTube video IDs found');
+if (watchPageData.length < 150) errors.push(`watch pages: expected at least 150 curated videos, found ${watchPageData.length}`);
+if (watchPageLanguages.size < 100) errors.push(`watch pages: expected at least 100 represented languages, found ${watchPageLanguages.size}`);
+if (new Set(watchPageData.map((video) => video.youtubeId)).size !== watchPageData.length) errors.push('watch pages: repeated YouTube IDs found');
+if (new Set(watchPageData.map((video) => video.path)).size !== watchPageData.length) errors.push('watch pages: repeated paths found');
+for (const video of watchPageData) {
+  if (!/^[A-Za-z0-9_-]{11}$/.test(video.youtubeId)) errors.push(`watch pages: invalid YouTube ID ${video.youtubeId}`);
+  if (!/^\/videos\/[a-z0-9-]+\/$/.test(video.path)) errors.push(`watch pages: invalid route ${video.path}`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(video.checkedAt)) errors.push(`watch pages: invalid checked date for ${video.youtubeId}`);
+  if (!video.language || video.language === 'Language not stated') errors.push(`watch pages: missing language for ${video.youtubeId}`);
+  if (/\b(sermon|preaching|debate|podcast|bible study|reaction|tutorial|documentary|slayer|dakinis)\b|\bjesus\s+vs\b|\bmuslim response\b/i.test(`${video.videoTitle} ${video.channel}`)) {
+    errors.push(`watch pages: likely non-worship content remains for ${video.youtubeId}`);
+  }
+}
 for (const deprecatedLanguage of ['Burmese', 'Farsi', 'Persian', 'Filipino', 'Tagalog']) {
   if (catalogue.dictionaries?.language?.includes(deprecatedLanguage)) errors.push(`catalogue: non-canonical language label remains: ${deprecatedLanguage}`);
 }
@@ -90,6 +112,7 @@ for (const file of pages) {
   if (title && (decodedLength(title) < 25 || decodedLength(title) > 65)) errors.push(`${route}: title length should be 25–65 characters`);
   if (description && (decodedLength(description) < 70 || decodedLength(description) > 165)) errors.push(`${route}: description length should be 70–165 characters`);
   if (/href="\/\?/.test(html)) errors.push(`${route}: finder links must use fragment parameters, not crawlable query parameters`);
+  if (!html.includes('href="/about/"') && route !== '/about/') errors.push(`${route}: missing editorial-method link to /about/`);
 
   if (title) {
     const earlier = titles.get(title);
@@ -125,6 +148,8 @@ for (const file of pages) {
     const iframeCount = (html.match(/<iframe(?:\s|>)/g) ?? []).length;
     if (iframeCount !== 1) errors.push(`${route}: expected one primary video iframe, found ${iframeCount}`);
     if (!videoSitemapUrls.has(`${SITE}${route}`)) errors.push(`${route}: missing from the video sitemap`);
+    if (!html.includes('class="seo-section seo-verification"')) errors.push(`${route}: missing visible verification evidence`);
+    if (!/<time datetime="\d{4}-\d{2}-\d{2}">/.test(html)) errors.push(`${route}: missing visible checked date`);
   }
 
   for (const match of html.matchAll(/href="(\/[^"#?]*)(?:[?#][^"]*)?"/g)) {
@@ -145,6 +170,7 @@ if (sitemapLastModified.length !== sitemapUrls.size) errors.push('sitemap: every
 if (sitemapLastModified.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date))) errors.push('sitemap: lastmod dates must use YYYY-MM-DD');
 
 const watchRoutes = [...routes].filter((route) => route.startsWith('/videos/') && route !== '/videos/');
+if (watchPageData.length !== watchRoutes.length) errors.push(`watch pages: expected ${watchPageData.length} generated routes, found ${watchRoutes.length}`);
 if (videoSitemapUrls.size !== watchRoutes.length) errors.push(`video sitemap: expected ${watchRoutes.length} URLs, found ${videoSitemapUrls.size}`);
 for (const url of videoSitemapUrls) {
   if (!sitemapUrls.has(url)) errors.push(`video sitemap URL is missing from the main sitemap: ${url}`);
@@ -169,6 +195,7 @@ console.log(JSON.stringify({
   uniqueCanonicals: canonicals.size,
   structuredData: 'valid',
   videoWatchPages: watchRoutes.length,
+  videoLanguages: watchPageLanguages.size,
   videoSitemapUrls: videoSitemapUrls.size,
   internalLinks: 'valid',
   catalogueVideos: catalogueRows.length,

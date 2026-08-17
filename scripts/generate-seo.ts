@@ -251,6 +251,16 @@ function pageShell(page: SeoPage): string {
         name: 'Worship Word Video',
         url: `${SITE}/`,
         logo: `${SITE}/worship-word-video-logo-512.png`,
+        founder: {
+          '@type': 'Person',
+          name: 'Stephen Norcross',
+        },
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'editorial and catalogue enquiries',
+          email: 'stephen@kairoshousing.org.uk',
+          availableLanguage: ['English'],
+        },
       },
       {
         '@type': 'WebSite',
@@ -307,7 +317,7 @@ ${page.videoEmbedUrl ? `  <meta property="og:video" content="${page.videoEmbedUr
   </header>
   <main>${page.body}</main>
   <footer class="seo-footer">
-    <nav aria-label="Useful links"><a href="/videos/">Featured videos</a><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/songs/">Songs across languages</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/#main-content">Song finder</a></nav>
+    <nav aria-label="Useful links"><a href="/videos/">Featured videos</a><a href="/guides/worship-word-lyrics/">Worship word lyrics</a><a href="/songs/">Songs across languages</a><a href="/languages/">Languages</a><a href="/seasons/">Church seasons</a><a href="/formats/">Lyrics & subtitle formats</a><a href="/arrangements/">Worship styles</a><a href="/guides/">Church guides</a><a href="/about/">About & catalogue method</a><a href="/#main-content">Song finder</a></nav>
     <p>Worship Word Video is a free directory and playlist-planning tool. Videos remain hosted by YouTube and subject to the uploader's and YouTube's terms. Always preview a video and confirm church licensing before public use.</p>
     <p><a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20enquiry">Contact: stephen@kairoshousing.org.uk</a> · <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a></p>
   </footer>
@@ -328,6 +338,10 @@ function songRows(songs: WorshipSong[], language?: string): string {
   }).join('\n');
 }
 
+function verifiedVideoCards(videos: VideoWatchPageRecord[]): string {
+  return videos.map((video) => `<a class="seo-video-card" href="${video.path}"><img src="${video.thumbnailUrl}" width="480" height="360" loading="lazy" alt=""><span><strong>${escapeHtml(video.catalogueTitle)}</strong><small>${escapeHtml(video.language)} · ${escapeHtml(video.presentation)}</small><small>Uploaded by ${escapeHtml(video.channel)}</small></span></a>`).join('');
+}
+
 function languagePage(language: string, songs: WorshipSong[], related: string[]): SeoPage {
   const slug = slugify(language);
   const arrangements = countBy(songs, inferWorshipArrangement);
@@ -336,6 +350,10 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
   const appQuery = new URLSearchParams({ language });
   const description = `Find ${count.toLocaleString('en-GB')} ${language} Christian worship and hymn videos with lyrics, on-screen words or subtitles. Free church playlist and projection tools.`;
   const examples = songs.slice(0, 18);
+  const verifiedVideos = VIDEO_WATCH_PAGES
+    .filter((video) => video.language === language)
+    .sort((left, right) => left.catalogueTitle.localeCompare(right.catalogueTitle))
+    .slice(0, 12);
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/languages/">Languages</a><span>›</span><span>${escapeHtml(language)}</span></nav>
   <article class="seo-hero">
     <p class="seo-eyebrow">Multilingual worship catalogue</p>
@@ -353,6 +371,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
     <p>The catalogue includes ${escapeHtml(formatList(arrangements))}. Presentation labels distinguish native-language vocals with native words, English vocals with translated subtitles, native vocals with English subtitles and bilingual versions where the uploader's wording supports that distinction.</p>
     <p>These labels are based on public uploader metadata and conservative catalogue checks. They are a practical starting point, not a linguistic or theological endorsement. Preview the exact video, ask a fluent speaker to review translated words, and confirm the music and streaming permissions used by your church.</p>
   </section>
+  ${verifiedVideos.length ? `<section class="seo-section"><h2>Verified ${escapeHtml(language)} watch pages</h2><p>These featured pages each contain one currently embeddable video with its YouTube title, uploader, publication date, duration and catalogue labels checked for accurate video-search data.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
   <section class="seo-section">
     <h2>Example ${escapeHtml(language)} worship word videos</h2>
     <ul class="seo-song-list">${songRows(examples, language)}</ul>
@@ -384,11 +403,18 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
         mainEntity: {
           '@type': 'ItemList',
           numberOfItems: count,
-          itemListElement: examples.map((song, index) => ({
-            '@type': 'ListItem',
-            position: index + 1,
-            name: song.englishTitle ? `${song.title} (${song.englishTitle})` : song.title,
-          })),
+          itemListElement: verifiedVideos.length
+            ? verifiedVideos.map((video, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: video.catalogueTitle,
+              url: canonicalUrl(video.path),
+            }))
+            : examples.map((song, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: song.englishTitle ? `${song.title} (${song.englishTitle})` : song.title,
+            })),
         },
       },
       {
@@ -556,6 +582,9 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   const pageTitle = fullPageTitle.length <= 65
     ? fullPageTitle
     : `${family.title} Languages | Worship Videos`;
+  const verifiedVideos = VIDEO_WATCH_PAGES
+    .filter((video) => video.familySlug === family.slug)
+    .sort((left, right) => left.language.localeCompare(right.language) || left.videoTitle.localeCompare(right.videoTitle));
   const languageCards = languages.map(([language, languageSongs]) => {
     const languageQuery = new URLSearchParams({ q: family.title, language });
     const formats = countBy(languageSongs, inferLanguagePresentation);
@@ -565,6 +594,7 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   <article class="seo-hero"><p class="seo-eyebrow">Well-known worship across languages</p><h1>${escapeHtml(family.title)} in different languages</h1><p class="seo-lead">Compare ${count.toLocaleString('en-GB')} playable versions across ${languages.length.toLocaleString('en-GB')} languages. Use the language and presentation labels to distinguish native-language vocals, translated subtitles, English subtitles and bilingual versions where the uploader's metadata supports that description.</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Search every ${escapeHtml(family.title)} video</a><a class="seo-button seo-button--quiet" href="/formats/">Understand lyrics and subtitle labels</a></div></article>
   <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable word videos</span></div><div><strong>${languages.length.toLocaleString('en-GB')}</strong><span>languages represented</span></div><div><strong>${presentationFormatCount.toLocaleString('en-GB')}</strong><span>lyrics and subtitle formats</span></div></section>
   <section class="seo-section"><h2>Choose a language version</h2><div class="seo-card-grid">${languageCards}</div></section>
+  ${verifiedVideos.length ? `<section class="seo-section"><h2>Watch verified ${escapeHtml(family.title)} videos</h2><p>These dedicated pages use current, embeddable YouTube uploads and verified publication metadata. Continue to preview the complete version before church use.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
   <section class="seo-section"><h2>Example ${escapeHtml(family.title)} lyric and subtitle videos</h2><ul class="seo-song-list">${songRows(orderedSongs)}</ul><p><a class="seo-text-link" href="${finderUrl(query)}">Open all ${count.toLocaleString('en-GB')} matching videos in the finder →</a></p></section>
   <section class="seo-section seo-help"><h2>Check the exact version before church</h2><p>These are links to public YouTube uploads, not copies of the song or lyrics. A familiar English title can refer to a translation, adaptation, cover or subtitled original. Preview the complete video, ask a fluent speaker to review translated words and theology, and confirm the licences needed for your service.</p></section>`;
   return {
@@ -633,12 +663,15 @@ function videoDescription(video: VideoWatchPageRecord): string {
   return truncateAtWord(description, 165);
 }
 
-function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRecord[]): SeoPage {
+function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRecord[], publishedLanguageSlugs: Set<string>): SeoPage {
   const finderQuery = new URLSearchParams({ q: video.catalogueTitle });
   if (video.language !== 'English') finderQuery.set('language', video.language);
   const uploadDateLabel = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
   }).format(new Date(video.uploadDate));
+  const checkedDateLabel = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(new Date(`${video.checkedAt}T00:00:00Z`));
   const related = allVideos
     .filter((candidate) => candidate.youtubeId !== video.youtubeId)
     .sort((left, right) => {
@@ -648,6 +681,8 @@ function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRe
     })
     .slice(0, 6);
   const embedUrl = `https://www.youtube-nocookie.com/embed/${video.youtubeId}`;
+  const languageSlug = slugify(video.language);
+  const languagePath = publishedLanguageSlugs.has(languageSlug) ? `/languages/${languageSlug}/` : '/languages/';
   const description = videoDescription(video);
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/videos/">Featured videos</a><span>›</span><span>${escapeHtml(video.catalogueTitle)}</span></nav>
   <article class="seo-watch-hero">
@@ -657,7 +692,7 @@ function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRe
     <div class="seo-video-frame">
       <iframe src="${embedUrl}" title="${escapeHtml(video.videoTitle)}" width="1280" height="720" loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     </div>
-    <div class="seo-actions"><a class="seo-button" href="${finderUrl(finderQuery)}">Find related versions</a><a class="seo-button seo-button--quiet" href="https://www.youtube.com/watch?v=${video.youtubeId}" rel="noopener noreferrer">Open on YouTube</a></div>
+    <div class="seo-actions"><a class="seo-button" href="${finderUrl(finderQuery)}">Find related versions</a><a class="seo-button seo-button--quiet" href="${languagePath}">Explore ${escapeHtml(video.language)} worship</a><a class="seo-button seo-button--quiet" href="https://www.youtube.com/watch?v=${video.youtubeId}" rel="noopener noreferrer">Open on YouTube</a></div>
   </article>
   <section class="seo-video-facts" aria-label="Video details">
     <div><strong>Uploader</strong><span>${escapeHtml(video.channel)}</span></div>
@@ -667,6 +702,7 @@ function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRe
     <div><strong>Duration</strong><span>${readableDuration(video.durationSeconds)}</span></div>
     <div><strong>Published on YouTube</strong><span>${uploadDateLabel}</span></div>
   </section>
+  <section class="seo-section seo-verification"><h2>Why this video is listed</h2><div class="seo-check-grid"><div><strong>Words or subtitles indicated</strong><span>${escapeHtml(video.presentation)} is identified by the maintained catalogue and public uploader information.</span></div><div><strong>Playback checked</strong><span>The YouTube link and embedded player were available when checked on <time datetime="${video.checkedAt}">${checkedDateLabel}</time>.</span></div><div><strong>Review boundary</strong><span>This is a metadata and playback check, not a fluent-language or theological endorsement. Preview the complete upload before church use.</span></div></div></section>
   <section class="seo-section"><h2>Before using this video in church</h2><p>This page embeds the uploader's public YouTube video; Worship Word Video does not host the recording or reproduce its lyrics. Watch the entire video, check the visible words and theology, confirm the key and tempo, and make sure your church has the permissions it needs for projection or streaming.</p><p>The language and presentation labels are a carefully checked search aid, not a linguistic or theological endorsement. For translated material, ask a fluent speaker or trusted church leader to review the exact upload.</p></section>
   ${video.familySlug ? `<section class="seo-section"><h2>Compare this familiar song across languages</h2><p><a class="seo-text-link" href="/songs/${video.familySlug}/">Explore ${escapeHtml(video.familyTitle ?? video.catalogueTitle)} in other languages →</a></p></section>` : ''}
   <section class="seo-section"><h2>More verified worship watch pages</h2><div class="seo-video-grid">${related.map((item) => `<a class="seo-video-card" href="${item.path}"><img src="${item.thumbnailUrl}" width="480" height="360" loading="lazy" alt=""><span><strong>${escapeHtml(item.catalogueTitle)}</strong><small>${escapeHtml(item.language)} · ${escapeHtml(item.channel)}</small></span></a>`).join('')}</div></section>`;
@@ -689,6 +725,7 @@ function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRe
         name: video.videoTitle,
         description,
         isPartOf: { '@id': `${SITE}/#website` },
+        dateModified: video.checkedAt,
         primaryImageOfPage: { '@type': 'ImageObject', url: video.thumbnailUrl },
         mainEntity: { '@id': `${canonicalUrl(video.path)}#video` },
       },
@@ -892,6 +929,7 @@ async function generate(): Promise<void> {
     const related = Array.from({ length: Math.min(8, Math.max(0, languageNames.length - 1)) }, (_, offset) => languageNames[(index + offset + 1) % languageNames.length]);
     return languagePage(language, songs, related);
   });
+  const publishedLanguageSlugs = new Set(languagePages.map((page) => page.path.split('/').filter(Boolean).at(-1)!));
 
   const arrangements = [...arrangementGroups.entries()]
     .filter(([arrangement]) => arrangement !== 'Arrangement not stated')
@@ -921,7 +959,7 @@ async function generate(): Promise<void> {
     .map((family) => [family, songsByFamily.get(family.slug) ?? []] as const)
     .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 2);
   const songFamilyPages = songFamilies.map(([family, songs]) => songFamilyPage(family, songs));
-  const videoPages = VIDEO_WATCH_PAGES.map((video) => videoWatchPage(video, VIDEO_WATCH_PAGES));
+  const videoPages = VIDEO_WATCH_PAGES.map((video) => videoWatchPage(video, VIDEO_WATCH_PAGES, publishedLanguageSlugs));
 
   const languageIndex: SeoPage = {
     path: '/languages/',
@@ -978,11 +1016,28 @@ async function generate(): Promise<void> {
     ],
   };
 
+  const videoLanguageGroups = [...new Map(VIDEO_WATCH_PAGES.map((video) => [
+    video.language,
+    VIDEO_WATCH_PAGES
+      .filter((candidate) => candidate.language === video.language)
+      .sort((left, right) => left.catalogueTitle.localeCompare(right.catalogueTitle)),
+  ])).entries()].sort((left, right) => {
+    if (left[0] === 'English') return -1;
+    if (right[0] === 'English') return 1;
+    return right[1].length - left[1].length || left[0].localeCompare(right[0]);
+  });
+  const videoLanguageNavigation = videoLanguageGroups.map(([language, videos]) => `<a class="seo-card" href="#${slugify(language)}"><strong>${escapeHtml(language)}</strong><span>${videos.length} verified ${videos.length === 1 ? 'video' : 'videos'}</span></a>`).join('');
+  const videoLanguageSections = videoLanguageGroups.map(([language, videos]) => {
+    const languageSlug = slugify(language);
+    const languagePath = publishedLanguageSlugs.has(languageSlug) ? `/languages/${languageSlug}/` : '/languages/';
+    return `<section class="seo-section"><h2 id="${languageSlug}">${escapeHtml(language)} worship watch pages</h2><p>${videos.length === 1 ? 'One current featured video is' : `${videos.length} current featured videos are`} available in this verified collection. <a href="${languagePath}">Explore ${escapeHtml(language)} and other language collections</a> for more searchable versions.</p><div class="seo-video-grid">${verifiedVideoCards(videos)}</div></section>`;
+  }).join('');
+
   const videoIndex: SeoPage = {
     path: '/videos/',
     title: 'Featured Worship Lyric Videos | Verified Watch Pages',
     description: `Watch ${videoPages.length} curated English and multilingual YouTube worship videos with words, verified embeds and clear language and presentation labels.`,
-    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Featured videos</span></nav><article class="seo-hero"><p class="seo-eyebrow">Dedicated worship watch pages</p><h1>Featured worship lyric videos</h1><p class="seo-lead">Watch ${videoPages.length} carefully selected English and multilingual worship videos on dedicated pages. Every featured embed was checked as playable, and its original YouTube publication date was verified for accurate video search data.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search the complete catalogue</a><a class="seo-button seo-button--quiet" href="/languages/">Browse every language collection</a></div></article><section class="seo-stats"><div><strong>${videoPages.length}</strong><span>verified watch pages</span></div><div><strong>${new Set(VIDEO_WATCH_PAGES.map((video) => video.language)).size}</strong><span>languages represented</span></div><div><strong>${VIDEO_WATCH_PAGES.filter((video) => video.familySlug).length}</strong><span>familiar-song versions</span></div></section><section class="seo-section"><h2>Watch a featured word video</h2><div class="seo-video-grid">${VIDEO_WATCH_PAGES.map((video) => `<a class="seo-video-card" href="${video.path}"><img src="${video.thumbnailUrl}" width="480" height="360" loading="lazy" alt=""><span><strong>${escapeHtml(video.catalogueTitle)}</strong><small>${escapeHtml(video.language)} · ${escapeHtml(video.channel)}</small></span></a>`).join('')}</div></section><section class="seo-section seo-help"><h2>Why the watch-page collection is selective</h2><p>The complete finder contains tens of thousands of searchable links. This smaller collection is reserved for videos whose current YouTube embed and original publication date could both be verified. That keeps the video sitemap and structured data accurate instead of making unsupported claims for every catalogue result.</p></section>`,
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>Featured videos</span></nav><article class="seo-hero"><p class="seo-eyebrow">Dedicated worship watch pages</p><h1>Featured worship lyric videos</h1><p class="seo-lead">Watch ${videoPages.length} carefully selected English and multilingual worship videos on dedicated pages. Every featured embed was checked as playable, and its original YouTube publication date was verified for accurate video search data.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Search the complete catalogue</a><a class="seo-button seo-button--quiet" href="/languages/">Browse every language collection</a><a class="seo-button seo-button--quiet" href="/about/">How videos are checked</a></div></article><section class="seo-stats"><div><strong>${videoPages.length}</strong><span>verified watch pages</span></div><div><strong>${videoLanguageGroups.length}</strong><span>languages represented</span></div><div><strong>${VIDEO_WATCH_PAGES.filter((video) => video.familySlug).length}</strong><span>familiar-song versions</span></div></section><section class="seo-section"><h2>Browse verified videos by language</h2><div class="seo-card-grid">${videoLanguageNavigation}</div></section>${videoLanguageSections}<section class="seo-section seo-help"><h2>Why the watch-page collection is selective</h2><p>The complete finder contains tens of thousands of searchable links. This smaller collection is reserved for videos whose current YouTube embed and original publication date could both be verified. That keeps the video sitemap and structured data accurate instead of making unsupported claims for every catalogue result.</p><p><a class="seo-text-link" href="/about/">Read the catalogue and editorial method →</a></p></section>`,
     schema: [
       {
         '@type': 'CollectionPage',
@@ -1011,6 +1066,26 @@ async function generate(): Promise<void> {
     ],
   };
 
+  const aboutPage: SeoPage = {
+    path: '/about/',
+    title: 'About Worship Word Video | Catalogue & Review Method',
+    description: 'Learn who created Worship Word Video, how its multilingual YouTube worship catalogue is checked, and what churches must review before using a video.',
+    body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><span>About</span></nav><article class="seo-hero"><p class="seo-eyebrow">Purpose, people and catalogue quality</p><h1>About Worship Word Video</h1><p class="seo-lead">Stephen Norcross created Worship Word Video to save church leaders hours of searching for YouTube worship videos with readable words, especially in churches without musicians and congregations where people worship in more than one language.</p><div class="seo-actions"><a class="seo-button" href="/#main-content">Open the worship finder</a><a class="seo-button seo-button--quiet" href="/videos/">Browse verified watch pages</a></div></article><section class="seo-stats"><div><strong>${uniquePlayableVideos.toLocaleString('en-GB')}</strong><span>unique searchable videos</span></div><div><strong>${namedLanguageCount}</strong><span>named languages</span></div><div><strong>${VIDEO_WATCH_PAGES.length}</strong><span>verified watch pages</span></div></section><section class="seo-section"><h2>Why the tool exists</h2><p>Many churches do not have a pianist, organist or worship band available for every service. Finding an appropriate video can take much longer than expected: the recording needs a singable arrangement, clear on-screen words, suitable language, accurate subtitles and an ending that works in public worship. This directory brings those practical search needs into one place.</p><p>The English catalogue remains central. Multilingual collections also help churches include people who worship most naturally in Persian/Farsi, Urdu, Arabic, Portuguese, Italian and many other heart languages.</p></section><section class="seo-section"><h2>How catalogue entries are checked</h2><ol><li><strong>Words evidence:</strong> an entry needs public uploader wording or maintained catalogue evidence indicating lyrics, words or subtitles.</li><li><strong>Useful labels:</strong> language, vocal/subtitle format and arrangement are recorded from uploader metadata where possible and otherwise inferred conservatively.</li><li><strong>Verified watch pages:</strong> the smaller featured collection is checked for current YouTube playback, embedding, title, uploader, duration and original publication date.</li><li><strong>Corrections:</strong> unavailable, misleading or unsuitable entries can be reported and removed from public results.</li></ol><p>The catalogue is intentionally transparent about the boundary of these checks. Automated playback and metadata checks cannot confirm translation accuracy, theology or congregational suitability.</p></section><section class="seo-section"><h2>What churches still need to review</h2><p>Watch the complete upload before a service. Check every visible word, translation, spoken introduction, verse order, key, tempo, sound level and ending. For multilingual material, ask a fluent speaker and a trusted church leader to review the exact version. Churches remain responsible for the music, projection, recording and streaming permissions relevant to their service and country.</p><p><a class="seo-text-link" href="/guides/church-youtube-lyric-videos/">Use the complete church video checklist →</a></p></section><section class="seo-section"><h2>YouTube, copyright and independence</h2><p>Worship Word Video is a search and playlist-planning directory. It does not host recordings, download videos or reproduce full song lyrics. Videos remain hosted by YouTube and can be changed, restricted or removed by their uploaders. Worship Word Video is not YouTube and does not claim ownership of third-party music, recordings, translations or video artwork.</p></section><section class="seo-section"><h2>Kairos Housing</h2><p>Stephen works for Kairos Housing, a charity supporting people seeking sanctuary and people at risk of homelessness — <strong>Rebuilding lives with dignity</strong>. Use of the worship finder is not conditional on a donation. People who choose to support the charity can give through Kairos Housing's own secure donation page.</p><p><a class="seo-text-link" href="https://operations.kairoshousing.org.uk/donate" rel="noopener noreferrer">Support Kairos Housing →</a></p></section><section class="seo-section seo-help"><h2>Contact, corrections and language review</h2><p>Email <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20enquiry">stephen@kairoshousing.org.uk</a> with a question, broken-video report or correction. Fluent speakers and church leaders can also <a href="/guides/review-multilingual-worship-videos/">help review a language collection</a>. Please identify the exact page and video without copying full copyrighted lyrics into the message.</p></section>`,
+    schema: [
+      {
+        '@type': 'AboutPage',
+        '@id': `${SITE}/about/#page`,
+        url: `${SITE}/about/`,
+        name: 'About Worship Word Video',
+        description: 'Purpose, creator and catalogue review method for Worship Word Video.',
+        isPartOf: { '@id': `${SITE}/#website` },
+        about: { '@id': `${SITE}/#organization` },
+        dateModified: LAST_MODIFIED,
+      },
+      breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'About', path: '/about/' }]),
+    ],
+  };
+
   const pages = [
     languageIndex,
     ...languagePages,
@@ -1026,6 +1101,7 @@ async function generate(): Promise<void> {
     ...videoPages,
     guideIndex,
     ...GUIDE_PAGES,
+    aboutPage,
   ];
   await Promise.all([
     removeStaleGeneratedDirectories('languages', new Set(languagePages.map((page) => page.path.split('/').filter(Boolean).at(-1)!))),
@@ -1042,6 +1118,7 @@ async function generate(): Promise<void> {
     removeDuplicateIndexFiles('songs'),
     removeDuplicateIndexFiles('videos'),
     removeDuplicateIndexFiles('guides'),
+    removeDuplicateIndexFiles('about'),
   ]);
   await Promise.all(pages.map(writePage));
 
@@ -1065,7 +1142,7 @@ async function generate(): Promise<void> {
   await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\n\nSitemap: ${SITE}/sitemap.xml\nSitemap: ${SITE}/video-sitemap.xml\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'seo-urls.json'), `${JSON.stringify(urls, null, 2)}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'indexnow-key.txt'), `${INDEXNOW_KEY}\n`, 'utf8');
-  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nThe catalogue contains ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos across ${namedLanguageCount} named languages. Public features include song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; start and stop timing; and clean second-screen projection.\n\n## Important public collections\n\n- [Worship word lyrics guide](${SITE}/guides/worship-word-lyrics/): How churches can find and review worship videos with words on screen.\n- [Churches without musicians guide](${SITE}/guides/worship-videos-for-churches-without-musicians/): Practical help for services using carefully prepared videos.\n- [Well-known songs across languages](${SITE}/songs/): Familiar worship songs with versions in multiple languages.\n- [Languages](${SITE}/languages/): Dedicated collections for languages with at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos.\n- [Lyrics and subtitle formats](${SITE}/formats/): Native-language words, translated subtitles and bilingual formats.\n- [Church seasons](${SITE}/seasons/): Worship videos for Christmas, Easter and other church seasons.\n- [Worship arrangements](${SITE}/arrangements/): Contemporary, choral, acoustic and other musical treatments.\n- [Church guides](${SITE}/guides/): Planning, projection, copyright and multilingual-review guidance.\n\n## Site information\n\n- [Worship Word Video](${SITE}/): Canonical homepage and public song finder.\n- [Terms, privacy and copyright guidance](${SITE}/?legal=1): Important guidance for churches using third-party YouTube videos.\n- [XML sitemap](${SITE}/sitemap.xml): Current index of canonical public pages.\n\nThe site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use. Contact: stephen@kairoshousing.org.uk.\n`, 'utf8');
+  await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nThe catalogue contains ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos across ${namedLanguageCount} named languages. Public features include song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; start and stop timing; and clean second-screen projection.\n\n## Important public collections\n\n- [Worship word lyrics guide](${SITE}/guides/worship-word-lyrics/): How churches can find and review worship videos with words on screen.\n- [Churches without musicians guide](${SITE}/guides/worship-videos-for-churches-without-musicians/): Practical help for services using carefully prepared videos.\n- [Well-known songs across languages](${SITE}/songs/): Familiar worship songs with versions in multiple languages.\n- [Languages](${SITE}/languages/): Dedicated collections for languages with at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos.\n- [Lyrics and subtitle formats](${SITE}/formats/): Native-language words, translated subtitles and bilingual formats.\n- [Church seasons](${SITE}/seasons/): Worship videos for Christmas, Easter and other church seasons.\n- [Worship arrangements](${SITE}/arrangements/): Contemporary, choral, acoustic and other musical treatments.\n- [Church guides](${SITE}/guides/): Planning, projection, copyright and multilingual-review guidance.\n- [About and catalogue method](${SITE}/about/): Creator, purpose, verification method, review boundaries and corrections.\n\n## Site information\n\n- [Worship Word Video](${SITE}/): Canonical homepage and public song finder.\n- [Verified video watch pages](${SITE}/videos/): Dedicated, current YouTube embeds with accurate video metadata.\n- [Terms, privacy and copyright guidance](${SITE}/?legal=1): Important guidance for churches using third-party YouTube videos.\n- [XML sitemap](${SITE}/sitemap.xml): Current index of canonical public pages.\n\nThe site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use. Contact: stephen@kairoshousing.org.uk.\n`, 'utf8');
 
   const feedItems = GUIDE_PAGES.map((page) => `<item><title>${escapeHtml(page.title)}</title><link>${canonicalUrl(page.path)}</link><guid>${canonicalUrl(page.path)}</guid><description>${escapeHtml(page.description)}</description><pubDate>${FEED_DATE}</pubDate></item>`).join('');
   await writeFile(resolve(PUBLIC_DIR, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Worship Word Video Guides</title><link>${SITE}/guides/</link><description>Practical worship video guidance for churches.</description><language>en-gb</language>${feedItems}</channel></rss>`, 'utf8');

@@ -46,6 +46,7 @@ export function SeoDiscoverySection() {
         {popularLanguages.map(([label, slug]) => <a key={slug} href={`/languages/${slug}/`}>{label}</a>)}
         <a href="/languages/">All languages →</a>
         <a href="/songs/">Well-known songs →</a>
+        <a href="/about/">How videos are checked →</a>
       </nav>
     </section>
   );
