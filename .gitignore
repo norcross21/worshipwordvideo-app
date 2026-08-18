@@ -38,6 +38,12 @@ public/indexnow-key.txt
 .env.*
 !.env.example
 
+# Generated social and marketing collateral
+output/
+
+# Stray image exports
+Codex Image*.png
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

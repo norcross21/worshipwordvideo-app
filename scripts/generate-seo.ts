@@ -18,6 +18,30 @@ const FEED_DATE = new Date(`${LAST_MODIFIED}T00:00:00Z`).toUTCString();
 const INDEXNOW_KEY = 'b2b960d2c713e3e71a89a4f6e34345d1';
 const MIN_LANGUAGE_PAGE_VIDEOS = 3;
 
+/**
+ * Catalogue totals are computed once here so that guide copy, FAQ answers and
+ * llms.txt all quote the same live figures instead of hard-coded numbers that
+ * silently go stale as the catalogue grows.
+ */
+const PLAYABLE_SONGS = getFullSongLibrary()
+  .filter((song) => Boolean(song.youtubeId))
+  .map(canonicaliseSongLanguage);
+const UNIQUE_PLAYABLE_VIDEOS = new Set(PLAYABLE_SONGS.map((song) => song.youtubeId)).size;
+const NAMED_LANGUAGE_COUNT = new Set(
+  PLAYABLE_SONGS
+    .map((song) => song.language ?? 'English')
+    .filter((language) => language !== 'Language not stated'),
+).size;
+const DEEP_LANGUAGE_COUNT = [...PLAYABLE_SONGS.reduce((counts, song) => {
+  const language = song.language ?? 'English';
+  if (language !== 'Language not stated') counts.set(language, (counts.get(language) ?? 0) + 1);
+  return counts;
+}, new Map<string, number>()).values()].filter((count) => count >= 500).length;
+
+function approximateTotal(value: number): string {
+  return `${(Math.floor(value / 1000) * 1000).toLocaleString('en-GB')}`;
+}
+
 interface SeoPage {
   path: string;
   title: string;
@@ -752,7 +776,194 @@ function videoWatchPage(video: VideoWatchPageRecord, allVideos: VideoWatchPageRe
   };
 }
 
-const GUIDE_PAGES: SeoPage[] = [
+interface FaqEntry {
+  question: string;
+  answer: string;
+}
+
+/**
+ * Visible FAQ markup and FAQPage structured data are rendered from the same
+ * entries, so the schema can never describe an answer the reader cannot see.
+ */
+function faqSection(entries: FaqEntry[]): string {
+  const items = entries
+    .map((entry) => `<div class="seo-faq-item"><h3>${escapeHtml(entry.question)}</h3><p>${escapeHtml(entry.answer)}</p></div>`)
+    .join('');
+  return `<section class="seo-section seo-faq"><h2>Common questions</h2>${items}</section>`;
+}
+
+function faqSchema(path: string, entries: FaqEntry[]): Record<string, unknown> {
+  return {
+    '@type': 'FAQPage',
+    '@id': `${canonicalUrl(path)}#faq`,
+    mainEntity: entries.map((entry) => ({
+      '@type': 'Question',
+      name: entry.question,
+      acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+    })),
+  };
+}
+
+const GUIDE_FAQS: Record<string, FaqEntry[]> = {
+  '/guides/worship-word-lyrics/': [
+    {
+      question: 'Is Worship Word Video free to use, and do I need an account?',
+      answer: 'Worship Word Video is free to use, and searching or previewing videos needs no account. A free account is needed for the service-planning tools: building and saving a named running order, setting tidy start and stop points, and opening the separate church-screen window. There is no subscription or fee, and the optional charity donation link is never a condition of use. Videos play in YouTube’s own embedded player, so any adverts or restrictions come from YouTube and the uploader, not from this directory.',
+    },
+    {
+      question: 'What does it mean when a video is labelled as having words indicated?',
+      answer: 'On Worship Word Video, a words-indicated label means the uploader’s own title, description or the maintained metadata signalled that lyrics, words or subtitles appear on screen. It is a search shortcut rather than a human review: nobody has confirmed that every verse appears, that the spelling is correct, or that the wording suits your congregation. Watch each video right through before the service, and if it is not in English, ask someone who knows the language well to check it.',
+    },
+    {
+      question: 'Does using Worship Word Video mean our church service is properly licensed?',
+      answer: 'No. Finding a video through Worship Word Video says nothing about your church’s permissions. Copyright licensing for singing, projecting words, recording or live-streaming stays your church’s own responsibility, and a video being publicly visible on YouTube does not grant those permissions. Check what your service involves with the licensing bodies relevant to your country, such as CCLI, PRS or PPL in the UK, or take your own professional advice. This directory has no affiliation with them.',
+    },
+    {
+      question: 'What happens if a worship video is removed or blocked before the service?',
+      answer: 'Any linked video can disappear, because each one stays on YouTube under its uploader’s control and may be edited, made private, geo-blocked or deleted without notice. Worship Word Video stores only the link and public metadata, so there is no copy here to fall back on. Check your running order again shortly before the service, keep an alternative video for each song, and be ready to sing unaccompanied if a link fails.',
+    },
+    {
+      question: 'Can I find worship songs with words in languages other than English?',
+      answer: `Yes. Worship Word Video lists more than ${approximateTotal(UNIQUE_PLAYABLE_VIDEOS)} playable YouTube links across ${NAMED_LANGUAGE_COUNT} named languages, and you can search or filter by language as well as by song title, artist or hymn number. Listings show whether uploader information suggests native-language words, translated subtitles, English subtitles or a bilingual format. Those labels come from public metadata rather than any language review, so treat them as a starting point and have a fluent speaker check the words first.`,
+    },
+    {
+      question: 'Why do some results say the language is not stated?',
+      answer: 'Worship Word Video says the language is not stated when the uploader’s title, channel or writing system gave no dependable evidence of it, even though the wording pointed to words or subtitles on screen. The alternative would be to inherit the language of whichever search found the video, which can be wrong. Treat those entries as worth previewing rather than as faults, and confirm the language yourself before planning a service around one.',
+    },
+  ],
+  '/guides/worship-videos-for-churches-without-musicians/': [
+    {
+      question: 'Can a church hold a worship service if it has no musicians?',
+      answer: 'Yes. Congregations regularly sing to a YouTube worship video that supplies both the accompaniment and the words on screen, so no instrumentalist is needed. Worship Word Video is a free directory that points to public uploads whose wording indicates words or subtitles; it does not host recordings or reproduce lyrics, and that wording is not a fluent-language or theological review. Watch each upload right through yourself, and settle your own licensing position separately.',
+    },
+    {
+      question: 'Do we still need a CCLI or PRS licence if we use YouTube worship videos instead of live musicians?',
+      answer: 'Treat the requirement as unchanged: playing a recorded video instead of using live musicians does not remove a church’s own licensing duties. Permissions for public performance, copying, projection and any online stream remain the individual church’s responsibility, and depend on your country, venue and what the service involves. Worship Word Video is a directory of links and cannot make a service licensed. Confirm your position with CCLI, PRS, PPL or your own adviser.',
+    },
+    {
+      question: 'What happens if a worship video is removed or blocked before Sunday?',
+      answer: 'Plan for it, because it does happen. Videos found through a directory such as Worship Word Video stay on third-party YouTube channels, so an uploader can edit, restrict, make private, geo-block or delete one at any time, sometimes between a Thursday rehearsal and Sunday morning. Re-check every link shortly before the service, hold a second suitable video for each slot, and keep an unaccompanied song or a reading available as a fallback.',
+    },
+    {
+      question: 'How do we get a congregation to sing along with a video instead of just watching it?',
+      answer: 'Repetition and clear leadership do more than the technology. Keep to a short pool of songs the congregation already knows and return to them over several weeks, set the volume so voices are supported rather than covered, and say out loud that this is a song to join in with. Someone at the front, visibly singing, changes how a room responds to a worship video.',
+    },
+    {
+      question: 'How many worship videos should we put in one service?',
+      answer: 'Usually fewer than a live band would play; three or four songs is a manageable pattern, because a recording runs to a fixed length and cannot read the room or extend a chorus. In Worship Word Video, signed-in members can add optional start and stop points to shorten a long opening or a trailing end screen, although YouTube seeks to the nearest keyframe, so treat that timing as approximate. Leave a little silence between songs for prayer.',
+    },
+    {
+      question: 'Can one volunteer run the whole thing on their own?',
+      answer: 'Usually yes, because there is no band to rehearse or cue. One volunteer can assemble the running order in advance, then step to the next item when the moment comes. In Worship Word Video the dashboard and its Next control stay on the laptop, and the projection window it opens carries nothing but the player; saving a named service needs a free account. Teach a second volunteer the same routine so no service depends on one person attending.',
+    },
+  ],
+  '/guides/church-youtube-lyric-videos/': [
+    {
+      question: 'Is it legal to play YouTube worship lyric videos in a church service?',
+      answer: 'It depends on your own church’s permissions and the platform’s terms, so it is a question for your church and its licensing bodies rather than one a directory can answer. Showing a video to a gathered congregation raises different questions from watching it privately at home, and recording or streaming raises further ones again. Worship Word Video only links to public YouTube uploads; it cannot make any service licensed.',
+    },
+    {
+      question: 'How can I tell if a YouTube video actually shows the words on screen?',
+      answer: 'The only reliable check is playing the exact upload yourself, from the first verse to the last. A title containing lyrics, with words or sing along tells you what the uploader chose to type, and it can be inaccurate, incomplete or true of only part of the song. On Worship Word Video the words on screen filter follows uploader wording and maintained catalogue metadata, not a fluent-speaker check of every line.',
+    },
+    {
+      question: 'Which YouTube channel should we choose when a worship song has dozens of versions?',
+      answer: 'Prefer an official artist, publisher, church or ministry channel where one exists, then compare arrangement, key and word presentation. A video being visible on YouTube does not prove the uploader holds the rights to it, and re-uploads are more likely to be blocked or taken down later. Keep the exact video link and channel name in your own order of service so the same upload can be found and rechecked.',
+    },
+    {
+      question: 'What if a worship video is deleted or blocked before Sunday?',
+      answer: 'Assume it can happen and choose a second option for every song. An uploader can delete a video, make it private, restrict it by country or switch embedding off without warning, so recheck each item a day or two before the service and again on the morning itself. A different upload, another arrangement or an unaccompanied version prevents a scramble as people arrive.',
+    },
+    {
+      question: 'Can we use the same lyric video in our livestream or online service?',
+      answer: 'Streaming is a separate question from showing a video in the room, and both sit with your church rather than with this directory. Recording or broadcasting a service that includes someone else’s video is normally treated separately from projecting it to a gathered congregation, and platforms may mute or block a stream automatically. Ask your licensing bodies and check the platform’s terms before publishing anything online.',
+    },
+    {
+      question: 'How do we stop adverts interrupting a worship video during a service?',
+      answer: 'There is no reliable way to guarantee advert-free playback, so plan around it rather than promise it. Adverts are decided by YouTube and the rights holders, not by a church or by a directory, and a video that played cleanly last month may carry one this week. Worship Word Video uses the official YouTube embed player, does not remove adverts and makes no advert-free claim, so preview on the day and keep an operator at the controls.',
+    },
+  ],
+  '/guides/multilingual-worship/': [
+    {
+      question: 'How many languages should we use in one worship service?',
+      answer: 'Most churches handle one or two languages beyond the main service language well. Depth matters more than breadth, so a single well-prepared item in an additional language usually serves people better than several partly-prepared ones. Fewer languages also means fewer screen changes for the AV volunteer, less unfamiliar pronunciation for anyone leading, and enough time to say briefly why the church is singing it.',
+    },
+    {
+      question: 'Does Worship Word Video check that a video’s language and subtitle labels are correct?',
+      answer: 'No. Language, region and presentation labels in Worship Word Video come from public uploader metadata such as the video title, channel and script, plus maintained catalogue records. They are discovery aids, not a linguistic, translation-quality or theological endorsement. Where the available wording does not support a language claim, the entry says the language is not stated. A fluent speaker and a trusted church leader should watch the exact video before public use.',
+    },
+    {
+      question: 'What if nobody in our church speaks the language we want to include?',
+      answer: 'Find someone to review it before the service rather than relying on a catalogue label. A neighbouring church, a denominational or mission network, a local community organisation, or the family of someone in the congregation can often watch a short worship video and comment on the visible words. Until a fluent speaker has watched that exact upload, it is safer to postpone the item than to project words nobody present can check.',
+    },
+    {
+      question: 'Do we need extra permissions to sing or project a worship song in another language?',
+      answer: 'Worship Word Video cannot answer that, and licensing is always your own church’s responsibility, whichever language is sung. The site is a free directory of public YouTube links, so finding a video here does not make a service licensed and does not cover singing, projection, recording or streaming permissions. Ask your own licence providers, such as CCLI, PRS or PPL, about the specific song, translation and arrangement you plan to use.',
+    },
+    {
+      question: 'Which languages have the most worship videos with words on screen?',
+      answer: `Portuguese, Tamil, Hindi, Arabic, Burmese, Spanish, Indonesian and Tagalog/Filipino are currently among the largest collections in Worship Word Video, and ${DEEP_LANGUAGE_COUNT} named languages each hold at least five hundred playable links, within ${NAMED_LANGUAGE_COUNT} named languages overall. Depth varies a great deal. Country names are also not languages, so a request for Nigerian or Indian worship needs narrowing to something specific such as Yoruba, Telugu or Malayalam.`,
+    },
+    {
+      question: 'What should we do if a multilingual video disappears before the Sunday we planned to use it?',
+      answer: 'Plan a second option for every multilingual item and check each link again shortly before the service. Videos belong to their YouTube uploaders, who can edit, restrict, make private, geo-block or delete them at any time, and embedding can be switched off, so no external link can be promised for a future date. Signed-in members can keep the alternative in the same saved service plan, then preview the whole running order on the church equipment.',
+    },
+  ],
+  '/guides/second-screen-church-projection/': [
+    {
+      question: 'How do I project a YouTube worship video without the congregation seeing my browser tabs?',
+      answer: 'Open the dedicated church-screen window and leave the operator dashboard on the laptop. Worship Word Video’s projection window carries only the YouTube player plus a small caption naming the song and any trim times; no search box, catalogue or playlist appears on it. The transport buttons remain with the operator, and the two windows keep in step, so choosing the next item changes the church screen and nothing else.',
+    },
+    {
+      question: 'Do I need a second monitor to use a worship video playlist in church?',
+      answer: 'No, though a second display gives a cleaner result. On a single screen you can still work through the playlist and use the player’s own full-screen control, but you will be swapping between the video and the controls, and the congregation may glimpse the browser. In browsers that can report connected displays, Worship Word Video says so when it finds only one rather than leaving a window nobody can see. An extended projector, television or spare monitor is preferable.',
+    },
+    {
+      question: 'Will adverts appear on the church screen during worship?',
+      answer: 'They can. Videos play through YouTube’s own embedded player, so any advertising, banner or end screen the uploader or platform includes may appear, and Worship Word Video does not block or remove it. Preview each video shortly before the service, note where interruptions occur, and be ready to move on using the operator controls. Uploads can change between rehearsal and Sunday, so check again on the day.',
+    },
+    {
+      question: 'Do we need a licence to project YouTube worship videos in a church service?',
+      answer: 'That is your church’s own decision and responsibility, and this directory cannot answer it for you. Public performance, projection, recording and livestreaming of worship songs can each involve separate permissions such as CCLI, PPL or PRS, depending on your country and how the material is used. Worship Word Video only points to publicly available YouTube uploads, grants no permission of any kind, and has no affiliation with CCLI or any licensing body. Ask your denomination or the licensing body directly.',
+    },
+    {
+      question: 'What happens if the internet drops or a video disappears during the service?',
+      answer: 'Playback stops or stalls, because the video streams from YouTube and Worship Word Video never stores a copy. A third-party upload can also be made private, geo-blocked, edited or removed without notice, so a link that worked at rehearsal may not work on Sunday. Plan a fallback you control: a word sheet your church is licensed to use, a second video you have watched through yourself, or a spoken introduction while the operator moves on.',
+    },
+    {
+      question: 'Why did nothing appear on the projector when I opened the church screen?',
+      answer: 'Worship Word Video opens the church screen as a separate browser window, so the usual causes are a blocked pop-up or a window the browser could not place on the second display. Allow pop-ups for the site in the operator’s desktop browser, then reopen the church screen. If the clean window lands on the laptop instead of the projector, grant window-management access when prompted, or drag the window across and choose Full screen there.',
+    },
+  ],
+  '/guides/review-multilingual-worship-videos/': [
+    {
+      question: 'How long does it take to review one multilingual worship video?',
+      answer: 'Allow the full running time of the video plus a few minutes for notes, so a four-minute song usually takes about ten minutes from start to finish. Skipping through is where mistakes happen, because a spoken introduction, a mistimed subtitle or an unexpected closing screen only shows itself on a complete watch. Stop while your concentration is still fresh rather than working quickly through a long list in one sitting.',
+    },
+    {
+      question: 'Nobody in our church speaks the language, so how can we still get a video checked?',
+      answer: 'Look outside your own congregation for a fluent speaker willing to watch the worship video once. A neighbouring church, a diaspora fellowship, a hospital or university chaplaincy, a mission partner or a denominational language network can often help. Give them the exact link and a short list of what you need judged. If nobody is available, treat the entry as unreviewed and consider a version that carries English subtitles alongside the sung language.',
+    },
+    {
+      question: 'What should I do if the subtitles do not match what is being sung?',
+      answer: 'Email stephen@kairoshousing.org.uk, the correction and content-report route for Worship Word Video, giving the catalogue page and the YouTube link. Describe the mismatch in your own words rather than pasting the text shown on screen. Say whether the problem is timing, spelling, a loose paraphrase or an entirely different song. Entries that turn out to be wrongly labelled can be relabelled, corrected or removed from public results.',
+    },
+    {
+      question: 'Once a fluent speaker has reviewed a video, can we rely on it indefinitely?',
+      answer: 'Treat it as a snapshot rather than a standing guarantee. Uploaders can re-edit a video, replace the subtitle track, restrict it by country, switch it to private or delete it, and none of that produces any warning to a directory that merely links to it. Open and watch the exact link again shortly before any service that depends on it, and keep a second option ready.',
+    },
+    {
+      question: 'Can we use a multilingual worship video in a service before a fluent speaker has reviewed it?',
+      answer: 'That decision belongs to the church rather than to a directory, and a practical middle path is to preview the exact upload with a fluent speaker present even when no formal written review ever happens. Catalogue labels are drawn from public uploader wording and cautious inference, so they indicate what to expect rather than confirm it, and they are not a translation or theological endorsement. Permissions for singing, projecting or streaming remain the church’s own responsibility.',
+    },
+    {
+      question: 'What is the difference between native-language words and translated subtitles on screen?',
+      answer: 'The format labels used in the Worship Word Video catalogue describe what is sung alongside what appears on screen. Native-language words means the on-screen text is in the same language as the singing, which suits a congregation reading and singing together. Translated subtitles means the sung language and the written text differ, so people follow the meaning rather than sing from it. Separate labels cover a native vocal with English subtitles and bilingual versions.',
+    },
+  ],
+};
+
+const GUIDE_PAGE_DEFINITIONS: SeoPage[] = [
   {
     path: '/guides/worship-word-lyrics/',
     title: 'Worship Word Lyrics Videos for Churches | Free Finder',
@@ -854,6 +1065,23 @@ const GUIDE_PAGES: SeoPage[] = [
   },
 ];
 
+/**
+ * Append the visible FAQ block and its matching FAQPage schema to every guide
+ * that has entries, so answer engines and readers see identical wording.
+ */
+const GUIDE_PAGES: SeoPage[] = GUIDE_PAGE_DEFINITIONS.map((page) => {
+  const entries = GUIDE_FAQS[page.path];
+  if (!entries?.length) return page;
+  return {
+    ...page,
+    body: `${page.body}${faqSection(entries)}`,
+    schema: [
+      ...(Array.isArray(page.schema) ? page.schema : [page.schema]),
+      faqSchema(page.path, entries),
+    ],
+  };
+});
+
 async function writePage(page: SeoPage): Promise<void> {
   const directory = resolve(PUBLIC_DIR, page.path.replace(/^\//, ''));
   await mkdir(directory, { recursive: true });
@@ -879,9 +1107,7 @@ async function removeDuplicateIndexFiles(parent: string): Promise<void> {
 }
 
 async function generate(): Promise<void> {
-  const playableSongs = getFullSongLibrary()
-    .filter((song) => Boolean(song.youtubeId))
-    .map(canonicaliseSongLanguage);
+  const playableSongs = PLAYABLE_SONGS;
   const publicSongs = playableSongs.map((song) => ({
     ...song,
     wordsIndicated: hasPublicWordEvidence(song),
@@ -906,12 +1132,8 @@ async function generate(): Promise<void> {
     JSON.stringify(SONG_FAMILIES),
     'utf8',
   );
-  const uniquePlayableVideos = new Set(playableSongs.map((song) => song.youtubeId)).size;
-  const namedLanguageCount = new Set(
-    playableSongs
-      .map((song) => song.language ?? 'English')
-      .filter((language) => language !== 'Language not stated'),
-  ).size;
+  const uniquePlayableVideos = UNIQUE_PLAYABLE_VIDEOS;
+  const namedLanguageCount = NAMED_LANGUAGE_COUNT;
   const languageGroups = new Map<string, WorshipSong[]>();
   const arrangementGroups = new Map<string, WorshipSong[]>();
   for (const song of playableSongs) {
@@ -1139,7 +1361,7 @@ async function generate(): Promise<void> {
     </video:video>
   </url>`).join('\n')}\n</urlset>\n`;
   await writeFile(resolve(PUBLIC_DIR, 'video-sitemap.xml'), videoSitemap, 'utf8');
-  await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\n\nSitemap: ${SITE}/sitemap.xml\nSitemap: ${SITE}/video-sitemap.xml\n`, 'utf8');
+  await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\nDisallow: /*?q=\nDisallow: /*?language=\nDisallow: /*&language=\n\nSitemap: ${SITE}/sitemap.xml\nSitemap: ${SITE}/video-sitemap.xml\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'seo-urls.json'), `${JSON.stringify(urls, null, 2)}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'indexnow-key.txt'), `${INDEXNOW_KEY}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nThe catalogue contains ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos across ${namedLanguageCount} named languages. Public features include song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; start and stop timing; and clean second-screen projection.\n\n## Important public collections\n\n- [Worship word lyrics guide](${SITE}/guides/worship-word-lyrics/): How churches can find and review worship videos with words on screen.\n- [Churches without musicians guide](${SITE}/guides/worship-videos-for-churches-without-musicians/): Practical help for services using carefully prepared videos.\n- [Well-known songs across languages](${SITE}/songs/): Familiar worship songs with versions in multiple languages.\n- [Languages](${SITE}/languages/): Dedicated collections for languages with at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos.\n- [Lyrics and subtitle formats](${SITE}/formats/): Native-language words, translated subtitles and bilingual formats.\n- [Church seasons](${SITE}/seasons/): Worship videos for Christmas, Easter and other church seasons.\n- [Worship arrangements](${SITE}/arrangements/): Contemporary, choral, acoustic and other musical treatments.\n- [Church guides](${SITE}/guides/): Planning, projection, copyright and multilingual-review guidance.\n- [About and catalogue method](${SITE}/about/): Creator, purpose, verification method, review boundaries and corrections.\n\n## Site information\n\n- [Worship Word Video](${SITE}/): Canonical homepage and public song finder.\n- [Verified video watch pages](${SITE}/videos/): Dedicated, current YouTube embeds with accurate video metadata.\n- [Terms, privacy and copyright guidance](${SITE}/?legal=1): Important guidance for churches using third-party YouTube videos.\n- [XML sitemap](${SITE}/sitemap.xml): Current index of canonical public pages.\n\nThe site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use. Contact: stephen@kairoshousing.org.uk.\n`, 'utf8');

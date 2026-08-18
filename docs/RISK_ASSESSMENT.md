@@ -54,7 +54,7 @@ The present direction is lower risk because the app stores video metadata and Yo
 - The application does not download or host YouTube media.
 - Custom song forms no longer accept copied lyrics.
 - International entries store metadata, language, region and source channel only.
-- The catalogue contains 52,337 unique playable links across 114 named languages. Newly imported leads required uploader wording for lyrics, words or subtitles, worship-song context, a service-length duration and a fresh YouTube embed metadata response; this still does not mean the words or theology were manually verified.
+- The catalogue contains 72,965 unique playable links across 114 named languages. Newly imported leads required uploader wording for lyrics, words or subtitles, worship-song context, a service-length duration and a fresh YouTube embed metadata response; this still does not mean the words or theology were manually verified.
 - Exact-video arrangement and language-format labels are visible in search results and detail views. Unclear language leads say “Language not stated” rather than inheriting an unsupported search-language claim.
 - International detail pages advise a native speaker or church leader to review words and theology before public use.
 - A separate familiar-song collection links local-language, translated or subtitled versions to a verified English song identity for search, without reproducing lyrics.

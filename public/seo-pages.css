@@ -36,6 +36,9 @@ h2 { color: #172b61; font-family: Georgia, "Times New Roman", serif; font-size: 
 .seo-card strong { color: #163476; }
 .seo-card span { margin-top: 5px; color: #667085; font-size: .92rem; }
 .seo-help { border: 0; padding: 28px; margin: 18px 0 36px; border-radius: 16px; background: #edf9f6; }
+.seo-faq-item { padding: 18px 20px; margin-top: 12px; border: 1px solid #dce4e8; border-radius: 12px; background: white; }
+.seo-faq-item h3 { margin: 0; color: #163476; font-size: 1.02rem; line-height: 1.35; }
+.seo-faq-item p { margin: 8px 0 0; }
 .seo-watch-hero { padding: clamp(30px, 5vw, 54px) 0 30px; }
 .seo-watch-hero h1 { max-width: 960px; font-size: clamp(1.9rem, 4vw, 3.2rem); line-height: 1.08; }
 .seo-video-frame { width: 100%; margin-top: 28px; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 16px; background: #071334; box-shadow: 0 14px 34px rgba(16, 42, 112, .16); }
