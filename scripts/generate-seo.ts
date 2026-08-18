@@ -240,6 +240,12 @@ function formatList(items: Array<[string, number]>, limit = 3): string {
   return items.slice(0, limit).map(([label, count]) => `${label} (${count.toLocaleString('en-GB')})`).join(', ');
 }
 
+/** Join labels as readable prose: "Korean", "Korean and Spanish", "Korean, Spanish and Tamil". */
+function formatConjunction(labels: string[]): string {
+  if (labels.length <= 1) return labels[0] ?? '';
+  return `${labels.slice(0, -1).join(', ')} and ${labels.at(-1)}`;
+}
+
 function countBy(songs: WorshipSong[], getValue: (song: WorshipSong) => string): Array<[string, number]> {
   const counts = new Map<string, number>();
   for (const song of songs) {
@@ -583,6 +589,63 @@ function presentationPage(presentation: LanguagePresentation, songs: WorshipSong
   };
 }
 
+interface SongFamilyProfile {
+  credit?: string;
+  ccliRank?: number;
+  isTraditional: boolean;
+  isContemporary: boolean;
+  hymnalRefs: Array<{ shortName: string; hymnalName: string; number: string }>;
+  arrangements: Array<[string, number]>;
+  presentations: Array<[string, number]>;
+  regions: string[];
+  shortest?: number;
+  longest?: number;
+  typical?: number;
+}
+
+/**
+ * Derive the facts that genuinely differ between one familiar song and another,
+ * so each song-family page carries its own detail rather than repeating a shared
+ * template with only the title swapped.
+ */
+function songFamilyProfile(songs: WorshipSong[]): SongFamilyProfile {
+  const englishSongs = songs.filter((song) => (song.language ?? 'English') === 'English');
+  /**
+   * Where the catalogue could not identify a songwriter it stores the uploader's
+   * channel name in `artist`. Those rows must never be presented as a song
+   * credit, so only trust an artist that differs from its own channel.
+   */
+  const creditCandidates = englishSongs.filter((song) => song.artist && song.artist !== song.sourceChannel);
+  const creditCounts = countBy(creditCandidates, (song) => song.artist);
+  const creditSource = creditCandidates.find((song) => song.ccliUkRank)?.artist ?? creditCounts[0]?.[0];
+  const ranks = songs.map((song) => song.ccliUkRank).filter((rank): rank is number => Boolean(rank));
+  const durations = songs
+    .map((song) => song.durationSeconds)
+    .filter((seconds): seconds is number => Boolean(seconds))
+    .sort((left, right) => left - right);
+  const seenHymnals = new Set<string>();
+  const hymnalRefs: SongFamilyProfile['hymnalRefs'] = [];
+  for (const reference of songs.flatMap((song) => song.hymnalReferences ?? [])) {
+    const key = `${reference.shortName} ${reference.number}`;
+    if (seenHymnals.has(key)) continue;
+    seenHymnals.add(key);
+    hymnalRefs.push({ shortName: reference.shortName, hymnalName: reference.hymnalName, number: reference.number });
+  }
+  return {
+    credit: creditSource,
+    ccliRank: ranks.length ? Math.min(...ranks) : undefined,
+    isTraditional: songs.some((song) => /hymn|psalm|chant|liturgy/i.test(song.category)),
+    isContemporary: songs.some((song) => !/hymn|psalm|chant|liturgy/i.test(song.category)),
+    hymnalRefs,
+    arrangements: countBy(songs, inferWorshipArrangement),
+    presentations: countBy(songs, inferLanguagePresentation),
+    regions: [...new Set(songs.map((song) => song.region).filter((region): region is string => Boolean(region)))],
+    shortest: durations[0],
+    longest: durations.at(-1),
+    typical: durations[Math.floor(durations.length / 2)],
+  };
+}
+
 function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): SeoPage {
   const orderedSongs = [...songs].sort((left, right) => {
     const languageOrder = (left.language ?? 'English').localeCompare(right.language ?? 'English');
@@ -601,7 +664,15 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   const count = songs.length;
   const presentationFormatCount = new Set(songs.map(inferLanguagePresentation)).size;
   const query = new URLSearchParams({ q: family.title });
-  const description = `Find ${family.title} in ${languages.length} languages, with lyric, subtitle and translated worship videos for multilingual church services.`;
+  const profile = songFamilyProfile(songs);
+  const namedLanguages = languages.filter(([language]) => language !== 'English' && language !== 'Language not stated');
+  const leadLanguages = namedLanguages.slice(0, 3).map(([language]) => language);
+  const description = truncateAtWord(
+    leadLanguages.length
+      ? `${family.title} worship videos with words in ${languages.length} languages including ${formatConjunction(leadLanguages)}. Compare native words, translated subtitles and bilingual versions.`
+      : `${family.title} worship videos with on-screen words in ${languages.length} languages. Compare arrangements, subtitle formats and running times before your service.`,
+    164,
+  );
   const fullPageTitle = `${family.title} in Different Languages | Worship Videos`;
   const pageTitle = fullPageTitle.length <= 65
     ? fullPageTitle
@@ -614,13 +685,49 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
     const formats = countBy(languageSongs, inferLanguagePresentation);
     return `<a class="seo-card" href="${finderUrl(languageQuery)}"><strong>${escapeHtml(language)}</strong><span>${languageSongs.length.toLocaleString('en-GB')} playable ${languageSongs.length === 1 ? 'version' : 'versions'} · ${escapeHtml(formatList(formats, 2))}</span></a>`;
   }).join('');
+  const creditSentence = profile.credit
+    ? `The English version indexed here is credited to ${escapeHtml(profile.credit)}.`
+    : '';
+  const rankSentence = profile.ccliRank
+    ? `${creditSentence ? ' It sits' : `${escapeHtml(family.title)} sits`} at number ${profile.ccliRank} in the CCLI UK Top 100 snapshot held in this catalogue, so many English-speaking congregations will already know it.`
+    : '';
+  const creditParagraph = creditSentence || rankSentence
+    ? `<p>${creditSentence}${rankSentence}</p>`
+    : '';
+  const spreadSentence = leadLanguages.length
+    ? leadLanguages.length === 1
+      ? ` The one non-English collection here is ${escapeHtml(leadLanguages[0])}.`
+      : ` The widest non-English collections are ${escapeHtml(formatConjunction(leadLanguages))}.`
+    : '';
+  const lead = `${profile.isTraditional && profile.isContemporary
+    ? `${escapeHtml(family.title)} is catalogued here as a traditional hymn as well as a modern worship song, so the ${count.toLocaleString('en-GB')} versions below range from plain hymn settings to contemporary arrangements.`
+    : profile.isTraditional
+      ? `${escapeHtml(family.title)} is catalogued here as a traditional hymn, with ${count.toLocaleString('en-GB')} versions across ${languages.length.toLocaleString('en-GB')} languages.`
+      : `This page gathers ${count.toLocaleString('en-GB')} playable versions of ${escapeHtml(family.title)} across ${languages.length.toLocaleString('en-GB')} languages.`}${spreadSentence}`;
+
+  const arrangementSentence = `Uploaders present ${escapeHtml(family.title)} in ${profile.arrangements.length === 1 ? 'one catalogued arrangement' : `${profile.arrangements.length} catalogued arrangements`}: ${escapeHtml(formatList(profile.arrangements, 5))}.`;
+  const timingSentence = profile.shortest && profile.longest && profile.typical
+    ? profile.shortest === profile.longest
+      ? ` Every catalogued version runs about ${readableDuration(profile.typical)}.`
+      : ` Running times go from ${readableDuration(profile.shortest)} to ${readableDuration(profile.longest)}, with a typical version around ${readableDuration(profile.typical)} — worth checking against the time you have in the service.`
+    : '';
+  const regionSentence = profile.regions.length > 1
+    ? ` Uploads are associated with ${profile.regions.length.toLocaleString('en-GB')} regions, including ${escapeHtml(formatConjunction(profile.regions.slice(0, 3)))}.`
+    : '';
+
+  const hymnalSection = profile.hymnalRefs.length
+    ? `<section class="seo-section"><h2>${escapeHtml(family.title)} in the hymn books</h2><p>This song appears in ${profile.hymnalRefs.length === 1 ? 'one indexed hymn book' : `${profile.hymnalRefs.length} indexed hymn-book entries`}, which is useful when a service sheet or organist refers to a number rather than a title.</p><ul class="seo-song-list">${profile.hymnalRefs.slice(0, 12).map((reference) => `<li><strong>${escapeHtml(reference.shortName)} ${escapeHtml(reference.number)}</strong><span>${escapeHtml(reference.hymnalName)}</span></li>`).join('')}</ul></section>`
+    : '';
+
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/songs/">Songs across languages</a><span>›</span><span>${escapeHtml(family.title)}</span></nav>
-  <article class="seo-hero"><p class="seo-eyebrow">Well-known worship across languages</p><h1>${escapeHtml(family.title)} in different languages</h1><p class="seo-lead">Compare ${count.toLocaleString('en-GB')} playable versions across ${languages.length.toLocaleString('en-GB')} languages. Use the language and presentation labels to distinguish native-language vocals, translated subtitles, English subtitles and bilingual versions where the uploader's metadata supports that description.</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Search every ${escapeHtml(family.title)} video</a><a class="seo-button seo-button--quiet" href="/formats/">Understand lyrics and subtitle labels</a></div></article>
+  <article class="seo-hero"><p class="seo-eyebrow">Well-known worship across languages</p><h1>${escapeHtml(family.title)} in different languages</h1><p class="seo-lead">${lead}</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Search all ${escapeHtml(family.title)} versions</a><a class="seo-button seo-button--quiet" href="/formats/">Understand lyrics and subtitle labels</a></div></article>
   <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable word videos</span></div><div><strong>${languages.length.toLocaleString('en-GB')}</strong><span>languages represented</span></div><div><strong>${presentationFormatCount.toLocaleString('en-GB')}</strong><span>lyrics and subtitle formats</span></div></section>
+  <section class="seo-section"><h2>What this catalogue holds for ${escapeHtml(family.title)}</h2>${creditParagraph}<p>${arrangementSentence}${timingSentence}${regionSentence}</p><p>On-screen wording splits into ${escapeHtml(formatList(profile.presentations, 4))}, taken from uploader metadata rather than a line-by-line check.</p></section>
+  ${hymnalSection}
   <section class="seo-section"><h2>Choose a language version</h2><div class="seo-card-grid">${languageCards}</div></section>
-  ${verifiedVideos.length ? `<section class="seo-section"><h2>Watch verified ${escapeHtml(family.title)} videos</h2><p>These dedicated pages use current, embeddable YouTube uploads and verified publication metadata. Continue to preview the complete version before church use.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
+  ${verifiedVideos.length ? `<section class="seo-section"><h2>Watch verified ${escapeHtml(family.title)} videos</h2><p>Each of these ${verifiedVideos.length === 1 ? 'pages holds one' : `${verifiedVideos.length} pages holds a`} currently embeddable upload with its checked title, uploader and publication date.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
   <section class="seo-section"><h2>Example ${escapeHtml(family.title)} lyric and subtitle videos</h2><ul class="seo-song-list">${songRows(orderedSongs)}</ul><p><a class="seo-text-link" href="${finderUrl(query)}">Open all ${count.toLocaleString('en-GB')} matching videos in the finder →</a></p></section>
-  <section class="seo-section seo-help"><h2>Check the exact version before church</h2><p>These are links to public YouTube uploads, not copies of the song or lyrics. A familiar English title can refer to a translation, adaptation, cover or subtitled original. Preview the complete video, ask a fluent speaker to review translated words and theology, and confirm the licences needed for your service.</p></section>`;
+  <section class="seo-section seo-help"><h2>Before using ${escapeHtml(family.title)} in a service</h2><p>A familiar English title can front a translation, adaptation, cover or subtitled original, so preview the exact upload you intend to project.</p><p><a class="seo-text-link" href="/guides/church-youtube-lyric-videos/">Read the full selection, language-review and licensing checklist →</a></p></section>`;
   return {
     path: `/songs/${family.slug}/`,
     title: pageTitle,
