@@ -63,7 +63,7 @@ The present direction is lower risk because the app stores video metadata and Yo
 - Administrator authority is enforced in the database, not by checking an email in browser code.
 - A public Terms, Privacy and Copyright centre explains acceptable use, church licensing duties, third-party services, liability limits and the charity relationship.
 - Account creation requires agreement to the current legal and safety information.
-- A documented content-reporting and takedown route uses `stephen@kairoshousing.org.uk`.
+- A documented content-reporting and takedown route uses `hello@worshipwordvideo.org`, which forwards to the operator.
 - The selected YouTube privacy-enhanced player loads directly so planning is not interrupted by a separate consent gate. The privacy notice explains this third-party request; the app does not add advertising or marketing analytics, and the PECR/DUAA consent position should be reviewed if that changes.
 - Playlist trim points use YouTube's supported `start` and `end` parameters and warn that seeking may begin near the closest keyframe.
 - Projection uses a clean, dedicated URL plus browser storage/BroadcastChannel synchronisation, and keeps the operator dashboard off the projected window.

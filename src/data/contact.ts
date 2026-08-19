@@ -13,7 +13,7 @@
  * Supabase transactional templates and the administrator directory deliberately
  * keep the operator's own address and are not covered by this constant.
  */
-export const PUBLIC_CONTACT_EMAIL = 'stephen@kairoshousing.org.uk';
+export const PUBLIC_CONTACT_EMAIL = 'hello@worshipwordvideo.org';
 
 /** Build a `mailto:` link with a subject that identifies the site. */
 export function contactMailto(subject: string): string {
