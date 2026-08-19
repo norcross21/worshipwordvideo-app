@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { contactMailto } from '../data/contact';
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -28,7 +29,7 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
         <h1>Something did not open correctly</h1>
         <p>Your saved account services are safe. Reload the app to try again.</p>
         <button type="button" onClick={() => window.location.reload()}><RotateCcw size={17} /> Reload Worship Word Video</button>
-        <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20technical%20problem">Contact Stephen if it keeps happening</a>
+        <a href={contactMailto('technical problem')}>Contact Stephen if it keeps happening</a>
       </main>
     );
   }

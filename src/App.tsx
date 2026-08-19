@@ -26,6 +26,7 @@ import {
   openProjectionWindow,
   publishProjectionState,
 } from './data/projection';
+import { PUBLIC_CONTACT_EMAIL, contactMailto } from './data/contact';
 
 const SongLibraryDashboard = lazy(() => import('./components/SongLibraryDashboard').then((module) => ({ default: module.SongLibraryDashboard })));
 const WorshipQueue = lazy(() => import('./components/WorshipQueue').then((module) => ({ default: module.WorshipQueue })));
@@ -541,9 +542,9 @@ function MainApp() {
             <a href="/arrangements/">Worship styles</a>
             <a href="/guides/">Church guides</a>
             <a href="/about/">About & catalogue method</a>
-            <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20enquiry">Contact: stephen@kairoshousing.org.uk</a>
+            <a href={contactMailto('enquiry')}>Contact: {PUBLIC_CONTACT_EMAIL}</a>
             <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy & Copyright</button>
-            <a href="mailto:stephen@kairoshousing.org.uk?subject=Worship%20Word%20Video%20content%20report">Report a content concern</a>
+            <a href={contactMailto('content report')}>Report a content concern</a>
           </div>
           {adminRole === 'master_admin' && <VersionRefreshButton />}
         </div>

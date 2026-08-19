@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ExternalLink, FileText, Heart, LockKeyhole, Scale, ShieldAlert, X } from 'lucide-react';
 import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
+import { PUBLIC_CONTACT_EMAIL } from '../data/contact';
 
 export type LegalSection = 'terms' | 'copyright' | 'privacy' | 'charity';
 
@@ -10,7 +11,7 @@ interface LegalModalProps {
   onClose: () => void;
 }
 
-const APP_CONTACT = 'stephen@kairoshousing.org.uk';
+const APP_CONTACT = PUBLIC_CONTACT_EMAIL;
 
 export function LegalModal({ initialSection = 'terms', onClose }: LegalModalProps) {
   const [section, setSection] = useState<LegalSection>(initialSection);
