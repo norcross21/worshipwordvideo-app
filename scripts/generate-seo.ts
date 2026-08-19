@@ -373,14 +373,60 @@ function verifiedVideoCards(videos: VideoWatchPageRecord[]): string {
   return videos.map((video) => `<a class="seo-video-card" href="${video.path}"><img src="${video.thumbnailUrl}" width="480" height="360" loading="lazy" alt=""><span><strong>${escapeHtml(video.catalogueTitle)}</strong><small>${escapeHtml(video.language)} · ${escapeHtml(video.presentation)}</small><small>Uploaded by ${escapeHtml(video.channel)}</small></span></a>`).join('');
 }
 
-function languagePage(language: string, songs: WorshipSong[], related: string[]): SeoPage {
+function languagePage(language: string, songs: WorshipSong[], related: string[], publishedFamilies: SongFamilyDefinition[]): SeoPage {
   const slug = slugify(language);
   const arrangements = countBy(songs, inferWorshipArrangement);
   const presentations = countBy(songs, inferLanguagePresentation);
   const count = songs.length;
   const appQuery = new URLSearchParams({ language });
-  const description = `Find ${count.toLocaleString('en-GB')} ${language} Christian worship and hymn videos with lyrics, on-screen words or subtitles. Free church playlist and projection tools.`;
   const examples = songs.slice(0, 18);
+
+  // Facts that genuinely differ between one language collection and another, so
+  // each of the 105 pages describes its own catalogue rather than repeating a
+  // template with the language name swapped in.
+  const familiesHere = publishedFamilies
+    .map((family) => [family, songs.filter((song) => songFamilyForSong(song)?.slug === family.slug).length] as const)
+    .filter(([, familyCount]) => familyCount > 0)
+    .sort((left, right) => right[1] - left[1] || left[0].title.localeCompare(right[0].title));
+  const regions = [...new Set(songs.map((song) => song.region).filter((region): region is string => Boolean(region)))];
+  const durations = songs
+    .map((song) => song.durationSeconds)
+    .filter((seconds): seconds is number => Boolean(seconds))
+    .sort((left, right) => left - right);
+  const withEnglishSubtitles = songs.filter((song) => /English subtitles/i.test(inferLanguagePresentation(song))).length;
+  const withNativeWords = songs.filter((song) => /native words/i.test(inferLanguagePresentation(song))).length;
+  const rankedHere = [...new Set(songs.filter((song) => song.ccliUkRank).map((song) => song.title))];
+
+  const description = truncateAtWord(
+    familiesHere.length
+      ? `${count.toLocaleString('en-GB')} ${language} worship videos with on-screen words, including ${language} versions of ${formatConjunction(familiesHere.slice(0, 2).map(([family]) => family.title))}.`
+      : `Find ${count.toLocaleString('en-GB')} ${language} Christian worship and hymn videos with lyrics, on-screen words or subtitles for church services.`,
+    164,
+  );
+
+  const timingSentence = durations.length
+    ? durations[0] === durations.at(-1)
+      ? ` Versions run about ${readableDuration(durations[0])}.`
+      : ` They run from ${readableDuration(durations[0])} to ${readableDuration(durations.at(-1)!)}, typically around ${readableDuration(durations[Math.floor(durations.length / 2)])}.`
+    : '';
+  const entries = (total: number) => `${total.toLocaleString('en-GB')} ${total === 1 ? 'entry' : 'entries'}`;
+  const regionSentence = regions.length > 3
+    ? ` Uploads are associated with ${regions.length.toLocaleString('en-GB')} regions, including ${escapeHtml(formatConjunction(regions.slice(0, 3)))}.`
+    : regions.length > 1
+      ? ` Uploads are associated with ${escapeHtml(formatConjunction(regions))}.`
+      : regions.length === 1
+        ? ` Uploads are associated mainly with ${escapeHtml(regions[0])}.`
+        : '';
+  const subtitleSentence = withEnglishSubtitles && withNativeWords
+    ? `${entries(withNativeWords)} ${withNativeWords === 1 ? 'shows' : 'show'} ${escapeHtml(language)} words on screen for a congregation reading and singing together, and ${withEnglishSubtitles.toLocaleString('en-GB')} ${withEnglishSubtitles === 1 ? 'carries' : 'carry'} English subtitles so an English-speaking congregation can follow the meaning.`
+    : withNativeWords
+      ? `${entries(withNativeWords)} ${withNativeWords === 1 ? 'shows' : 'show'} ${escapeHtml(language)} words on screen, which suits a congregation reading and singing in ${escapeHtml(language)}.`
+      : withEnglishSubtitles
+        ? `${entries(withEnglishSubtitles)} ${withEnglishSubtitles === 1 ? 'carries' : 'carry'} English subtitles, so an English-speaking congregation can follow the meaning of a ${escapeHtml(language)} performance.`
+        : `Word and subtitle formats in this collection are ${escapeHtml(formatList(presentations, 3))}.`;
+  const rankedSentence = rankedHere.length
+    ? ` This collection includes ${escapeHtml(formatConjunction(rankedHere.slice(0, 3)))}, ${rankedHere.length === 1 ? 'a song' : 'songs'} from the CCLI UK Top 100 snapshot held in this catalogue.`
+    : '';
   const verifiedVideos = VIDEO_WATCH_PAGES
     .filter((video) => video.language === language)
     .sort((left, right) => left.catalogueTitle.localeCompare(right.catalogueTitle))
@@ -399,18 +445,20 @@ function languagePage(language: string, songs: WorshipSong[], related: string[])
   </section>
   <section class="seo-section">
     <h2>What is in the ${escapeHtml(language)} collection?</h2>
-    <p>The catalogue includes ${escapeHtml(formatList(arrangements))}. Presentation labels distinguish native-language vocals with native words, English vocals with translated subtitles, native vocals with English subtitles and bilingual versions where the uploader's wording supports that distinction.</p>
-    <p>These labels are based on public uploader metadata and conservative catalogue checks. They are a practical starting point, not a linguistic or theological endorsement. Preview the exact video, ask a fluent speaker to review translated words, and confirm the music and streaming permissions used by your church.</p>
+    <p>${escapeHtml(language)} uploads break down as ${escapeHtml(formatList(arrangements, 4))}.${timingSentence}${regionSentence}</p>
+    <p>${subtitleSentence}${rankedSentence}</p>
+    <p><a class="seo-text-link" href="/formats/">Understand what each words and subtitle label means →</a></p>
   </section>
-  ${verifiedVideos.length ? `<section class="seo-section"><h2>Verified ${escapeHtml(language)} watch pages</h2><p>These featured pages each contain one currently embeddable video with its YouTube title, uploader, publication date, duration and catalogue labels checked for accurate video-search data.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
+  ${familiesHere.length ? `<section class="seo-section"><h2>Familiar worship songs available in ${escapeHtml(language)}</h2><p>${familiesHere.length === 1 ? 'One well-known worship song in this catalogue has' : `${familiesHere.length.toLocaleString('en-GB')} well-known worship songs in this catalogue have`} a ${escapeHtml(language)} version, which helps a congregation sing something familiar in a language they read most naturally.</p><div class="seo-card-grid">${familiesHere.slice(0, 12).map(([family, familyCount]) => `<a class="seo-card" href="/songs/${family.slug}/"><strong>${escapeHtml(family.title)}</strong><span>${familyCount.toLocaleString('en-GB')} ${escapeHtml(language)} ${familyCount === 1 ? 'version' : 'versions'} · compare other languages</span></a>`).join('')}</div></section>` : ''}
+  ${verifiedVideos.length ? `<section class="seo-section"><h2>Verified ${escapeHtml(language)} watch pages</h2><p>${verifiedVideos.length === 1 ? `One ${escapeHtml(language)} upload has` : `${verifiedVideos.length} ${escapeHtml(language)} uploads have`} a dedicated page with the YouTube title, uploader and publication date checked.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
   <section class="seo-section">
     <h2>Example ${escapeHtml(language)} worship word videos</h2>
     <ul class="seo-song-list">${songRows(examples, language)}</ul>
     <p><a class="seo-text-link" href="${finderUrl(appQuery)}">View the complete filtered catalogue →</a></p>
   </section>
   <section class="seo-section seo-help">
-    <h2>Use a video confidently in church</h2>
-    <ol><li>Open the filtered finder and preview the exact linked upload.</li><li>Check whether the vocals, on-screen words and subtitles match your congregation.</li><li>Add it to a service playlist and trim silence or spoken introductions.</li><li>Open the clean projection window on the church's second screen.</li></ol>
+    <h2>Before using a ${escapeHtml(language)} video in church</h2>
+    <p>Catalogue labels come from public uploader metadata, so they narrow the search rather than confirm the words. Ask a fluent ${escapeHtml(language)} speaker to watch the exact upload before a service.</p>
     <p><a class="seo-text-link" href="/guides/review-multilingual-worship-videos/">Help review this language collection →</a></p>
   </section>
   <section class="seo-section"><h2>Explore other language collections</h2><div class="seo-link-grid">${related.map((item) => `<a href="/languages/${slugify(item)}/">${escapeHtml(item)} worship videos</a>`).join('')}</div></section>`;
@@ -1287,13 +1335,30 @@ async function generate(): Promise<void> {
     arrangementGroups.set(arrangement, [...(arrangementGroups.get(arrangement) ?? []), song]);
   }
 
+  // Group songs into familiar-song families before the language pages are built,
+  // so each language page can name the well-known songs it actually carries and
+  // link to those collections. Only families that get their own page are linked.
+  const songsByFamily = new Map<string, WorshipSong[]>();
+  for (const song of playableSongs) {
+    if (!hasPublicWordEvidence(song) || !hasNamedLanguage(song)) continue;
+    const family = songFamilyForSong(song);
+    if (!family) continue;
+    const familySongs = songsByFamily.get(family.slug) ?? [];
+    familySongs.push(song);
+    songsByFamily.set(family.slug, familySongs);
+  }
+  const songFamilies = SONG_FAMILIES
+    .map((family) => [family, songsByFamily.get(family.slug) ?? []] as const)
+    .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 2);
+  const publishedFamilies = songFamilies.map(([family]) => family);
+
   const languages = [...languageGroups.entries()]
     .filter(([language, songs]) => language !== 'Language not stated' && songs.length >= MIN_LANGUAGE_PAGE_VIDEOS)
     .sort((left, right) => right[1].length - left[1].length || left[0].localeCompare(right[0]));
   const languageNames = languages.map(([language]) => language);
   const languagePages = languages.map(([language, songs], index) => {
     const related = Array.from({ length: Math.min(8, Math.max(0, languageNames.length - 1)) }, (_, offset) => languageNames[(index + offset + 1) % languageNames.length]);
-    return languagePage(language, songs, related);
+    return languagePage(language, songs, related, publishedFamilies);
   });
   const publishedLanguageSlugs = new Set(languagePages.map((page) => page.path.split('/').filter(Boolean).at(-1)!));
 
@@ -1312,18 +1377,6 @@ async function generate(): Promise<void> {
     .filter(([, songs]) => songs.length >= 3);
   const presentationPages = presentations.map(([presentation, songs]) => presentationPage(presentation, songs));
 
-  const songsByFamily = new Map<string, WorshipSong[]>();
-  for (const song of playableSongs) {
-    if (!hasPublicWordEvidence(song) || !hasNamedLanguage(song)) continue;
-    const family = songFamilyForSong(song);
-    if (!family) continue;
-    const familySongs = songsByFamily.get(family.slug) ?? [];
-    familySongs.push(song);
-    songsByFamily.set(family.slug, familySongs);
-  }
-  const songFamilies = SONG_FAMILIES
-    .map((family) => [family, songsByFamily.get(family.slug) ?? []] as const)
-    .filter(([, songs]) => new Set(songs.map((song) => song.language ?? 'English')).size >= 2);
   const songFamilyPages = songFamilies.map(([family, songs]) => songFamilyPage(family, songs));
   const videoPages = VIDEO_WATCH_PAGES.map((video) => videoWatchPage(video, VIDEO_WATCH_PAGES, publishedLanguageSlugs));
 
