@@ -1,0 +1,1598 @@
+{
+  "/about/": {
+    "hash": "c03c36ba4df39a4f085c7e53a7b159469b82d4a5",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/": {
+    "hash": "cf0b356c457948be048fb4c909af342190731093",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/a-cappella/": {
+    "hash": "5d3c870a2c0f40dbdc0ec6f75e4a8932ece00bbc",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/acoustic-unplugged/": {
+    "hash": "06ea60d13edb9ddc1a34c3c4ab75976b877e6cb0",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/chant-liturgical/": {
+    "hash": "f650a5b03bb946fd13b33b4e2c98fa2acaff9097",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/children-family/": {
+    "hash": "f8a4dd202dea29198f0cde5b6dbd01f259baa945",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/choir-choral/": {
+    "hash": "2681ea5d5f5f3968c2ec1ba682e47443ff49fe3a",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/contemporary-worship/": {
+    "hash": "c7c6df56b52cf6a68821285fc9da9774842c2001",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/country-bluegrass/": {
+    "hash": "e28c03f4b7ccc93661b6145ab5765d69e8fb213b",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/gospel/": {
+    "hash": "97477ad3b6b55a3db7cf5915dde334954168450c",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/live-worship/": {
+    "hash": "a5890563a1e07fa659507e8d45f46116dc7ec0b8",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/orchestral-instrumental/": {
+    "hash": "62bceee9652e96009bf612a19822780cce34afa1",
+    "lastModified": "2026-08-19"
+  },
+  "/arrangements/traditional-hymn/": {
+    "hash": "c3b01589be193a8900cdb0fd7c095335a2ba5d8f",
+    "lastModified": "2026-08-19"
+  },
+  "/formats/": {
+    "hash": "18b75fecb9218c6165f5cd816972e41caeba18ec",
+    "lastModified": "2026-08-19"
+  },
+  "/formats/bilingual-worship-videos/": {
+    "hash": "b2321e8275075043ceaa79e9fda9db87cbcdda98",
+    "lastModified": "2026-08-19"
+  },
+  "/formats/english-worship-translated-subtitles/": {
+    "hash": "3b4225e49f1a32bdbb6225c86d96593ddf9f3743",
+    "lastModified": "2026-08-19"
+  },
+  "/formats/english-worship-videos-with-lyrics/": {
+    "hash": "9fc9a0b25e595f1e3bb4a65aedec933d89fe6751",
+    "lastModified": "2026-08-19"
+  },
+  "/formats/native-language-worship-with-lyrics/": {
+    "hash": "16ef4b8af0f0cc47ca5b4f02618b9c5f4d4263f0",
+    "lastModified": "2026-08-19"
+  },
+  "/formats/native-worship-english-subtitles/": {
+    "hash": "08a19ebd7ed79f96f8f39b84f20926c7394b81d9",
+    "lastModified": "2026-08-19"
+  },
+  "/formats/worship-videos-with-words-or-subtitles/": {
+    "hash": "8bfe1f5ad206b1c4048360e00e146ed0ac52f30e",
+    "lastModified": "2026-08-19"
+  },
+  "/guides/": {
+    "hash": "50d5cd16c29bccd2b9f268a56e0e3bd201ee7ee3",
+    "lastModified": "2026-08-19"
+  },
+  "/guides/church-youtube-lyric-videos/": {
+    "hash": "6f4719c6e89da9a7905f6025859111aeaf2541d7",
+    "lastModified": "2026-08-19"
+  },
+  "/guides/multilingual-worship/": {
+    "hash": "cf71848aea94c73e76febee1397e832419b9963e",
+    "lastModified": "2026-08-19"
+  },
+  "/guides/review-multilingual-worship-videos/": {
+    "hash": "f9b9047054a2d90e9108766b4ee88bce9dc73810",
+    "lastModified": "2026-08-19"
+  },
+  "/guides/second-screen-church-projection/": {
+    "hash": "88c65af6ee4e5e475c1f3408f74b20fccc094d56",
+    "lastModified": "2026-08-19"
+  },
+  "/guides/worship-videos-for-churches-without-musicians/": {
+    "hash": "8cf31de2dc25641b29e2b5150bf845730255470b",
+    "lastModified": "2026-08-19"
+  },
+  "/guides/worship-word-lyrics/": {
+    "hash": "63da88d8623444cd047ec7cf71ac403b43b5a256",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/": {
+    "hash": "b2cbad02e7783a6426e26a796935ea3d9a682763",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/afrikaans/": {
+    "hash": "ca446e7c4c80f6692f7c3a94fed75840d749d63f",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/akan/": {
+    "hash": "4cabe677670e4c3d9668effb74c3553ffe9cf260",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/albanian/": {
+    "hash": "5d21e07ecd72644a7038de554aa1902b7495dc3c",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/amharic/": {
+    "hash": "51c13f87a50b495bb91e222b88c809d5ed8ea12c",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/arabic/": {
+    "hash": "7a134dbaeb789689c7768a3ca67aaeb573e1b3bf",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/armenian/": {
+    "hash": "f325e97280604a16b3e77edee7f42d84f8bf1857",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/assamese/": {
+    "hash": "c0609f63ccef39e8ab7c35c05b6c3ed49b062922",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/assyrian-aramaic/": {
+    "hash": "1ad84e1fd4e5ebac1e887bff927133bb4e3ffab8",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/batak/": {
+    "hash": "64f805194a0f8092cbcd2521d56731d9170c749f",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/bengali/": {
+    "hash": "4589a6819e90f472e7e9e21bbbb89823425a317b",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/bulgarian/": {
+    "hash": "cf2b37d0de66b55bbbe0fa0ce8a87d62a4826d39",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/burmese-myanmar/": {
+    "hash": "72c0451c3a2a1aac1128464e8563d3bcd90a876a",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/cantonese/": {
+    "hash": "9b72774177b19db3ddc6bc202870a5669d4cba64",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/catalan/": {
+    "hash": "46093eb8879af7777fa2ef8baecf76104958b4bf",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/chichewa/": {
+    "hash": "48087eaaa35646a27bfa7a3f17d57cc8750c81f9",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/croatian/": {
+    "hash": "2b54631e48904e144de679626b274c837ec8e96d",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/czech/": {
+    "hash": "6e46022b2ccbf42744d087dbd6bbd9ae7db4a6f6",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/danish/": {
+    "hash": "67c5581933ba8277cd923037f95983e2a380ac62",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/dari/": {
+    "hash": "4d25efd89c1e323b6d01dea03b6e8d2445548d9b",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/dutch/": {
+    "hash": "b1a75dba71793ea0dc4c422536c935a15852b999",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/english/": {
+    "hash": "d2c92ad4ce3a2ca15de8bb4e77a8aded00cd05b3",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/ewe/": {
+    "hash": "326272b7f31824058068539cdd094bda4e781729",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/fijian/": {
+    "hash": "924ca09ae51a36f38719cb2ea5e72a012e82ccee",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/finnish/": {
+    "hash": "ffa1649d3d7a872d99710e2bbf6600f59efb985d",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/french/": {
+    "hash": "3d5fc78fd0e86679388cd1cbbfd5b3056dec01cd",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/ga/": {
+    "hash": "a4468ae722e0535b1ea5316a85d9dbc6656062e2",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/galician/": {
+    "hash": "bf3226d0737a0fb24faa2019e2f09c1cee2db37e",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/georgian/": {
+    "hash": "96e28251f400cf8cf383fc16f9a2deda9c41f5dc",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/german/": {
+    "hash": "d8d58957916d3455fdc35a3affe5bfb03e8e053a",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/greek/": {
+    "hash": "98f2d058ac8177c5926f76fca86eb5505ebb3c9d",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/gujarati/": {
+    "hash": "edbd502e2c5da5b14519b7a64952a126d9c0a821",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/haitian-creole/": {
+    "hash": "1c88e322c31477d67d7a502dc8052f843cea0c0e",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/hausa/": {
+    "hash": "b9b42c00d852fa3d3030245e8aafcc1aa6df0cb8",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/hebrew/": {
+    "hash": "d3857ec13801298778507d44555e297722187a75",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/hindi/": {
+    "hash": "e22f2fd28968993b91af23dd32314ca42bc6d61f",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/hmong/": {
+    "hash": "8dc09694ae24b6d19b34f8892276c4ed370df897",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/hungarian/": {
+    "hash": "b5dd7271130376824fcab1c86c2e5a05f4b59c05",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/igbo/": {
+    "hash": "7896f01e1f78cc39b831873c23a76b3f2f6bf0ef",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/indonesian/": {
+    "hash": "52a58cc89f9499d2ea2dd8a833c10710479ff97c",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/irish/": {
+    "hash": "740411499aa33199af5f3190105e37ced3189ba4",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/italian/": {
+    "hash": "7168ea237296544befea12587f31196756e6d722",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/japanese/": {
+    "hash": "a53ecf3ba8ff5e389cf9f2db49ac3142363746e3",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/javanese/": {
+    "hash": "1025a83658b690a14f8660058508fee1ecfdc973",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/kannada/": {
+    "hash": "65051ea3646ed0936ebe3cb7b14ec58ea5d1d18a",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/khasi/": {
+    "hash": "a68bc71878e231f3c73325d862c25a2d2b68a212",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/khmer/": {
+    "hash": "f3512986b1ac8a6b207d0278e28532fef3ecc074",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/kinyarwanda/": {
+    "hash": "f570baa03fe77f7c4c17d44e012a5e04d08546dc",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/kirundi/": {
+    "hash": "377b4b09a26b7f21046e22bb2b5bdb121369dbf7",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/konkani/": {
+    "hash": "4f3e345ea95ca4ac8f9388c39cb572e976569948",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/korean/": {
+    "hash": "3c01cf1660630fb90e6760ffb6713d08d5c0ee12",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/kurdish/": {
+    "hash": "48ba3ad63ca93bfd8ff70f6ece69a969f4928a0c",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/lao/": {
+    "hash": "59b7754f8d614a2371c425c6cd8a2ba30a016956",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/latin/": {
+    "hash": "cf29989001cca8deeba35671bd38e3d2981b62a8",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/lingala/": {
+    "hash": "5712627090d9a61caa2d48cd7a3fccf87bbacc1e",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/luganda/": {
+    "hash": "eacd7b74d5127b28f562cfcc874258bdce74ae05",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/malay/": {
+    "hash": "968384d85d3fe300bcec079b40ae4475db954e2f",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/malayalam/": {
+    "hash": "3d29265219a6d53e6de2173badcdc53a1c8421bf",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/mandarin-chinese/": {
+    "hash": "5312f67d440e1537a5262b8f7da3b7254adaf72d",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/maori/": {
+    "hash": "590b63f44b6ee036d223a09fe52565383b9dba28",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/marathi/": {
+    "hash": "181c5f23c0355613b9c4098c9a6d496889c3de69",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/mizo/": {
+    "hash": "7986dbcbed114b70e5f95f99151a5ca0018dfdad",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/mongolian/": {
+    "hash": "a24f19f211b2c95f94186bb4c032fc9ce8b6b2f2",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/ndebele/": {
+    "hash": "f2d89d5db1f9d48ba93fcb94fa29afc41011eed0",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/nepali/": {
+    "hash": "84e8fc606d394779f02a54c2fe355f947c3a6e0d",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/norwegian/": {
+    "hash": "85fd06069801d66b175ea57c0d4dd6bddb980702",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/odia/": {
+    "hash": "9edc536b86e79bb8258e5b1cd77dfbccfaf646d7",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/oromo/": {
+    "hash": "0ad59f15a01bfe7339e614a72cefcb6b5f5aafa9",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/persian-farsi/": {
+    "hash": "0e12995052f22f366294d0343353532e57525a73",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/polish/": {
+    "hash": "1ddd59267a28f6016e805a0f05dfc03332dc5306",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/portuguese/": {
+    "hash": "b1f8f818940c343e1dcfe8686b12ecec6ac6b616",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/punjabi/": {
+    "hash": "41870fee15fc2b073515952a61fe285fb2e4ad11",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/quechua/": {
+    "hash": "25c99396ae350b50cc324c0b7dc6d03bce01e134",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/romanian/": {
+    "hash": "5f969c6da429a051a09d71ae22da085c13ba7ce4",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/russian/": {
+    "hash": "51b9f2cd3839a508f16075d6f22d243558ba39f9",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/samoan/": {
+    "hash": "a55da0e4295d48d94e2587b8b23f4dce42356623",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/serbian/": {
+    "hash": "9c2aaaa782578ddb3ae50a1e52bed5226349ec60",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/sesotho/": {
+    "hash": "8cab4fb55fd197a412cf1c75a67865d53b49cbf2",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/setswana/": {
+    "hash": "98985ffc2a8062df887d99cdb3ada27fb8a41e6b",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/shona/": {
+    "hash": "1a0ebd83308c1f5543bf17238942e79a1d620470",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/sinhala/": {
+    "hash": "34a94a1f70f4b911808ecec8ba2149ad2be8298e",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/slovak/": {
+    "hash": "db799f6fbf3fd917202ff2b59e28aa93ad287820",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/somali/": {
+    "hash": "40829a2c2da987fcf5891a9f9ad965080d50ba6f",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/spanish/": {
+    "hash": "430aeeccb9d02ed205b8698ed23671b5a377d415",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/sundanese/": {
+    "hash": "76df6149eadf295938dbb5451b04e4714425ea3e",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/swahili/": {
+    "hash": "23ab86bfffb46bcd8d6b88e850560091f1943083",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/swedish/": {
+    "hash": "bcfbb44549fede22ac42dbcecbc8f97dfd678161",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/tagalog-filipino/": {
+    "hash": "51b89dd44d01a205ede9140f99b4ca37e4184132",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/tajik/": {
+    "hash": "4b9bfbb54d6ca078eb3ae3ce26220ca209a6ad8a",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/tamil/": {
+    "hash": "54a3ff6c92630e76d7525a7871fd306975ef3a01",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/telugu/": {
+    "hash": "6ebc460de29972fef9314aa043b8f15de12eae3c",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/thai/": {
+    "hash": "361894904ea1053dd2dbb5bd0f651c1062637692",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/tigrinya/": {
+    "hash": "533ee59918b29106d975403854956eca4d51587b",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/tok-pisin/": {
+    "hash": "67c611b97eb241ebfcc77c6e82269665c222b660",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/tongan/": {
+    "hash": "78ffe7c039fda7d46f6e6deb22f03d6ae45e4adf",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/turkish/": {
+    "hash": "b3feadc4a32a22ea9743df4e51ef77cd147e6ae0",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/twi/": {
+    "hash": "c4d68dc4af9b5f73e1c1bf27f4cf286d3c109bb2",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/ukrainian-and-russian-mixed/": {
+    "hash": "c90a4a56dac11091983393e458fd445cef92ae11",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/ukrainian/": {
+    "hash": "33fc675eff2eca622625de8b675c3da9083b7a9e",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/urdu/": {
+    "hash": "1226766b09c70258a738a4df44bb4c724b0b5cbf",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/vietnamese/": {
+    "hash": "57d30e306d308271e7a69f08ae67443d7e1a298d",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/welsh/": {
+    "hash": "ca41026a49357182c1199c5c5348cb89675c8e4e",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/wolof/": {
+    "hash": "bcb4f17e5ba862ac90018d055e6480ab623f89ed",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/xhosa/": {
+    "hash": "21f9a27428dee8695c559a0ed4028048ca6a9bfd",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/yoruba/": {
+    "hash": "019220f575f052d867bc3f53a9e7128e3ba3b2b3",
+    "lastModified": "2026-08-19"
+  },
+  "/languages/zulu/": {
+    "hash": "29ee72bcf572162e9b76b67f0b8fbf6538f0eea9",
+    "lastModified": "2026-08-19"
+  },
+  "/seasons/": {
+    "hash": "bb4297bdfd44f9397e35f4efa9a395d55ef4a5d9",
+    "lastModified": "2026-08-19"
+  },
+  "/seasons/advent/": {
+    "hash": "42a3b1d47394a6f0542c515f2ad0842a00209c78",
+    "lastModified": "2026-08-19"
+  },
+  "/seasons/christmas/": {
+    "hash": "8435b363c5183951a5c0975997203b5e7ec0d2bf",
+    "lastModified": "2026-08-19"
+  },
+  "/seasons/easter/": {
+    "hash": "e07dc2a366b0ebad53e437641983619cc8fe084c",
+    "lastModified": "2026-08-19"
+  },
+  "/seasons/harvest-and-thanksgiving/": {
+    "hash": "6546e2e727dc37803bb5f9f48f1a154d334fd97f",
+    "lastModified": "2026-08-19"
+  },
+  "/seasons/lent-and-holy-week/": {
+    "hash": "309cf0afb31e9a422d452b7dbccb2ebb5a19d3c8",
+    "lastModified": "2026-08-19"
+  },
+  "/seasons/pentecost/": {
+    "hash": "bc5037be7b02837b41baad3f92a74723efc7a515",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/": {
+    "hash": "3f7c10990c6088aa191660abc436d66bfcfa967d",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/10000-reasons-bless-the-lord/": {
+    "hash": "fc9c1c778fafef2352b7c6437b3cc99657f98c9d",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/a-thousand-hallelujahs/": {
+    "hash": "8ea1e13e2a47272f621ac84ee2fd8986532b858a",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/above-all/": {
+    "hash": "ea45432b5542d1eea789d589468a23735eb74717",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/all-hail-king-jesus/": {
+    "hash": "e796864f8bda55beac9a2d745f6b061a45671463",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/amazing-grace-my-chains-are-gone/": {
+    "hash": "2c201b7998285a21e3e0b00f02bea96de419406e",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/amazing-grace/": {
+    "hash": "38157b57bcac9289ffcca408d513238c6bb19a45",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/awesome-god/": {
+    "hash": "46296010499f30253a3b6bcc64f08bb0746b89e3",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/battle-belongs/": {
+    "hash": "7fda85480c2b3fddab3ef0f195155d58e63dd6f7",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/behold-our-god/": {
+    "hash": "890f25bfca51d323b034636513076b26779736fe",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/blessed-be-your-name/": {
+    "hash": "cde33d0e55ff96cbecaabc51cef1f6c342ebf535",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/breathe/": {
+    "hash": "0f0a8b65d938b8f4b3abd95ac29af233fe613c62",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/build-my-life/": {
+    "hash": "c4ad177991608c2f3b54b01962ffb7728944f087",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/change-my-heart-o-god/": {
+    "hash": "a216451b5b1f4182dde5a52d58dc5a6a8293dfc0",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/christ-be-magnified/": {
+    "hash": "ff21892f219c63025aaa9510e97c21c8ab3ef582",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/christ-our-hope-in-life-and-death/": {
+    "hash": "09027318e99b45e87263af527e2227a185eff3ac",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/come-jesus-come/": {
+    "hash": "3a000a5248c368dad30947d902d309fc2f888bff",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/cornerstone/": {
+    "hash": "265e6f3f518acbad86e65c504a44218aecc2af40",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/create-in-me-a-clean-heart/": {
+    "hash": "8691cba5a3ce9cddaae3df797b75067ae4a06e83",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/do-it-again/": {
+    "hash": "f928cc91277ec7546d2bcddbc0fc3506023c54ed",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/everlasting-god/": {
+    "hash": "91243a85daae3c0234513977ba8ea248b5f7d150",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/firm-foundation-he-wont/": {
+    "hash": "478bad4bf7ce9f768feca6e95705163fe2ec534f",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/god-i-look-to-you/": {
+    "hash": "1a011b953c30455d76e84d603cb280a3c3b2e831",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/god-of-wonders/": {
+    "hash": "023f00b7ee66570418c9fd17c52e080b5217927e",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/god-so-loved/": {
+    "hash": "48877b910cabe86130a7a1cf8a92fb89485fb636",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/good-good-father/": {
+    "hash": "5042f5416b22eee15d0e7d5d10b0d80ec8483024",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/goodness-of-god/": {
+    "hash": "5f27c775af74d1add30ad6e90396951e58228c42",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/gratitude/": {
+    "hash": "65df6d8e628c1123f21a88b8cad489e89646353c",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/graves-into-gardens/": {
+    "hash": "e39a2a04122aaa00a715822a1862945e8c2cb110",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/great-are-you-lord/": {
+    "hash": "f737ddf7e19159cc6f87f1861d328c8bb7fea386",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/great-is-thy-faithfulness/": {
+    "hash": "f1a6e336a677f1d1e5c8deffaca3729b007f105d",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/great-things/": {
+    "hash": "09efae2a1758b28b5a5b3f60c50a69bca7613c28",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/he-is-exalted/": {
+    "hash": "902d2b13057edb4e45f6e1afbbc989004495b8a5",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/here-i-am-to-worship/": {
+    "hash": "5f39d67f8253354658f8f68a19df7d428b41f07e",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/holy-forever/": {
+    "hash": "ecaab1a39979ce063ca6ae2c76f62fb161623a0c",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/holy-is-the-lord/": {
+    "hash": "b97efb7d47fdbabc6f97071f9101c06ab7120c78",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/hosanna-praise-is-rising/": {
+    "hash": "36616fb3dd7a4c3cb28228ddf4b64f48d78a6b68",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/hosanna/": {
+    "hash": "06c2f4efdc0c11c12a1f5849c9b9cb216bce2504",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/house-of-the-lord/": {
+    "hash": "d36ec839a8664c9834b5114bc21be42c728cd900",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/how-deep-the-fathers-love-for-us/": {
+    "hash": "11bf42310119394df9432e27a4f60fb37198a755",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/how-great-is-our-god/": {
+    "hash": "b225e84d8e58ca6b3acbd74d762d9f5e7fca36a4",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/how-great-thou-art/": {
+    "hash": "5a70db87c0d9c648edea77a92e16e42d786fbb2b",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/how-he-loves/": {
+    "hash": "e3a2b68f204890005c20105f057103c6e823a849",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/hymn-of-heaven/": {
+    "hash": "b1bb83f5e2921444fa4c554bd9f27f51314e746f",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/i-speak-jesus/": {
+    "hash": "597656d2c70749a4fe968d40e4f96245baf27aef",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/i-thank-god/": {
+    "hash": "c55e4884e585f6d7f372a0b62b95fcb15273136d",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/in-christ-alone/": {
+    "hash": "dfd4f2077b9a6139d2c2d33b287647540eb12b6b",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/indescribable/": {
+    "hash": "89c94cc4a6d1bb252eb2211269433bd5d4bcdfc5",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/is-he-worthy/": {
+    "hash": "f0f21460ddca3fc7706b0a3d40839c59ac29e13b",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/jesus-all-for-jesus/": {
+    "hash": "a4a0d25134bff943c261c995bfa88148180f7289",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/jesus-lover-of-my-soul/": {
+    "hash": "e382c597728e1d651b263c4680dc77fe4f5daac9",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/jireh/": {
+    "hash": "d8853831edb560d5d03a68702d6a5a5df3232ac7",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/king-of-kings-majesty/": {
+    "hash": "f32845ce36adc6466f41aea3e0126458be20d0ae",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/king-of-kings/": {
+    "hash": "003000e69eb35d52b73d1c8cb239a41dfecc26b5",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/king-of-my-heart/": {
+    "hash": "db7112123f1615386376d3709e2a74151f884184",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/living-hope/": {
+    "hash": "de57118a0cd6e7ecf2ce99ce1a4940380f970c98",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/look-up-child/": {
+    "hash": "24ae29a9243784754f896c0e0cd5fc628b6453aa",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/lord-i-lift-your-name-on-high/": {
+    "hash": "4dcc42da6a818ead76f453bcb7ea650d0d455dbd",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/lord-i-need-you/": {
+    "hash": "da42222d1747a0a47f93a9714fc2d2d219344bcb",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/mighty-to-save/": {
+    "hash": "f3fc3183fb0896909628f97cda31247b2f927969",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/million-little-miracles/": {
+    "hash": "d77b5bbe5aba3fb2a7041697fc50a1e0fd52ab87",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/my-lighthouse/": {
+    "hash": "42446ec5b223aa47f385ec2de57ba55c68e6c5fe",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/no-longer-slaves/": {
+    "hash": "d96a9141e08dbef3c694f929dfebd6ac211df058",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/o-come-to-the-altar/": {
+    "hash": "f3899f11c20fc9e426e51e0ee890183a2a0414b7",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/o-praise-the-name/": {
+    "hash": "a82d0c6626761af5c04f96fc2ce775c4792d1a80",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/oceans-where-feet-may-fail/": {
+    "hash": "bd0cd426485f39ea7d59bb62161f440dd2ed523f",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/one-way/": {
+    "hash": "8e1f21f39ce867a8fc82a312b1d3d5deec8e3226",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/only-a-holy-god/": {
+    "hash": "65d9a2fcd8f11dd445f8b20efdda68ea382631f8",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/open-the-eyes-of-my-heart/": {
+    "hash": "4d9610ea62baa5b62152b8044edc49805e46d437",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/our-god-is-greater/": {
+    "hash": "8b2a17dd2b63d31d597aad1b06c1b8fcb3456c38",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/praise/": {
+    "hash": "7403877cf59ed8441c0c68945b5f37b446b3fae5",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/promises/": {
+    "hash": "9d8fb2915a0dde88ccc0010f3f98283d1cdf1ea2",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/psalm-23-i-am-not-alone/": {
+    "hash": "9fe0819ad9b2f20b683f0ad6fbaf167dad026a90",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/raise-a-hallelujah/": {
+    "hash": "c3335c55cd4cba056d38fb190cbb3ba02d463205",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/reckless-love/": {
+    "hash": "90118c574dc01581a5fb3dbcd327e9adaad0282b",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/same-god/": {
+    "hash": "075d5ce9160acd5b833899063a3870aecbba7d24",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/shine-jesus-shine/": {
+    "hash": "61eaba42fac7cb6174f11cddd38eaf3bc003f762",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/shout-to-the-lord/": {
+    "hash": "e78a742a4ea39fcb48cb6db3a3465eca71e3e7fa",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/spirit-break-out/": {
+    "hash": "89a1f3af98aa3193e39628a07f3709a9b2d24615",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/surrender/": {
+    "hash": "3fedaa42125411c7c3043825282a3dfde079d302",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/thank-god-i-do/": {
+    "hash": "42f318b3a11e5247f7df0ec9f34a94b506bdd7a3",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/thank-you-jesus-for-the-blood/": {
+    "hash": "0465f4d750e30c42181cd178666e99ba1af873c7",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/the-blessing/": {
+    "hash": "6311bd61915eff1d289a5275f41608105fef2516",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/the-heart-of-worship/": {
+    "hash": "8611d84719381002282879614512e3b2efeced16",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/the-lord-is-my-salvation/": {
+    "hash": "3e78fbdfa7d01869d7135ebedf4a59ff01b03732",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/this-i-believe-the-creed/": {
+    "hash": "14587eafdecac371db8c3906b41a24b9a48e3296",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/this-is-amazing-grace/": {
+    "hash": "0788f3b81d069ad1b9bf42f988d97be457120fae",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/this-is-our-god/": {
+    "hash": "d36b025bc7de960e701ca7e19a8f23723034b09d",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/tremble/": {
+    "hash": "b79bbdfdd8ff9c0d0c47bd745410c5b46d848df9",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/trust-in-god/": {
+    "hash": "5319f4908aa1e4d703ec0c32b43725f0efb356b2",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/trust-in-you/": {
+    "hash": "823cfb742847180e1f31ad9446aaaa3389d31119",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/turn-your-eyes-upon-jesus/": {
+    "hash": "1d5aa72d6d5b04e0609f5d7be85abef210cb0264",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/wait-on-you/": {
+    "hash": "ecdad94a5c2a4730c4c8b2fa512aa01689cfe1d7",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/way-maker/": {
+    "hash": "ed17fdad29202efff6f22cf66547eb172ec159c6",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/what-a-beautiful-name/": {
+    "hash": "f28f37217699b547169465b780af932a4a876286",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/who-you-say-i-am/": {
+    "hash": "599d188baa7e375755da186be895830fcc2ea264",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/worthy-is-the-lamb/": {
+    "hash": "0ce939b0b77f17907a33164abcbd1c1cdb7fac24",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/worthy-of-it-all/": {
+    "hash": "be268f66062acfa0f08f2f019e85a4274ec21829",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/yet-not-i-but-through-christ-in-me/": {
+    "hash": "1d8e2a8f9db1a749c8d86c47205c91db9af6f3ea",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/you-never-let-go/": {
+    "hash": "2623e26f52d9a6d1db96e014b198f6346cd6a7b1",
+    "lastModified": "2026-08-19"
+  },
+  "/songs/you-say/": {
+    "hash": "f05c2fa93dce362d929cce7d6ab3f71c9d898966",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/": {
+    "hash": "022aaca7e26b78429ccbeccde974cdc25c33c2df",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/10-000-reasons-bless-the-lord-english-dgelri0e/": {
+    "hash": "c8adcb03fbc30ae8d92db3756bc90d5c5a0f1064",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/10-000-reasons-bless-the-lord-kinyarwanda-7mvdghf4/": {
+    "hash": "37f15c64b2962f9451f7d0c3b7eb9b347be6b306",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/10-000-reasons-bless-the-lord-swahili-9nbgggpw/": {
+    "hash": "637358235931af33887fa3b5b5a648c4be595993",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/10-minutes-of-hausa-praise-songs-with-lyrics-translation-wilson-yoko-hausa-xtv6xgoc/": {
+    "hash": "089a72bb366cda16a288850da11f2869bdbae64c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/3-kannada-jesus-song-kerubiyaru-song-pastor-simon-moses-english-lyrics-kannada-songs-kannada-hwqwmmpk/": {
+    "hash": "5203efc250ccee52aeafd487db7529852fe8f268",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/33miles-what-grace-looks-like-official-music-video-lithuanian-lyrics-lithuanian-7flbcrc8/": {
+    "hash": "080fca08010f0192525ab45479c8a66091688137",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/above-all-korean-r9yzufw4/": {
+    "hash": "430ded2ed81319e0a1fb736f1c7f214f1adae8e0",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/afrikaans-worship-moments-agnus-dei-koning-van-my-hart-english-subtitles-afrikaans-joegzzii/": {
+    "hash": "c651f6722b05c9aa8bad27c24ac26cc293306fed",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/aiz-sorvesporachea-mondiraat-konkani-church-entrance-hymn-instrumental-cover-lyrics-konkani-qeazubpy/": {
+    "hash": "773cb24553353d4f3f6340cb7110cba4caaa4f76",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/aka-jehovah-the-arm-of-the-lord-lyrics-video-with-english-translation-gabriel-eziashi-by-jo-igbo-ubxkh8vs/": {
+    "hash": "6ec01227461cd0f59e2e33bf7111ae2db4eb01d7",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/al-tar-ajk-eeto-hymn-of-the-syrian-orthodox-church-in-aramaic-with-english-translation-assyrian-aramaic-heqonhqq/": {
+    "hash": "acd270ff0e8cef8e4a990520f51ecfcdcb61829c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/amazing-grace-my-chains-are-gone-english-gxxuw08q/": {
+    "hash": "1d6e76a01608e23f84d265b371b8f0cf47b9423d",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/baba-wethu-peaceful-zulu-worship-song-with-english-lyrics-zulu-2k5ipgvw/": {
+    "hash": "14a33b3c4516c8a5e7a7ff2d019674a2603c3f52",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/blagoslaven-jesi-gospodi-blessed-are-thou-o-lord-english-subtitles-serbian-orthodox-serbian-5pgatqeg/": {
+    "hash": "503912df6e22d9a71dc6f7a6a7bd837e00b89e92",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/breathe-what-a-freind-i-have-found-hillsong-worship-kurdish-and-english-subtitled-kurdish-pbuatj90/": {
+    "hash": "a11eef15317b1a8c0bc12cb8d8f54169bef6ae80",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/build-my-life-english-zw48zcbe/": {
+    "hash": "24009558758e5a341b0bdbfc23b42c3fef824b28",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/calvary-youth-revelation-xhosa-lyric-video-xhosa-bwahdrum/": {
+    "hash": "dbb76c02c0c637cb207fbf6529d3b39cc77cc357",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/charlotte-church-gabriel-s-message-basque-lyrics-basque-ymquhvjm/": {
+    "hash": "f486aa75c77c9f7c9f91eae63a0d3f3587d4c226",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/charlotte-church-quis-est-deus-who-is-god-2001-latin-lyrics-full-english-translation-subs-latin-ga4m5sz8/": {
+    "hash": "609105d46b363e067ceca8fa0050f45bef4c77ba",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/charlotte-church-suo-gan-1998-full-welsh-cymraeg-lyrics-and-english-translation-in-subtitles-welsh-tajxtizm/": {
+    "hash": "2f8f0a6070139936777da077ed1124f4fd829d95",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/chattan-instrumental-by-living-sacrifice-church-with-bengali-lyrics-bengali-s84jueiw/": {
+    "hash": "552076e82faf7317b60c95cba2e33161810b81dc",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/cornerstone-english-xzeu02ui/": {
+    "hash": "4d0f2f393ed62c27b7b6c0028a08d1ca4e9612a7",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/czech-version-of-hallelujah-with-english-subtitles-czech-srxrc4gg/": {
+    "hash": "7dded661af023a13a453ea0ab6c1f1280bfc9032",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/den-samme-kraft-the-same-power-by-sentrums-norwegian-worship-english-lyrics-norwegian-9rfd3hpk/": {
+    "hash": "52c9f7621190a2603f24807e3c878231e678fd0f",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/desert-song-brooke-fraser-hillsong-united-with-subtitle-mongolian-mongolian-0lkxcjgy/": {
+    "hash": "e7ba7ac5c486257fa1c45c1042a41249d087a084",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/deva-mala-kshma-kari-lyrics-worship-song-marathi-rgaupalo/": {
+    "hash": "165e41b65a719142fca995ca03953110e2cde841",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/ekitibwa-kyo-mukama-lyrics-with-english-translation-luganda-worship-song-by-judith-babirye-luganda-jricplso/": {
+    "hash": "1436b48e4652e9ae75a7f5bdb268600c984e05ad",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/for-god-so-loved-with-lyrics-in-english-and-kyrgyz-joel-sowards-s-song-kyrgyz-d52kx09u/": {
+    "hash": "6a75df9d94fd1aecd5b524522ca723044cc6e916",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/generational-worship-gujarati-with-english-subtitles-gujarati-eownzyiy/": {
+    "hash": "19c2bfa5996b2768703b88642bc77888d2bd7c85",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/georgian-orthodox-chant-christ-is-risen-with-english-subtitles-georgian-ii1ru3zs/": {
+    "hash": "6c3050cba09ab3a082de505eec7e87a31f0c7141",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/god-i-look-to-you-bethel-music-bondye-mwen-gade-ou-haitian-creole-translation-haitian-creole-cknaluju/": {
+    "hash": "ce39564ecbc3e338133d7dc9c3e292c2651fb213",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/god-of-heaven-and-earth-tongan-translation-tongan-zlc4hz9g/": {
+    "hash": "60129ec50a106231bcaeaeebd34f66217f97a8c1",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/good-good-father-maori-worship-translated-maori-rrmf7qzo/": {
+    "hash": "4cf2b591f88c160d0cdd9fe0b735ec9935583fd3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/goodness-of-god-english-muumwmv4/": {
+    "hash": "bcbbbd2b8dc5e2060a592d78e648c665a3e9ce48",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/goodness-of-god-khasi-tqxz8m1k/": {
+    "hash": "19d204c3845f0b55f4a4f89bf7a75e8a5d34d121",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/goodness-of-god-khmer-qm2vag08/": {
+    "hash": "78ea455959f7ee7354bf8bcd1ec913d966d5a02e",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/goodness-of-god-mizo-fd2cvtac/": {
+    "hash": "ece2d3a77441fdf5184c30c2f513243e3b80b61b",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/goodness-of-god-tagalog-filipino-huyskwya/": {
+    "hash": "6f67abd5599c3ad2a627f78ba716dd15fe57efca",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/goodness-of-god-version-wolof-groupe-leer-dans-weyou-dibber-bi-paroles-magal-yessu-4-wolof-fwzntyqc/": {
+    "hash": "8a9cece4fb1f4aa3f9f676ddd6d9147acef6ab08",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/gospel-band-akan-lyric-abibi-dwom-ministration-akan-o8upqp1w/": {
+    "hash": "ff487228affeeb8c4f963accc1f1c72733df9ae7",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/gospel-rhumba-english-translation-mokonzi-na-motema-savior-of-my-heart-lingala-worship-lingala-rms9vk34/": {
+    "hash": "e1c0543bcc5f3f3dcab3468580b4e660a918955e",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/graves-into-gardens-spanish-0fkej3oy/": {
+    "hash": "65bb0a19a4e00ccb0f0a0e9dfe2beef19569e565",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/graves-into-gardens-ukrainian-r5f3rfrs/": {
+    "hash": "56bb1e4f3425ca3a4513fb715c190afebe50e502",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/great-are-you-lord-english-02shcais/": {
+    "hash": "372cd755fd630f501271df6bb7f70d3229b67596",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/great-are-you-lord-malayalam-n8af4k5c/": {
+    "hash": "34a3954576874e2b8056ec9c1912d78a540ef0b3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/gujarati-christian-worship-lyrics-song-gujarati-y60edzca/": {
+    "hash": "c4cb2651dbc1d7132bf8622c60cb886ffb4337a0",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/haskamak-karanna-ps-r-j-moses-sinhala-worship-song-translated-sinhala-j8ivcrow/": {
+    "hash": "7ee75fc9aeb2aa7122698f239e167292084e5ace",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/here-i-am-to-worship-english-knvkk2gy/": {
+    "hash": "62f3e0339065c7b8a113187ae75de0f9769bfe33",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/here-i-am-to-worship-german-nxhdeose/": {
+    "hash": "42b08ed56a9e2fd9e94063626d1e1adffc8ca9cf",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/here-i-am-to-worship-somali-lyric-somali-vpkbtla0/": {
+    "hash": "7b88d444cb3f1045c2b38f946b2fc82065e022bd",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/heyr-himna-smi-ur-with-subtitles-icelandic-hymn-in-train-station-icelandic-fu2mgicm/": {
+    "hash": "1a900a404d0d066439750b98309b75d959a5a7f8",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/hillsong-born-is-the-king-it-s-christmas-slovak-english-subtitles-slovak-t5aeqauc/": {
+    "hash": "bab5a5eca049f1a5f9c51cc451de6195198d543f",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/holy-forever-english-gxkemcrk/": {
+    "hash": "0782dba4680adefdd91c8cc601f6177a6a935f1f",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/holy-forever-mandarin-chinese-fsswiquy/": {
+    "hash": "77ee5d915dad134846e7a76f1d0bcfe637f95f7f",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/holy-forever-polish-e23waidm/": {
+    "hash": "10860ffee29124e77efacc6b5d80e36f4666d129",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/hosanna-indonesian-g87dzgcg/": {
+    "hash": "13626651d771962a46ce48a2f057805f0787bf07",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/hosanna-vietnamese-p15gy4rk/": {
+    "hash": "798bb782668231ecc4d72f5939db65ac54b8fb6e",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/how-deep-the-father-s-love-for-us-nepali-ciwd68mq/": {
+    "hash": "2231091481e5c97e17859dcb651ee551078495d6",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/how-great-is-our-god-english-18rsvjhk/": {
+    "hash": "7d721622391b2c08834993ca5ece8fe907b4af9a",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/how-great-is-our-god-hebrew-dfolkmjm/": {
+    "hash": "43627d3e9f5409af2b6de54d35021c61157de958",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/how-great-is-our-god-telugu-i7dwxyhu/": {
+    "hash": "2b452c6fbeb5e3567415040d5821baf939bdb6f6",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/how-great-thou-art-english-fgo8kmns/": {
+    "hash": "ec6642e9874cd48ab578d0cf0de6562ad573331a",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/hymn-of-heaven-dutch-2msshig4/": {
+    "hash": "d47d94263ebe882156dd0f06b1cd20893005f1c7",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/hymn-of-heaven-khasi-pmzrnqhq/": {
+    "hash": "cd88e9089ce8487bdbcaef1fa02d695a3ae764fc",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/i-speak-jesus-cover-swahili-and-shona-translation-official-music-video-by-gershwin-and-joyce-shona-atjspezi/": {
+    "hash": "058ec949e52203e6e616769099c1b213030047b6",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/i-speak-jesus-english-z8vdmg20/": {
+    "hash": "04cc199e610b591e1e8686237c70b69fcbe1ca8c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/i-surrender-by-hillsong-tajik-translation-taslimi-tu-tajik-zyw3xdci/": {
+    "hash": "1e12f19042467fe66423bcf58fce4cdd6072f487",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/ikm-worship-team-loto-fa-afetai-gratitude-samoan-translation-samoan-jfgovepq/": {
+    "hash": "c401cb1c5ac9bc2010d9fa772073faa181c13c46",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/in-christ-alone-english-63oi38rq/": {
+    "hash": "b564fde7ed46c8835e5c78e95dcd92a5007858a3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/inger-ama-devla-ande-cie-wast-kwiek-gypsy-christian-worship-english-hungarian-subtitle-hungarian-kki4tihw/": {
+    "hash": "e530ec1dc6840cc24d7712b4415d342fb0a1b168",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/jehovah-yi-ga-lyrics-with-english-translation-praise-praiseandworship-worship-ga-js0dyziw/": {
+    "hash": "6ad9dc6900deb006049d0e0b56a90fa3e4d44316",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/jesus-lover-of-my-soul-malayalam-ck2hgc54/": {
+    "hash": "343486e989e5a2d839325a1cfdcc271fd252f710",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/jireh-french-wvgklu3y/": {
+    "hash": "8a6057498090a461e2055a72cd24dd5965eead0c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/jireh-italian-zkjl3z8g/": {
+    "hash": "937a00158780cdbbf6cd95367f4531f40d39dff6",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/jos-maatamme-ei-rakenna-virsi-582-finnish-hymn-sanat-english-lyrics-finnish-srvzxkhy/": {
+    "hash": "7c010a08120466988e96502e7ed7d979e8c01c4c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/karaoke-with-turkish-lyrics-bu-dag-bana-ver-rab-give-me-this-mountain-by-new-creation-worship-turkish-rlfoyboo/": {
+    "hash": "f1149a4505aade7609bd40bad174a4081d5505ad",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/ke-a-boka-i-will-praise-praise-and-worship-sesotho-x-english-lyric-video-sesotho-rnnxwmxs/": {
+    "hash": "190322dbb71149d567602b257a1cbc0e471897d5",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/ki-dore-pahoru-christian-assamese-lyrics-song-assamese-t6mgugd4/": {
+    "hash": "7ca4ac03b049a8b16b32a74737bb12e1809891d1",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/king-of-kings-english-icfwiepg/": {
+    "hash": "72ba900fa9df039031ebf8f8f8c9d0a3b4a561d1",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/lagu-pujian-rohani-batak-i-hosana-singers-i-ise-do-ale-alenta-official-lyric-video-batak-x386cvmg/": {
+    "hash": "52215665d109ece06fe2f5c3fbb2e9a83e12bcf5",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/life-worship-closer-danish-translation-lyric-video-danish-k4rrsnow/": {
+    "hash": "55fcc0314485245d83f1a48d77a643a9e910a800",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/liturgy-of-armenian-church-soorp-soorp-english-and-latin-subtitled-armenian-f0lhgzk4/": {
+    "hash": "f905451e7fe341ba818a86ffc4c08dac98c68b2e",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/living-hope-english-fxxdvo6w/": {
+    "hash": "fdb42e635cc4fd282063a45362c6a57d6163ac3d",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/lord-i-need-you-german-ezpkuvss/": {
+    "hash": "b4bb0152e87a3aa8eb401c2298189c41a2ab0d3d",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/maa-samagama-inna-yesuni-ps-r-j-moses-sinhala-worship-song-translated-sinhala-de5m8eym/": {
+    "hash": "33b005a4eb90bc8287672edbee9a38e249ff22ad",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/main-nhi-kalla-punjabi-masih-lyrics-song-2021-ankur-narula-ministry-punjabi-nixf1ukw/": {
+    "hash": "1262e744053df7f0a87d6f8cc1a45914f2cf3154",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/man-of-sorrows-by-hillsong-worship-translated-into-hmong-hmong-9mfq8hd8/": {
+    "hash": "a13d2e54d79948737f3a02cea6d55f9f169c3043",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/marathi-church-song-dhanyavad-yeshula-lyrics-song-marathi-0tgkoijg/": {
+    "hash": "1ed19dade7dbf443eba4a81a658899de33a08418",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/margi-salib-paduka-the-way-of-the-cross-dalane-salib-mu-javanese-official-lyric-video-javanese-ltcbqkja/": {
+    "hash": "39d4709d083bf60a3098bcb0de4a1282588a13dd",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/michael-octavius-agnus-dei-kannada-translation-new-worship-song-kannada-mggpsggk/": {
+    "hash": "16ea614b0f8642a8bee9620755cde347f085048b",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/mighty-to-save-italian-dksq6g1s/": {
+    "hash": "bd33d917d8431ec2aa99abfcccbd0bc3ce6f784b",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/min-raddning-my-portion-swedish-translation-isla-vista-worship-swedish-ohsihqkm/": {
+    "hash": "160a8bbbf8acd73df22dab58810ab94fc645bac0",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/miqedem-ashrei-ha-ish-psalm-1-slovenian-lyrics-slovenian-sfibgdg0/": {
+    "hash": "2a0e74d6f74b8b15d69bea0726067d69b4f23158",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/mirga-bita-hinlalu-lyrics-in-english-subtitles-by-pst-losh-new-oromo-worship-song-oromo-sdtgmkru/": {
+    "hash": "ea8c5cba01c82ac1ca16de31ecf45569a60624bd",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/mubarak-matthew-5-3-12-punjabi-with-english-subtitles-punjabi-tq6ctbqs/": {
+    "hash": "cebc6b07c5b91ff3902a64643600edb12d838f63",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/new-mezmur-tigrinya-lyric-clip-iii-iii-christlovemedia-tigrinya-m13fojhc/": {
+    "hash": "fe39ae553091c75186e9a6f92b38a14b306bdaa3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/new-odia-lyrics-christian-full-song-by-gitanjali-bhatra-s-b-music-2024-odia-r3mvhdvs/": {
+    "hash": "3b492c4deed9d8c678b177a453dcd6f485b3a6c6",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/ngiyabonga-nkosi-thank-you-lord-ndebele-zulu-and-english-gospel-official-lyric-video-ndebele-m0f3o6we/": {
+    "hash": "88d4bce7aa3de0779f83d314375c4dd8870765a4",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/no-longer-slaves-japanese-9x7kfnks/": {
+    "hash": "35085446d457bc635ca6d4c4780e894f9008c0c5",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/o-come-to-the-altar-portuguese-mregc4ew/": {
+    "hash": "79a672de59e404b94b3b82a05200c83e4ac5a0a9",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/o-praise-the-name-anastasis-english-pifdpnkc/": {
+    "hash": "fe11042ef8693d3b83b24ef6a7c61564a868ea7f",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/oceans-where-feet-may-fail-burmese-myanmar-ww3fbhow/": {
+    "hash": "2cdf14d0bcf195f761bbb9df8eb2349c4e3ca068",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/oceans-where-feet-may-fail-vietnamese-wqbpnc3g/": {
+    "hash": "7f7cb5509dd2c088bbb8f196e64f4ce700f86178",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/odia-christian-song-ishwara-prema-chadi-parena-eng-subtitles-odia-g04rtf8m/": {
+    "hash": "036fe1c5e0382526c3cc524d652645a3fe0571c8",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/only-a-holy-god-telugu-4ja5oo9o/": {
+    "hash": "e01e1143a8c9ac0a3ea71282c7dae13e65b0fb9f",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/petra-adonai-s-hrvatskim-prijevodom-croatian-subtitles-from-back-to-the-rock-live-croatian-8p4x34ya/": {
+    "hash": "a9abe1f7eb3c3fd6175cfc8ef8181a0cf658cf5d",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/praise-english-njgvkhe8/": {
+    "hash": "4f016387073ea11beb892b64c92b231bb7faadab",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/praise-mandarin-chinese-vku8go8e/": {
+    "hash": "0c0f4ab71cbc74cc1359922f3936b4292239f376",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/psalm-23-i-am-not-alone-english-ptxbsir8/": {
+    "hash": "bf9062523cae323004584f5120450f16b0a785a5",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/reckless-love-korean-zg9rtreq/": {
+    "hash": "4427240d30f9929f8a4cf5f0e08005352ae35b89",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/rohani-batak-i-hosana-singers-i-na-loja-ho-o-donganki-be-503-i-official-lyric-music-batak-tnkmz1hu/": {
+    "hash": "fb9d641778ef40dea5adf10ffebd994afbd12248",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/safe-by-victory-worship-translated-in-lao-lao-7tg3eece/": {
+    "hash": "80b36ef5bcba31a3dd4513d7a6db61327bab6596",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/sairicastaneda-dios-incomparable-version-kichwa-video-letra-quechua-3hxh6jza/": {
+    "hash": "c34128ae42d62af30ac9afe9116ab0256c47e9ef",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/same-god-cantonese-iipk4vhc/": {
+    "hash": "02f0263aa4c37f1d9dc2abd84de61479b2da5d51",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/sefela-hymn-joko-ya-gago-e-bobebe-with-english-lyrics-botswana-youtuber-setswana-ifjoh014/": {
+    "hash": "c952261fe8da7c150819003f9ab8321f997c321e",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/servant-ministry-amaku-velegaua-song-lyrics-and-translation-in-tok-pisin-tok-pisin-c2h92t60/": {
+    "hash": "b7804292bdfbe501079275747c74193179047776",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/shine-jesus-shine-persian-farsi-sgxmqedq/": {
+    "hash": "dbbdf80814ca1d0a4c132b23a1b52d086bf552f0",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/shout-to-the-lord-arabic-oaxwvqfe/": {
+    "hash": "30af5ae71e143c18be49f52d0a8bbdbf9b774bc9",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/shout-to-the-lord-english-5cmssaxc/": {
+    "hash": "d1dbd696f9c9f58fafabdf0763e80b63b148906b",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/shout-to-the-lord-hindi-utlfo4gc/": {
+    "hash": "69f2f68897ef49f2de4c25b539609bf1dd776521",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/susanna-min-god-is-good-myanmar-song-with-english-subtitle-burmese-myanmar-7ek8sioi/": {
+    "hash": "189815782545059e8e15049c97d11b169cfb3dd4",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/tag-kids-yancy-hosanna-english-worship-song-with-thai-subtitle-thai-ksotwmcy/": {
+    "hash": "db7a236d3d544281cbcffc0548242cf2602a2efe",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-hindi-5mhdxrla/": {
+    "hash": "3e8baeebd784d9d0e3255cb761604d578b06e9f7",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-khmer-cdcfrad4/": {
+    "hash": "d6237c508721148a7e971d04d765b0d48c4bb0ab",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-nepali-tpk1dqlq/": {
+    "hash": "50b22ce1aa153b6d0e659394aec09d98e4e67bce",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-romanian-ugzr7pfg/": {
+    "hash": "656bdfeaa682e1dcc2e61359974bc098414507c3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-spanish-uke1mnpc/": {
+    "hash": "f69493849ed71464da73836f1d2b0e0a167c44bd",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-swahili-nzxf0fb0/": {
+    "hash": "8555fbf47f03067d8004e407ff9a29e668759fb6",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-urdu-bxkxfte0/": {
+    "hash": "96be8a3825e2a54018fbd2eb9f21dcb9db51de5b",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/the-blessing-yoruba-5qjufshc/": {
+    "hash": "e7abe4e89769b0d0f9d70b338414bcfac6486caa",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/this-i-believe-the-creed-arabic-ljoe3rzm/": {
+    "hash": "9e2bd69978c73d7e3177ad9dba89ed1a78d4898d",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/this-is-amazing-grace-english-jkbodrro/": {
+    "hash": "9d1f75e1884ec8b58e8507e11e0159b413c779cf",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/this-is-amazing-grace-japanese-ygudkkzm/": {
+    "hash": "0c97cb08884eb6322459f47f869fea4e4def9084",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/trisagion-bulgarian-chant-holy-god-in-slavonic-with-english-subtitles-bulgarian-gfgsh2pw/": {
+    "hash": "f41f190c82e80f4c1c04380a8287ab533ad7391a",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/ukrainian-and-russian-mixed-7mnahxqe/": {
+    "hash": "9e3f206117a8b6d826b44dfa1c744886a89d21b3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/uri-mwiza-yesu-by-worship-team-epe-audio-subtitles-in-kirundi-and-english-kirundi-qmamirqu/": {
+    "hash": "6afa5b24fb24b2fee60458d43e78ac6655ff86d3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/vaarum-ayya-with-english-subtitle-cover-tamil-christian-song-sda-church-pulierranghy-tamil-rbfdfg1w/": {
+    "hash": "a53dee429433c7aba9380bc7eccf4fa1393c500c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/wanonda-lyrics-with-english-translation-luganda-worship-song-by-judith-babirye-luganda-chx6cp3e/": {
+    "hash": "243d4a246ff14463e534d190394ac301463491f3",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/way-maker-english-du3xzmms/": {
+    "hash": "334d5f5ce5878531707f9f72cc970547896ddf72",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/way-maker-french-vjfedplw/": {
+    "hash": "90c50058d50c424c194137c3cf2c96abd45f6a72",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/way-maker-russian-ials0up4/": {
+    "hash": "efe691321b23c6231ef5a8f896c0c26e4a1aa4dc",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/way-maker-tagalog-filipino-mygccqp0/": {
+    "hash": "3151f026c4940e225a3d89f713544ad14c12e4de",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/way-maker-tamil-ovtuedp0/": {
+    "hash": "8b283eb78c5e0811fbc713339f14bd97472ab31a",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/way-maker-ukrainian-hhi831gm/": {
+    "hash": "4d9e0612e47da7fc3bc20bfbd5320e814a66166b",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/what-a-beautiful-name-english-6qlah3l4/": {
+    "hash": "e70915e4ff3d27da84b9d6e381a64ba110a826e8",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/what-a-beautiful-name-indonesian-m6slelvm/": {
+    "hash": "00e3796f3a2ef612603dd7125bcf6b9417365d40",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/what-a-beautiful-name-persian-farsi-iqp6tdqo/": {
+    "hash": "df9f030f48b7298c111357fde2b55c8740dbe8e2",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/what-a-beautiful-name-portuguese-emamfl3k/": {
+    "hash": "c7ce85be4431e6de9671ffd34c4b2bf95cdb464e",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/what-shall-i-return-to-yehovah-english-translation-chichewa-worship-song-inspired-by-psalm-116-chichewa-an0xpsf8/": {
+    "hash": "125b7f717a1272a4c90938b5eeccfde828ec857c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/who-am-i-subtitles-albanian-sespznu4/": {
+    "hash": "0bbee948284276115a6481cbed2efd5c44796195",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/who-you-say-i-am-english-c1bp13n4/": {
+    "hash": "7bd01f0b93ad5e299ce4984539d750a7b4962b2c",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/who-you-say-i-am-hillsong-worship-amharic-lyrics-amharic-dxutlr6q/": {
+    "hash": "0a5d71693f8d37d6a309f169447352d4f0a37eb9",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/worship-hindi-christian-song-yeshu-masih-translated-into-fijian-and-english-fijian-yk6ofcwy/": {
+    "hash": "c6ab9339764a6894c5c8884012f3bc4b3d15bd16",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/worship-songs-2020-with-christ-in-front-greek-christian-songs-with-english-subtitles-greek-nt2wnhjq/": {
+    "hash": "87a71eca751e1451965283366978c02752f5dab5",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/worthy-of-it-all-english-prjcwb8o/": {
+    "hash": "67e2b7a827214cc970a4eb4f42e5ba501a76fc9e",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/y-b-s-jesus-da-a-y-b-hu-n-anim-no-full-twi-lyrics-with-english-translation-twi-0durbi6c/": {
+    "hash": "16c00e1e6653bfa0d564424b42f10c4fadff8425",
+    "lastModified": "2026-08-19"
+  },
+  "/videos/yet-not-i-but-through-christ-in-me-english-djufazfg/": {
+    "hash": "35b9499e49c1b9ba4812d1be27c89a80fce15f1a",
+    "lastModified": "2026-08-19"
+  }
+}

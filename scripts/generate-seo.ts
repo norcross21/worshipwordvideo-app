@@ -1,4 +1,5 @@
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { getFullSongLibrary } from '../src/data/songLibraryStore';
 import { inferWorshipSeasons, WORSHIP_SEASONS, type WorshipSeason } from '../src/data/songSeason';
@@ -1189,6 +1190,42 @@ const GUIDE_PAGES: SeoPage[] = GUIDE_PAGE_DEFINITIONS.map((page) => {
   };
 });
 
+const LASTMOD_MANIFEST = resolve(process.cwd(), 'src', 'data', 'seoLastModified.json');
+
+interface LastModifiedRecord {
+  hash: string;
+  lastModified: string;
+}
+
+/**
+ * A sitemap `lastmod` is only useful to a crawler if it marks a real content
+ * change. Stamping every build date on all 400 URLs tells Google the whole site
+ * changed daily, so it learns to ignore the signal. Instead, fingerprint each
+ * page's own content and keep the stored date until that fingerprint moves.
+ */
+async function resolveLastModified(pages: SeoPage[]): Promise<Map<string, string>> {
+  let stored: Record<string, LastModifiedRecord> = {};
+  try {
+    stored = JSON.parse(await readFile(LASTMOD_MANIFEST, 'utf8')) as Record<string, LastModifiedRecord>;
+  } catch {
+    stored = {};
+  }
+  const next: Record<string, LastModifiedRecord> = {};
+  const dates = new Map<string, string>();
+  for (const page of pages) {
+    // Hash the page's own meaningful content, not the rendered shell, so that a
+    // build-stamped date elsewhere in the document cannot invalidate every page.
+    const hash = createHash('sha1').update(`${page.title}\n${page.description}\n${page.body}`).digest('hex');
+    const previous = stored[page.path];
+    const lastModified = previous?.hash === hash ? previous.lastModified : LAST_MODIFIED;
+    next[page.path] = { hash, lastModified };
+    dates.set(page.path, lastModified);
+  }
+  const ordered = Object.fromEntries(Object.entries(next).sort(([left], [right]) => left.localeCompare(right)));
+  await writeFile(LASTMOD_MANIFEST, `${JSON.stringify(ordered, null, 2)}\n`, 'utf8');
+  return dates;
+}
+
 async function writePage(page: SeoPage): Promise<void> {
   const directory = resolve(PUBLIC_DIR, page.path.replace(/^\//, ''));
   await mkdir(directory, { recursive: true });
@@ -1452,7 +1489,13 @@ async function generate(): Promise<void> {
   await Promise.all(pages.map(writePage));
 
   const urls = [`${SITE}/`, ...pages.map((page) => canonicalUrl(page.path))];
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url) => `  <url><loc>${escapeHtml(url)}</loc><lastmod>${LAST_MODIFIED}</lastmod></url>`).join('\n')}\n</urlset>\n`;
+  const lastModifiedByPath = await resolveLastModified(pages);
+  const homeLastModified = lastModifiedByPath.get('/languages/') ?? LAST_MODIFIED;
+  const lastModifiedByUrl = new Map<string, string>([[`${SITE}/`, homeLastModified]]);
+  for (const page of pages) {
+    lastModifiedByUrl.set(canonicalUrl(page.path), lastModifiedByPath.get(page.path) ?? LAST_MODIFIED);
+  }
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((url) => `  <url><loc>${escapeHtml(url)}</loc><lastmod>${lastModifiedByUrl.get(url) ?? LAST_MODIFIED}</lastmod></url>`).join('\n')}\n</urlset>\n`;
   await writeFile(resolve(PUBLIC_DIR, 'sitemap.xml'), sitemap, 'utf8');
   const videoSitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${VIDEO_WATCH_PAGES.map((video) => `  <url>
     <loc>${escapeHtml(canonicalUrl(video.path))}</loc>
