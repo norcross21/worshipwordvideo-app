@@ -30,7 +30,23 @@ Use one strong page for each distinct church need. Do not create near-duplicate 
 | Service preparation | church worship playlist; worship video start and stop times; church projection screen | Member features and second-screen guide |
 | Styles and seasons | contemporary worship lyric videos; gospel songs with lyrics; choir worship videos; Christmas or Easter worship songs | Arrangement and church-season collection pages |
 
-The exact phrase “worship word lyrics” is now present in the home-page title, main heading, explanatory copy, site-name structured data and a substantial dedicated guide. Related phrases appear only where they accurately describe visible content.
+### Correction from the first Search Console query data (19 August 2026)
+
+The plan previously placed the exact phrase “worship word lyrics” in the home-page
+title, main heading and explanatory copy. The first twelve recorded queries do not
+support that choice: **no** query contained “worship word lyrics”, while five of the
+twelve were “worship lyric video” variants, and the strongest of them — *worship
+lyric videos for churches* — already sits at average position 6.5.
+
+The home-page title, meta description and heading now lead with “worship lyric
+videos”, which is the wording churches actually type. “Worship Word Lyrics” is kept
+as a brand `alternateName` and the dedicated guide keeps its URL, because the guide
+genuinely explains the different names people use for the same resource.
+
+This is a small sample from eleven days, so it is a course correction rather than a
+settled conclusion. Re-read the query report before making further wording changes,
+and change the URL of the guide only if a much larger sample keeps showing no demand
+for the phrase.
 
 ## What is implemented in the site
 
