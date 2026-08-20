@@ -1559,6 +1559,7 @@ async function generate(): Promise<void> {
   const homepageSource = await Promise.all([
     readFile(resolve(process.cwd(), 'index.html'), 'utf8'),
     readFile(resolve(process.cwd(), 'src', 'App.tsx'), 'utf8'),
+    readFile(resolve(process.cwd(), 'src', 'App.css'), 'utf8'),
     readFile(resolve(process.cwd(), 'src', 'components', 'SeoDiscoverySection.tsx'), 'utf8'),
   ]);
   const homepageFingerprint: PageFingerprint = {

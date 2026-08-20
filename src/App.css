@@ -22,7 +22,8 @@
   
   --color-text-main: #111c27;
   --color-text-muted: #53657a;
-  --color-text-light: #7b8ca1;
+  /* Secondary text stays visually quiet while meeting WCAG AA on every light surface. */
+  --color-text-light: #5f7186;
   
   --color-purple: #7c3aed;
   --color-purple-bg: #f3e8ff;
@@ -5312,7 +5313,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 }
 .service-workspace.has-service .service-workspace__icon { background: #112d79; }
 .service-workspace__select { display: grid; min-width: 0; gap: 0.05rem; }
-.service-workspace__select > span { color: #667a90; font-size: 0.61rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.service-workspace__select > span { color: var(--color-text-light); font-size: 0.61rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .service-workspace__select select {
   width: 100%;
   min-height: 30px;
@@ -5329,7 +5330,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   cursor: pointer;
 }
 .service-workspace__select select:focus-visible { outline: 3px solid rgb(56 189 248 / 28%); outline-offset: 2px; border-radius: 5px; }
-.service-workspace__status { color: #667a90; font-size: 0.69rem; font-weight: 700; white-space: nowrap; }
+.service-workspace__status { color: var(--color-text-light); font-size: 0.69rem; font-weight: 700; white-space: nowrap; }
 .service-workspace__status.is-saving { color: #8b6200; }
 .service-workspace__status.is-error { color: #aa2e2e; }
 .service-workspace__actions { display: flex; align-items: center; gap: 0.35rem; }
@@ -5499,7 +5500,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   min-width: 0;
   align-items: baseline;
   gap: 0.45rem;
-  color: #667a90;
+  color: var(--color-text-light);
   font-size: 0.72rem;
 }
 
@@ -5527,7 +5528,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   flex-wrap: wrap;
 }
 .library-intro h2 { font-size: clamp(1.35rem, 2.2vw, 1.7rem); }
-.library-intro p { margin: 0; color: #667a90; font-size: 0.76rem; }
+.library-intro p { margin: 0; color: var(--color-text-light); font-size: 0.76rem; }
 .music-dashboard { gap: 0.6rem; }
 
 .music-dashboard__toolbar {
@@ -5587,7 +5588,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .known-song-summary {
   margin: -0.15rem 0 0;
   padding-inline: 0.25rem;
-  color: #667a90;
+  color: var(--color-text-light);
   font-size: 0.68rem;
 }
 
