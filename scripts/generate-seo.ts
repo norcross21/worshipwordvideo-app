@@ -58,6 +58,13 @@ interface SeoPage {
   videoEmbedUrl?: string;
 }
 
+interface PageFingerprint {
+  path: string;
+  title: string;
+  description: string;
+  body: string;
+}
+
 interface VideoWatchPageRecord {
   youtubeId: string;
   path: string;
@@ -269,11 +276,21 @@ function breadcrumbSchema(items: Array<{ name: string; path: string }>): Record<
   };
 }
 
-function pageShell(page: SeoPage): string {
+function applyLastModified(value: unknown, lastModified: string): unknown {
+  if (Array.isArray(value)) return value.map((item) => applyLastModified(item, lastModified));
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [
+    key,
+    key === 'dateModified' ? lastModified : applyLastModified(item, lastModified),
+  ]));
+}
+
+function pageShell(page: SeoPage, lastModified: string): string {
   const url = canonicalUrl(page.path);
   const socialImage = page.socialImage ?? `${SITE}/og-cover.png`;
   const socialImageAlt = page.socialImageAlt ?? 'Worship Word Video — free worship videos with words for churches';
-  const schemas = Array.isArray(page.schema) ? page.schema : [page.schema];
+  const schemas = (Array.isArray(page.schema) ? page.schema : [page.schema])
+    .map((schema) => applyLastModified(schema, lastModified));
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',
     '@graph': [
@@ -326,7 +343,7 @@ function pageShell(page: SeoPage): string {
   <meta property="og:title" content="${escapeHtml(page.title)}">
   <meta property="og:description" content="${escapeHtml(page.description)}">
   <meta property="og:url" content="${url}">
-${page.openGraphType === 'article' ? `  <meta property="article:modified_time" content="${LAST_MODIFIED}">` : ''}
+${page.openGraphType === 'article' ? `  <meta property="article:modified_time" content="${lastModified}">` : ''}
   <meta property="og:image" content="${socialImage}">
   <meta property="og:image:width" content="${page.socialImageWidth ?? 1200}">
   <meta property="og:image:height" content="${page.socialImageHeight ?? 630}">
@@ -640,7 +657,7 @@ function presentationPage(presentation: LanguagePresentation, songs: WorshipSong
 }
 
 interface SongFamilyProfile {
-  credit?: string;
+  catalogueAttribution?: string;
   ccliRank?: number;
   isTraditional: boolean;
   isContemporary: boolean;
@@ -660,14 +677,12 @@ interface SongFamilyProfile {
  */
 function songFamilyProfile(songs: WorshipSong[]): SongFamilyProfile {
   const englishSongs = songs.filter((song) => (song.language ?? 'English') === 'English');
-  /**
-   * Where the catalogue could not identify a songwriter it stores the uploader's
-   * channel name in `artist`. Those rows must never be presented as a song
-   * credit, so only trust an artist that differs from its own channel.
-   */
-  const creditCandidates = englishSongs.filter((song) => song.artist && song.artist !== song.sourceChannel);
-  const creditCounts = countBy(creditCandidates, (song) => song.artist);
-  const creditSource = creditCandidates.find((song) => song.ccliUkRank)?.artist ?? creditCounts[0]?.[0];
+  // `artist` is catalogue attribution, not verified songwriting authorship. It
+  // may identify a performer, ministry or uploader channel, so the public page
+  // must describe it conservatively and never call it a song credit.
+  const attributionCandidates = englishSongs.filter((song) => song.artist);
+  const attributionCounts = countBy(attributionCandidates, (song) => song.artist);
+  const catalogueAttribution = attributionCandidates.find((song) => song.ccliUkRank)?.artist ?? attributionCounts[0]?.[0];
   const ranks = songs.map((song) => song.ccliUkRank).filter((rank): rank is number => Boolean(rank));
   const durations = songs
     .map((song) => song.durationSeconds)
@@ -682,7 +697,7 @@ function songFamilyProfile(songs: WorshipSong[]): SongFamilyProfile {
     hymnalRefs.push({ shortName: reference.shortName, hymnalName: reference.hymnalName, number: reference.number });
   }
   return {
-    credit: creditSource,
+    catalogueAttribution,
     ccliRank: ranks.length ? Math.min(...ranks) : undefined,
     isTraditional: songs.some((song) => /hymn|psalm|chant|liturgy/i.test(song.category)),
     isContemporary: songs.some((song) => !/hymn|psalm|chant|liturgy/i.test(song.category)),
@@ -735,14 +750,14 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
     const formats = countBy(languageSongs, inferLanguagePresentation);
     return `<a class="seo-card" href="${finderUrl(languageQuery)}"><strong>${escapeHtml(language)}</strong><span>${languageSongs.length.toLocaleString('en-GB')} playable ${languageSongs.length === 1 ? 'version' : 'versions'} · ${escapeHtml(formatList(formats, 2))}</span></a>`;
   }).join('');
-  const creditSentence = profile.credit
-    ? `The English version indexed here is credited to ${escapeHtml(profile.credit)}.`
+  const attributionSentence = profile.catalogueAttribution
+    ? `One English-language result is catalogued under ${escapeHtml(profile.catalogueAttribution)}. This attribution comes from catalogue metadata, may identify a songwriter, performer, ministry or uploader, and has not been independently verified.`
     : '';
   const rankSentence = profile.ccliRank
-    ? `${creditSentence ? ' It sits' : `${escapeHtml(family.title)} sits`} at number ${profile.ccliRank} in the CCLI UK Top 100 snapshot held in this catalogue, so many English-speaking congregations will already know it.`
+    ? `${attributionSentence ? ' The song sits' : `${escapeHtml(family.title)} sits`} at number ${profile.ccliRank} in the CCLI UK Top 100 snapshot held in this catalogue, so many English-speaking congregations will already know it.`
     : '';
-  const creditParagraph = creditSentence || rankSentence
-    ? `<p>${creditSentence}${rankSentence}</p>`
+  const attributionParagraph = attributionSentence || rankSentence
+    ? `<p>${attributionSentence}${rankSentence}</p>`
     : '';
   const spreadSentence = leadLanguages.length
     ? leadLanguages.length === 1
@@ -772,7 +787,7 @@ function songFamilyPage(family: SongFamilyDefinition, songs: WorshipSong[]): Seo
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/songs/">Songs across languages</a><span>›</span><span>${escapeHtml(family.title)}</span></nav>
   <article class="seo-hero"><p class="seo-eyebrow">Well-known worship across languages</p><h1>${escapeHtml(family.title)} in different languages</h1><p class="seo-lead">${lead}</p><div class="seo-actions"><a class="seo-button" href="${finderUrl(query)}">Search all ${escapeHtml(family.title)} versions</a><a class="seo-button seo-button--quiet" href="/formats/">Understand lyrics and subtitle labels</a></div></article>
   <section class="seo-stats"><div><strong>${count.toLocaleString('en-GB')}</strong><span>playable word videos</span></div><div><strong>${languages.length.toLocaleString('en-GB')}</strong><span>languages represented</span></div><div><strong>${presentationFormatCount.toLocaleString('en-GB')}</strong><span>lyrics and subtitle formats</span></div></section>
-  <section class="seo-section"><h2>What this catalogue holds for ${escapeHtml(family.title)}</h2>${creditParagraph}<p>${arrangementSentence}${timingSentence}${regionSentence}</p><p>On-screen wording splits into ${escapeHtml(formatList(profile.presentations, 4))}, taken from uploader metadata rather than a line-by-line check.</p></section>
+  <section class="seo-section"><h2>What this catalogue holds for ${escapeHtml(family.title)}</h2>${attributionParagraph}<p>${arrangementSentence}${timingSentence}${regionSentence}</p><p>On-screen wording splits into ${escapeHtml(formatList(profile.presentations, 4))}, taken from uploader metadata rather than a line-by-line check.</p></section>
   ${hymnalSection}
   <section class="seo-section"><h2>Choose a language version</h2><div class="seo-card-grid">${languageCards}</div></section>
   ${verifiedVideos.length ? `<section class="seo-section"><h2>Watch verified ${escapeHtml(family.title)} videos</h2><p>Each of these ${verifiedVideos.length === 1 ? 'pages holds one' : `${verifiedVideos.length} pages holds a`} currently embeddable upload with its checked title, uploader and publication date.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
@@ -1134,7 +1149,7 @@ const GUIDE_PAGE_DEFINITIONS: SeoPage[] = [
         headline: 'Find worship word lyrics videos for church services',
         description: 'A practical guide to finding worship lyric videos, hymns with lyrics and multilingual worship songs with subtitles for church services.',
         mainEntityOfPage: `${SITE}/guides/worship-word-lyrics/`,
-        datePublished: LAST_MODIFIED,
+        datePublished: '2026-08-19',
         dateModified: LAST_MODIFIED,
         image: `${SITE}/og-cover.png`,
         author: { '@id': `${SITE}/#organization` },
@@ -1163,7 +1178,7 @@ const GUIDE_PAGE_DEFINITIONS: SeoPage[] = [
         headline: 'Worship videos for churches without musicians',
         description: 'A practical workflow for finding, checking, arranging and projecting worship lyric videos when a church has no musicians available.',
         mainEntityOfPage: `${SITE}/guides/worship-videos-for-churches-without-musicians/`,
-        datePublished: LAST_MODIFIED,
+        datePublished: '2026-08-19',
         dateModified: LAST_MODIFIED,
         image: `${SITE}/og-cover.png`,
         author: { '@id': `${SITE}/#organization` },
@@ -1216,7 +1231,7 @@ const GUIDE_PAGE_DEFINITIONS: SeoPage[] = [
     openGraphType: 'article',
     body: `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/guides/">Guides</a><span>›</span><span>Language review</span></nav><article class="seo-hero"><p class="seo-eyebrow">Catalogue quality</p><h1>Help review multilingual worship videos</h1><p class="seo-lead">Automated checks can confirm a public video link and read uploader metadata, but only people can judge whether the language, translation, theology and cultural context are suitable for worship.</p><div class="seo-actions"><a class="seo-button" href="/languages/">Choose a language collection</a><a class="seo-button seo-button--quiet" href="mailto:${PUBLIC_CONTACT_EMAIL}?subject=Worship%20Word%20Video%20language%20review">Volunteer to review</a></div></article><section class="seo-section"><h2>Who should review?</h2><p>A useful review normally combines a fluent or native speaker with a trusted church or worship leader. Fluency helps with spelling, natural phrasing and subtitle meaning; church experience helps with theology, denominational context and whether the arrangement is practical for congregational singing.</p></section><section class="seo-section"><h2>A clear review checklist</h2><ol><li>Record the exact Worship Word Video page and YouTube URL so the correct upload is reviewed.</li><li>Watch the complete video, including introductions, spoken sections and ending screens.</li><li>Identify the sung language and the language of any visible words or subtitles separately.</li><li>Check whether it is a translation of the familiar song, an adaptation, or a different song with a similar title.</li><li>Check spelling, meaning, verse order, theology, readable timing, sound quality and suitability for congregational singing.</li><li>Report any concern without copying full copyrighted lyrics into the message.</li></ol></section><section class="seo-section"><h2>How review credits will work</h2><p>A reviewer can choose whether to be credited by name, church or organisation. No credit will be published without permission. A review describes the exact video and date checked; it does not guarantee that a third-party upload will remain unchanged or available.</p><p><a class="seo-text-link" href="mailto:${PUBLIC_CONTACT_EMAIL}?subject=Worship%20Word%20Video%20language%20review">Contact Worship Word Video about a language review →</a></p></section><section class="seo-section seo-help"><h2>What the catalogue currently means</h2><p>“Words indicated” means public uploader wording or maintained catalogue metadata signals lyrics, words or subtitles. It is not the same as a fluent-language review. Churches should continue to preview every exact upload before public use and confirm their own music, projection and streaming permissions.</p></section>`,
     schema: [
-      { '@type': 'Article', '@id': `${SITE}/guides/review-multilingual-worship-videos/#article`, headline: 'Help review multilingual worship videos', description: 'A practical review process for fluent speakers and church leaders checking multilingual worship videos.', mainEntityOfPage: `${SITE}/guides/review-multilingual-worship-videos/`, datePublished: LAST_MODIFIED, dateModified: LAST_MODIFIED, image: `${SITE}/og-cover.png`, author: { '@id': `${SITE}/#organization` }, publisher: { '@id': `${SITE}/#organization` } },
+      { '@type': 'Article', '@id': `${SITE}/guides/review-multilingual-worship-videos/#article`, headline: 'Help review multilingual worship videos', description: 'A practical review process for fluent speakers and church leaders checking multilingual worship videos.', mainEntityOfPage: `${SITE}/guides/review-multilingual-worship-videos/`, datePublished: '2026-08-19', dateModified: LAST_MODIFIED, image: `${SITE}/og-cover.png`, author: { '@id': `${SITE}/#organization` }, publisher: { '@id': `${SITE}/#organization` } },
       breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Guides', path: '/guides/' }, { name: 'Language review', path: '/guides/review-multilingual-worship-videos/' }]),
     ],
   },
@@ -1252,7 +1267,7 @@ interface LastModifiedRecord {
  * changed daily, so it learns to ignore the signal. Instead, fingerprint each
  * page's own content and keep the stored date until that fingerprint moves.
  */
-async function resolveLastModified(pages: SeoPage[]): Promise<Map<string, string>> {
+async function resolveLastModified(pages: PageFingerprint[]): Promise<Map<string, string>> {
   let stored: Record<string, LastModifiedRecord> = {};
   try {
     stored = JSON.parse(await readFile(LASTMOD_MANIFEST, 'utf8')) as Record<string, LastModifiedRecord>;
@@ -1275,10 +1290,10 @@ async function resolveLastModified(pages: SeoPage[]): Promise<Map<string, string
   return dates;
 }
 
-async function writePage(page: SeoPage): Promise<void> {
+async function writePage(page: SeoPage, lastModified: string): Promise<void> {
   const directory = resolve(PUBLIC_DIR, page.path.replace(/^\//, ''));
   await mkdir(directory, { recursive: true });
-  await writeFile(resolve(directory, 'index.html'), pageShell(page), 'utf8');
+  await writeFile(resolve(directory, 'index.html'), pageShell(page, lastModified), 'utf8');
 }
 
 async function removeStaleGeneratedDirectories(parent: string, expectedNames: Set<string>): Promise<void> {
@@ -1540,11 +1555,22 @@ async function generate(): Promise<void> {
     removeDuplicateIndexFiles('guides'),
     removeDuplicateIndexFiles('about'),
   ]);
-  await Promise.all(pages.map(writePage));
-
   const urls = [`${SITE}/`, ...pages.map((page) => canonicalUrl(page.path))];
-  const lastModifiedByPath = await resolveLastModified(pages);
-  const homeLastModified = lastModifiedByPath.get('/languages/') ?? LAST_MODIFIED;
+  const homepageSource = await Promise.all([
+    readFile(resolve(process.cwd(), 'index.html'), 'utf8'),
+    readFile(resolve(process.cwd(), 'src', 'App.tsx'), 'utf8'),
+    readFile(resolve(process.cwd(), 'src', 'components', 'SeoDiscoverySection.tsx'), 'utf8'),
+  ]);
+  const homepageFingerprint: PageFingerprint = {
+    path: '/',
+    title: 'Worship Word Video homepage',
+    description: 'Public application shell and search discovery content',
+    body: homepageSource.join('\n'),
+  };
+  const lastModifiedByPath = await resolveLastModified([homepageFingerprint, ...pages]);
+  await Promise.all(pages.map((page) => writePage(page, lastModifiedByPath.get(page.path) ?? LAST_MODIFIED)));
+
+  const homeLastModified = lastModifiedByPath.get('/') ?? LAST_MODIFIED;
   const lastModifiedByUrl = new Map<string, string>([[`${SITE}/`, homeLastModified]]);
   for (const page of pages) {
     lastModifiedByUrl.set(canonicalUrl(page.path), lastModifiedByPath.get(page.path) ?? LAST_MODIFIED);
@@ -1565,11 +1591,11 @@ async function generate(): Promise<void> {
     </video:video>
   </url>`).join('\n')}\n</urlset>\n`;
   await writeFile(resolve(PUBLIC_DIR, 'video-sitemap.xml'), videoSitemap, 'utf8');
-  // The complete catalogue is a 3 MB runtime payload for the finder widget, and
+  // The complete catalogue is a multi-megabyte runtime payload for the finder widget, and
   // the app requests it whenever a URL carries a finder query. Crawling it added
   // over a gigabyte of download for no indexable content, since every public page
   // is pre-rendered and the smaller starter payload still populates the finder.
-  await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\nDisallow: /*?q=\nDisallow: /*?language=\nDisallow: /*&language=\nDisallow: /catalogue/worship-songs.json$\n\nSitemap: ${SITE}/sitemap.xml\nSitemap: ${SITE}/video-sitemap.xml\n`, 'utf8');
+  await writeFile(resolve(PUBLIC_DIR, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /*?projection=1\nDisallow: /*?q=\nDisallow: /*&q=\nDisallow: /*?language=\nDisallow: /*&language=\nDisallow: /*?season=\nDisallow: /*&season=\nDisallow: /*?arrangement=\nDisallow: /*&arrangement=\nDisallow: /*?presentation=\nDisallow: /*&presentation=\nDisallow: /catalogue/worship-songs.json$\n\nSitemap: ${SITE}/sitemap.xml\nSitemap: ${SITE}/video-sitemap.xml\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'seo-urls.json'), `${JSON.stringify(urls, null, 2)}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'indexnow-key.txt'), `${INDEXNOW_KEY}\n`, 'utf8');
   await writeFile(resolve(PUBLIC_DIR, 'llms.txt'), `# Worship Word Video\n\n> A search and member playlist-planning tool that saves churches time finding YouTube worship and hymn videos with on-screen words or subtitles. It is designed for English-speaking and multilingual churches, including congregations without musicians.\n\nThe catalogue contains ${playableSongs.length.toLocaleString('en-GB')} searchable entries and ${uniquePlayableVideos.toLocaleString('en-GB')} unique playable YouTube videos across ${namedLanguageCount} named languages. Public features include song, artist, language and hymn-number search; presentation and arrangement labels; church-season filters; member service playlists; start and stop timing; and clean second-screen projection.\n\n## Important public collections\n\n- [Worship word lyrics guide](${SITE}/guides/worship-word-lyrics/): How churches can find and review worship videos with words on screen.\n- [Churches without musicians guide](${SITE}/guides/worship-videos-for-churches-without-musicians/): Practical help for services using carefully prepared videos.\n- [Well-known songs across languages](${SITE}/songs/): Familiar worship songs with versions in multiple languages.\n- [Languages](${SITE}/languages/): Dedicated collections for languages with at least ${MIN_LANGUAGE_PAGE_VIDEOS} playable videos.\n- [Lyrics and subtitle formats](${SITE}/formats/): Native-language words, translated subtitles and bilingual formats.\n- [Church seasons](${SITE}/seasons/): Worship videos for Christmas, Easter and other church seasons.\n- [Worship arrangements](${SITE}/arrangements/): Contemporary, choral, acoustic and other musical treatments.\n- [Church guides](${SITE}/guides/): Planning, projection, copyright and multilingual-review guidance.\n- [About and catalogue method](${SITE}/about/): Creator, purpose, verification method, review boundaries and corrections.\n\n## Site information\n\n- [Worship Word Video](${SITE}/): Canonical homepage and public song finder.\n- [Verified video watch pages](${SITE}/videos/): Dedicated, current YouTube embeds with accurate video metadata.\n- [Terms, privacy and copyright guidance](${SITE}/?legal=1): Important guidance for churches using third-party YouTube videos.\n- [XML sitemap](${SITE}/sitemap.xml): Current index of canonical public pages.\n\nThe site is a directory and does not host recordings or reproduce lyrics. Videos remain on YouTube. Catalogue labels are based on public uploader metadata and must be previewed before church use. Contact: ${PUBLIC_CONTACT_EMAIL}.\n`, 'utf8');

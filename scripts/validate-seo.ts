@@ -152,6 +152,13 @@ for (const file of pages) {
     if (!/<time datetime="\d{4}-\d{2}-\d{2}">/.test(html)) errors.push(`${route}: missing visible checked date`);
   }
 
+  if (route.startsWith('/songs/') && route !== '/songs/') {
+    if (/\bcredited to\b/i.test(html)) errors.push(`${route}: ambiguous songwriting-credit wording remains`);
+    if (html.includes('is catalogued under') && !html.includes('has not been independently verified')) {
+      errors.push(`${route}: catalogue attribution is missing its verification caveat`);
+    }
+  }
+
   for (const match of html.matchAll(/href="(\/[^"#?]*)(?:[?#][^"]*)?"/g)) {
     const target = match[1];
     if (target === '/' || target.includes('.')) continue;
@@ -183,6 +190,15 @@ for (const requiredTag of ['thumbnail_loc', 'title', 'description', 'player_loc'
   if (count !== videoSitemapUrls.size) errors.push(`video sitemap: every entry must contain video:${requiredTag}`);
 }
 if (!robots.includes(`Sitemap: ${SITE}/video-sitemap.xml`)) errors.push('robots.txt: video sitemap declaration is missing');
+for (const parameter of ['q', 'language', 'season', 'arrangement', 'presentation']) {
+  for (const separator of ['?', '&']) {
+    const rule = `Disallow: /*${separator}${parameter}=`;
+    if (!robots.includes(rule)) errors.push(`robots.txt: legacy finder rule is missing: ${rule}`);
+  }
+}
+if (!robots.includes('Disallow: /catalogue/worship-songs.json$')) {
+  errors.push('robots.txt: complete runtime catalogue crawl rule is missing');
+}
 
 if (errors.length) {
   throw new Error(`SEO validation failed:\n- ${errors.join('\n- ')}`);
