@@ -393,6 +393,7 @@ function verifiedVideoCards(videos: VideoWatchPageRecord[]): string {
 
 function languagePage(language: string, songs: WorshipSong[], related: string[], publishedFamilies: SongFamilyDefinition[]): SeoPage {
   const slug = slugify(language);
+  const languageArticle = /^[aeiou]/i.test(language) ? 'an' : 'a';
   const arrangements = countBy(songs, inferWorshipArrangement);
   const presentations = countBy(songs, inferLanguagePresentation);
   const count = songs.length;
@@ -416,7 +417,9 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
   const rankedHere = [...new Set(songs.filter((song) => song.ccliUkRank).map((song) => song.title))];
 
   const description = truncateAtWord(
-    familiesHere.length
+    language === 'Armenian'
+      ? `Browse ${count.toLocaleString('en-GB')} Armenian Christian songs, Apostolic Church hymns and worship videos with lyrics, Armenian words or subtitles.`
+      : familiesHere.length
       ? `${count.toLocaleString('en-GB')} ${language} worship videos with on-screen words, including ${language} versions of ${formatConjunction(familiesHere.slice(0, 2).map(([family]) => family.title))}.`
       : `Find ${count.toLocaleString('en-GB')} ${language} Christian worship and hymn videos with lyrics, on-screen words or subtitles for church services.`,
     164,
@@ -449,11 +452,14 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
     .filter((video) => video.language === language)
     .sort((left, right) => left.catalogueTitle.localeCompare(right.catalogueTitle))
     .slice(0, 12);
+  const languageIntentSection = language === 'Armenian'
+    ? `<section class="seo-section"><h2>Armenian Christian songs and Apostolic Church hymns</h2><p>This collection brings together contemporary Armenian praise, Christian lyric videos and Armenian Apostolic Church hymns. Examples include Der Voghormia and Nor Dzaghig alongside newer <em>hogevor erg</em> (spiritual song) recordings.</p><p>Many titles include both Armenian script and a Latin transliteration, making it easier to identify a familiar song before checking the exact words and arrangement with a fluent Armenian speaker.</p></section>`
+    : '';
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/languages/">Languages</a><span>›</span><span>${escapeHtml(language)}</span></nav>
   <article class="seo-hero">
     <p class="seo-eyebrow">Multilingual worship catalogue</p>
-    <h1>${escapeHtml(language)} worship videos with words</h1>
-    <p class="seo-lead">Explore ${count.toLocaleString('en-GB')} playable Christian worship and hymn videos catalogued for ${escapeHtml(language)}-speaking churches, international congregations and services where English is a second language.</p>
+    <h1>${language === 'Armenian' ? 'Armenian Christian worship songs with lyrics' : `${escapeHtml(language)} worship videos with words`}</h1>
+    <p class="seo-lead">${language === 'Armenian' ? `Explore ${count.toLocaleString('en-GB')} playable Armenian Christian songs, Apostolic Church hymns and contemporary worship videos with on-screen words or subtitles.` : `Explore ${count.toLocaleString('en-GB')} playable Christian worship and hymn videos catalogued for ${escapeHtml(language)}-speaking churches, international congregations and services where English is a second language.`}</p>
     <div class="seo-actions"><a class="seo-button" href="${finderUrl(appQuery)}">Search all ${escapeHtml(language)} videos</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div>
   </article>
   <section class="seo-stats" aria-label="Catalogue summary">
@@ -467,6 +473,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
     <p>${subtitleSentence}${rankedSentence}</p>
     <p><a class="seo-text-link" href="/formats/">Understand what each words and subtitle label means →</a></p>
   </section>
+  ${languageIntentSection}
   ${familiesHere.length ? `<section class="seo-section"><h2>Familiar worship songs available in ${escapeHtml(language)}</h2><p>${familiesHere.length === 1 ? 'One well-known worship song in this catalogue has' : `${familiesHere.length.toLocaleString('en-GB')} well-known worship songs in this catalogue have`} a ${escapeHtml(language)} version, which helps a congregation sing something familiar in a language they read most naturally.</p><div class="seo-card-grid">${familiesHere.slice(0, 12).map(([family, familyCount]) => `<a class="seo-card" href="/songs/${family.slug}/"><strong>${escapeHtml(family.title)}</strong><span>${familyCount.toLocaleString('en-GB')} ${escapeHtml(language)} ${familyCount === 1 ? 'version' : 'versions'} · compare other languages</span></a>`).join('')}</div></section>` : ''}
   ${verifiedVideos.length ? `<section class="seo-section"><h2>Verified ${escapeHtml(language)} watch pages</h2><p>${verifiedVideos.length === 1 ? `One ${escapeHtml(language)} upload has` : `${verifiedVideos.length} ${escapeHtml(language)} uploads have`} a dedicated page with the YouTube title, uploader and publication date checked.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
   <section class="seo-section">
@@ -475,7 +482,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
     <p><a class="seo-text-link" href="${finderUrl(appQuery)}">View the complete filtered catalogue →</a></p>
   </section>
   <section class="seo-section seo-help">
-    <h2>Before using a ${escapeHtml(language)} video in church</h2>
+    <h2>Before using ${languageArticle} ${escapeHtml(language)} video in church</h2>
     <p>Catalogue labels come from public uploader metadata, so they narrow the search rather than confirm the words. Ask a fluent ${escapeHtml(language)} speaker to watch the exact upload before a service.</p>
     <p><a class="seo-text-link" href="/guides/review-multilingual-worship-videos/">Help review this language collection →</a></p>
   </section>
