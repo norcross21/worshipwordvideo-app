@@ -1,15 +1,15 @@
 {
   "/": {
-    "hash": "f8d2e4d8d4137aed58267fc4da6d5a855ea641d3",
-    "lastModified": "2026-08-20"
+    "hash": "c2237fd21df9bcc4d1008a49af044fd79a293095",
+    "lastModified": "2026-08-26"
   },
   "/about/": {
-    "hash": "910a7890817a1356231920f9f164ae93348dfde9",
-    "lastModified": "2026-08-19"
+    "hash": "4f0c5373195ea072e11848e282738f375d02b1d0",
+    "lastModified": "2026-08-26"
   },
   "/arrangements/": {
-    "hash": "cf0b356c457948be048fb4c909af342190731093",
-    "lastModified": "2026-08-19"
+    "hash": "9dd2d4de349807a499fea48746f61891d8e35c5f",
+    "lastModified": "2026-08-26"
   },
   "/arrangements/a-cappella/": {
     "hash": "5d3c870a2c0f40dbdc0ec6f75e4a8932ece00bbc",
@@ -32,16 +32,16 @@
     "lastModified": "2026-08-19"
   },
   "/arrangements/contemporary-worship/": {
-    "hash": "c7c6df56b52cf6a68821285fc9da9774842c2001",
-    "lastModified": "2026-08-19"
+    "hash": "fbbf7e3b1a1b3572bd8765ac516e044d07d5a610",
+    "lastModified": "2026-08-26"
   },
   "/arrangements/country-bluegrass/": {
     "hash": "e28c03f4b7ccc93661b6145ab5765d69e8fb213b",
     "lastModified": "2026-08-19"
   },
   "/arrangements/gospel/": {
-    "hash": "97477ad3b6b55a3db7cf5915dde334954168450c",
-    "lastModified": "2026-08-19"
+    "hash": "6d57ddeee8d1eddbd4f0939dff0b9f5844a0f35e",
+    "lastModified": "2026-08-26"
   },
   "/arrangements/live-worship/": {
     "hash": "a5890563a1e07fa659507e8d45f46116dc7ec0b8",
@@ -56,32 +56,32 @@
     "lastModified": "2026-08-19"
   },
   "/formats/": {
-    "hash": "18b75fecb9218c6165f5cd816972e41caeba18ec",
-    "lastModified": "2026-08-19"
+    "hash": "826e98b87565dba1d22e3d88de71e86faedc3b26",
+    "lastModified": "2026-08-26"
   },
   "/formats/bilingual-worship-videos/": {
-    "hash": "b2321e8275075043ceaa79e9fda9db87cbcdda98",
-    "lastModified": "2026-08-19"
+    "hash": "c74a057f5c3053debcd71c38aad3e4a37463ab9f",
+    "lastModified": "2026-08-26"
   },
   "/formats/english-worship-translated-subtitles/": {
-    "hash": "3b4225e49f1a32bdbb6225c86d96593ddf9f3743",
-    "lastModified": "2026-08-19"
+    "hash": "897af4b4966c5cf2e0f35b7415671a9820008520",
+    "lastModified": "2026-08-26"
   },
   "/formats/english-worship-videos-with-lyrics/": {
     "hash": "9fc9a0b25e595f1e3bb4a65aedec933d89fe6751",
     "lastModified": "2026-08-19"
   },
   "/formats/native-language-worship-with-lyrics/": {
-    "hash": "16ef4b8af0f0cc47ca5b4f02618b9c5f4d4263f0",
-    "lastModified": "2026-08-19"
+    "hash": "a8b88602e5fd24ee47cbfce34d7e4cc5904e7ecc",
+    "lastModified": "2026-08-26"
   },
   "/formats/native-worship-english-subtitles/": {
     "hash": "08a19ebd7ed79f96f8f39b84f20926c7394b81d9",
     "lastModified": "2026-08-19"
   },
   "/formats/worship-videos-with-words-or-subtitles/": {
-    "hash": "8bfe1f5ad206b1c4048360e00e146ed0ac52f30e",
-    "lastModified": "2026-08-19"
+    "hash": "d723e5b89297888b20bb1852bbc31431dfd2ec1d",
+    "lastModified": "2026-08-26"
   },
   "/guides/": {
     "hash": "50d5cd16c29bccd2b9f268a56e0e3bd201ee7ee3",
@@ -112,8 +112,8 @@
     "lastModified": "2026-08-19"
   },
   "/languages/": {
-    "hash": "b2cbad02e7783a6426e26a796935ea3d9a682763",
-    "lastModified": "2026-08-19"
+    "hash": "2ffbcb70ca5eb4f09d83e86831b9df2ca04e5327",
+    "lastModified": "2026-08-26"
   },
   "/languages/afrikaans/": {
     "hash": "2932e535924173020f41ca89c984e3f6e3269c74",
@@ -124,8 +124,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/albanian/": {
-    "hash": "e1af76ae80c06f7a32f3a6f009dd7bb38c1be879",
-    "lastModified": "2026-08-23"
+    "hash": "1c0a4714b0cd99a0cc918e276658f9ae4bc02717",
+    "lastModified": "2026-08-26"
   },
   "/languages/amharic/": {
     "hash": "de506d8873c6c8b08f1e3139f2572901bb19364d",
@@ -137,7 +137,7 @@
   },
   "/languages/armenian/": {
     "hash": "024a76146ea75de4f7fc9ae178092682efbf194b",
-    "lastModified": "2026-08-23"
+    "lastModified": "2026-08-26"
   },
   "/languages/assamese/": {
     "hash": "2ef1499cc645e9fcdcc9df5a5d287d842fb73ee0",
@@ -168,8 +168,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/catalan/": {
-    "hash": "ad191f41e233b7b0ddbd13e519dce3fbb37d1196",
-    "lastModified": "2026-08-23"
+    "hash": "c31bebe6eb2c2de794d858762e943090789df1cd",
+    "lastModified": "2026-08-26"
   },
   "/languages/chichewa/": {
     "hash": "2573848fb3ea11043679fbd1775dcc4df37e4f70",
@@ -200,8 +200,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/ewe/": {
-    "hash": "d97e20cbe85238db69d844100ee7538473388ff2",
-    "lastModified": "2026-08-23"
+    "hash": "b9f770f6e9c93a31523465c629f4ba7fc206a579",
+    "lastModified": "2026-08-26"
   },
   "/languages/fijian/": {
     "hash": "6c11712434c615995994f62a522e78e5acce8090",
@@ -224,8 +224,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/georgian/": {
-    "hash": "ca6cfa06c72d9c3f572431756578c0eb5f442e1d",
-    "lastModified": "2026-08-23"
+    "hash": "14880d226045512b8ffda41304c0047663cd5cfc",
+    "lastModified": "2026-08-26"
   },
   "/languages/german/": {
     "hash": "2b8e48c60bdf9768c59cdd3af0af997dcce6d524",
@@ -240,8 +240,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/haitian-creole/": {
-    "hash": "e93cd2f030e4f9dd93b7f282f16274b4a57269ed",
-    "lastModified": "2026-08-23"
+    "hash": "6bb86012bb5fadd22cba6c6b40eaa1e55a207388",
+    "lastModified": "2026-08-26"
   },
   "/languages/hausa/": {
     "hash": "b831f4fdf41e8065f996d2f273099f460f116416",
@@ -264,16 +264,16 @@
     "lastModified": "2026-08-23"
   },
   "/languages/igbo/": {
-    "hash": "7199ed8b4b016d3224333c8f4d92ed41435276b1",
-    "lastModified": "2026-08-23"
+    "hash": "af4470023ba2da1d10afd16e3bcc9f6a0df98b47",
+    "lastModified": "2026-08-26"
   },
   "/languages/indonesian/": {
     "hash": "7df88ed3f6ad543b2bc609725a4d9781b47426a4",
     "lastModified": "2026-08-23"
   },
   "/languages/irish/": {
-    "hash": "4aaa3472601af162c9f3a79f464b37fd1712f388",
-    "lastModified": "2026-08-23"
+    "hash": "abe371894f9b9801a6d9b5adf3bc29c489105a6c",
+    "lastModified": "2026-08-26"
   },
   "/languages/italian/": {
     "hash": "a3b40f3d993d653acefe9c4578a513fed071efcf",
@@ -316,8 +316,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/kurdish/": {
-    "hash": "7ba79da9e885d46d1c18bce0575097fc1b984714",
-    "lastModified": "2026-08-23"
+    "hash": "e3d6bd1b4c2b60bbbdbca979e18ca4e9b372748d",
+    "lastModified": "2026-08-26"
   },
   "/languages/lao/": {
     "hash": "7661e06592d15f6da498b6a679854aa2a62468b8",
@@ -332,8 +332,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/luganda/": {
-    "hash": "b518caa4bdbe33003b58407b24f33077d3928174",
-    "lastModified": "2026-08-23"
+    "hash": "af4080561e73865292222a86d8b8a0bb8b369349",
+    "lastModified": "2026-08-26"
   },
   "/languages/malay/": {
     "hash": "eaf63973cda88fb936a399d8b21186c29d4307e8",
@@ -348,8 +348,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/maori/": {
-    "hash": "b238f36b75e7a82303d71332aa591805e4588cd1",
-    "lastModified": "2026-08-23"
+    "hash": "eb7d576fc0b304446d60f293c2e1e1bd9a03094f",
+    "lastModified": "2026-08-26"
   },
   "/languages/marathi/": {
     "hash": "c3f9f4399ba828ab214f80ff4bcd9a610906970e",
@@ -360,8 +360,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/mongolian/": {
-    "hash": "d6b29e379a24f10485420b8959b82d90e5db2afa",
-    "lastModified": "2026-08-23"
+    "hash": "bb09cf797fc3abb5df1e79301c005e92dfacd35a",
+    "lastModified": "2026-08-26"
   },
   "/languages/ndebele/": {
     "hash": "561a465c544fec497c40daf47f56af36007fbfd4",
@@ -372,8 +372,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/norwegian/": {
-    "hash": "94ab7497e9aee1f1ab752db3e733071412cf61d4",
-    "lastModified": "2026-08-23"
+    "hash": "1671e890327aa8c4565b8351c3c6bd2ba421ec25",
+    "lastModified": "2026-08-26"
   },
   "/languages/odia/": {
     "hash": "24545433a1a1a48a2c2c3c901999ac6661d8f20b",
@@ -400,8 +400,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/quechua/": {
-    "hash": "a32b20678be2d7e61866032cf6f9a8d89f4e6d86",
-    "lastModified": "2026-08-23"
+    "hash": "2f9c60423fe964150c991b40e100bea5dc886cce",
+    "lastModified": "2026-08-26"
   },
   "/languages/romanian/": {
     "hash": "a3ce388563fa9f2addf625d354adbd1939ad3abf",
@@ -456,8 +456,8 @@
     "lastModified": "2026-08-23"
   },
   "/languages/swedish/": {
-    "hash": "8fb923ba3ccd580013c2bae3b6e14d22faaa385e",
-    "lastModified": "2026-08-23"
+    "hash": "cdb15c67e31c5f7d5d5bfc9ff45df6f49c2104f5",
+    "lastModified": "2026-08-26"
   },
   "/languages/tagalog-filipino/": {
     "hash": "5bb2031afa32c64e5f45eed2172d1fcc77327671",
@@ -484,12 +484,12 @@
     "lastModified": "2026-08-23"
   },
   "/languages/tok-pisin/": {
-    "hash": "4316a9f56ef018f3b9c793016a234168c825f491",
-    "lastModified": "2026-08-23"
+    "hash": "d61a74cd0fcc8e8bc331efaa1084d79aab69eb4e",
+    "lastModified": "2026-08-26"
   },
   "/languages/tongan/": {
-    "hash": "7849b6cbf68ae20638e2ead594c53850ce8c4b0f",
-    "lastModified": "2026-08-23"
+    "hash": "dd77a21e0a239c779990dfdf1f87ea5d847890b5",
+    "lastModified": "2026-08-26"
   },
   "/languages/turkish/": {
     "hash": "7f9e124a31eea7f9f5726699eef8abb7799b2660",
@@ -520,12 +520,12 @@
     "lastModified": "2026-08-23"
   },
   "/languages/wolof/": {
-    "hash": "5deef9430a75c922c476a260b38ce858501a2d43",
-    "lastModified": "2026-08-23"
+    "hash": "426f381d4479965867ac6fbec8164087b39c47a5",
+    "lastModified": "2026-08-26"
   },
   "/languages/xhosa/": {
-    "hash": "a787824d20158dfee3182e3baea57bad698b00d2",
-    "lastModified": "2026-08-23"
+    "hash": "a5faeab27bd1e5aea2f0be749bae92e119eebf18",
+    "lastModified": "2026-08-26"
   },
   "/languages/yoruba/": {
     "hash": "fc68fae791258e4ef69352c1946bb91426fd6160",

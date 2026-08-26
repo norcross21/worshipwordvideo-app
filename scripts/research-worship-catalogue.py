@@ -372,7 +372,10 @@ LOCAL_LANGUAGE_SIGNALS: dict[str, re.Pattern[str]] = {
     "ny": re.compile(r"chichewa|nyanja|nyimbo", re.I),
     "rn": re.compile(r"kirundi|indirimbo", re.I),
     "wo": re.compile(r"wolof|wólof", re.I),
-    "tpi": re.compile(r"tok pisin|lotu song", re.I),
+    # Uploaders commonly close the language name up as "Tokpisin" and use
+    # "PNG Pidgin" for Tok Pisin. Both are explicit language labels rather
+    # than evidence inferred from a Papua New Guinea location alone.
+    "tpi": re.compile(r"tok\s*pisin|png\s+pidgin|lotu song", re.I),
     "qu": re.compile(r"quechua|kichwa|takiy", re.I),
     "ht": re.compile(r"krey[oò]l|ayisyen|adorasyon|lwanj", re.I),
     "mi": re.compile(r"m[aā]ori|waiata|karaitiana|whakapono|whakamoemiti", re.I),

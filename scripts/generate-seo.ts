@@ -413,12 +413,43 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
     .filter((seconds): seconds is number => Boolean(seconds))
     .sort((left, right) => left - right);
   const withEnglishSubtitles = songs.filter((song) => /English subtitles/i.test(inferLanguagePresentation(song))).length;
+  const withEnglishSupport = songs.filter((song) => /English subtitles|translated subtitles|bilingual/i.test(inferLanguagePresentation(song))).length;
   const withNativeWords = songs.filter((song) => /native words/i.test(inferLanguagePresentation(song))).length;
   const rankedHere = [...new Set(songs.filter((song) => song.ccliUkRank).map((song) => song.title))];
+  const entries = (total: number) => `${total.toLocaleString('en-GB')} ${total === 1 ? 'entry' : 'entries'}`;
+
+  const languageSeoOverride = language === 'Armenian'
+    ? {
+      title: 'Armenian Worship Songs with Lyrics | Church Videos',
+      description: `Browse ${count.toLocaleString('en-GB')} Armenian Christian songs, Apostolic Church hymns and worship videos with lyrics, Armenian words or subtitles.`,
+      heading: 'Armenian Christian worship songs with lyrics',
+      schemaName: 'Armenian worship videos with words',
+      lead: `Explore ${count.toLocaleString('en-GB')} playable Armenian Christian songs, Apostolic Church hymns and contemporary worship videos with on-screen words or subtitles.`,
+      intentSection: `<section class="seo-section"><h2>Armenian Christian songs and Apostolic Church hymns</h2><p>This collection brings together contemporary Armenian praise, Christian lyric videos and Armenian Apostolic Church hymns. Examples include Der Voghormia and Nor Dzaghig alongside newer <em>hogevor erg</em> (spiritual song) recordings.</p><p>Many titles include both Armenian script and a Latin transliteration, making it easier to identify a familiar song before checking the exact words and arrangement with a fluent Armenian speaker.</p></section>`,
+    }
+    : language === 'Tok Pisin'
+      ? {
+        title: 'Tok Pisin Worship & Gospel Songs with Lyrics',
+        description: `Browse ${count.toLocaleString('en-GB')} Tok Pisin worship and gospel songs with lyrics, words or English translations for churches in Papua New Guinea. Preview each exact video.`,
+        heading: 'Tok Pisin worship and gospel songs with lyrics',
+        schemaName: 'Tok Pisin worship and gospel songs with lyrics',
+        lead: `Find ${count.toLocaleString('en-GB')} playable Tok Pisin Christian praise, worship and gospel videos with words on screen for churches in Papua New Guinea and beyond.`,
+        intentSection: `<section class="seo-section"><h2>Tok Pisin gospel songs and lyrics for PNG churches</h2><p>Use this collection to find Tok Pisin worship songs with lyrics, PNG gospel lyric videos and Christian praise recordings with words on screen. The catalogue keeps the uploader's exact title and channel so you can identify and preview the right version before a service.</p>${withEnglishSupport ? `<p>${entries(withEnglishSupport)} ${withEnglishSupport === 1 ? 'is' : 'are'} labelled with English subtitles, translation or bilingual presentation, which can help a multilingual congregation follow the song.</p>` : ''}</section>`,
+      }
+      : language === 'Luganda'
+        ? {
+          title: 'Luganda Worship & Praise Songs with Lyrics',
+          description: `Browse ${count.toLocaleString('en-GB')} Luganda worship, praise and gospel songs with lyrics or English translations for Ugandan churches and multilingual services. Preview each video.`,
+          heading: 'Luganda worship and praise songs with lyrics',
+          schemaName: 'Luganda worship and praise songs with lyrics',
+          lead: `Explore ${count.toLocaleString('en-GB')} playable Luganda worship, praise, gospel and hymn videos with on-screen words for churches in Uganda and Luganda-speaking congregations worldwide.`,
+          intentSection: `<section class="seo-section"><h2>Praise and worship songs in Luganda with lyrics</h2><p>This collection includes Church of Uganda hymns, Catholic and SDA songbook videos, contemporary praise and Luganda gospel songs. Use the uploader titles and presentation labels to narrow the list before previewing the exact words and arrangement.</p>${withEnglishSupport ? `<p>${entries(withEnglishSupport)} ${withEnglishSupport === 1 ? 'is' : 'are'} labelled with English subtitles, translated words or bilingual presentation for services where both Luganda and English are used.</p>` : ''}</section>`,
+        }
+        : undefined;
 
   const description = truncateAtWord(
-    language === 'Armenian'
-      ? `Browse ${count.toLocaleString('en-GB')} Armenian Christian songs, Apostolic Church hymns and worship videos with lyrics, Armenian words or subtitles.`
+    languageSeoOverride
+      ? languageSeoOverride.description
       : familiesHere.length
       ? `${count.toLocaleString('en-GB')} ${language} worship videos with on-screen words, including ${language} versions of ${formatConjunction(familiesHere.slice(0, 2).map(([family]) => family.title))}.`
       : `Find ${count.toLocaleString('en-GB')} ${language} Christian worship and hymn videos with lyrics, on-screen words or subtitles for church services.`,
@@ -430,7 +461,6 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
       ? ` Versions run about ${readableDuration(durations[0])}.`
       : ` They run from ${readableDuration(durations[0])} to ${readableDuration(durations.at(-1)!)}, typically around ${readableDuration(durations[Math.floor(durations.length / 2)])}.`
     : '';
-  const entries = (total: number) => `${total.toLocaleString('en-GB')} ${total === 1 ? 'entry' : 'entries'}`;
   const regionSentence = regions.length > 3
     ? ` Uploads are associated with ${regions.length.toLocaleString('en-GB')} regions, including ${escapeHtml(formatConjunction(regions.slice(0, 3)))}.`
     : regions.length > 1
@@ -452,14 +482,12 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
     .filter((video) => video.language === language)
     .sort((left, right) => left.catalogueTitle.localeCompare(right.catalogueTitle))
     .slice(0, 12);
-  const languageIntentSection = language === 'Armenian'
-    ? `<section class="seo-section"><h2>Armenian Christian songs and Apostolic Church hymns</h2><p>This collection brings together contemporary Armenian praise, Christian lyric videos and Armenian Apostolic Church hymns. Examples include Der Voghormia and Nor Dzaghig alongside newer <em>hogevor erg</em> (spiritual song) recordings.</p><p>Many titles include both Armenian script and a Latin transliteration, making it easier to identify a familiar song before checking the exact words and arrangement with a fluent Armenian speaker.</p></section>`
-    : '';
+  const languageIntentSection = languageSeoOverride?.intentSection ?? '';
   const body = `<nav class="seo-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>›</span><a href="/languages/">Languages</a><span>›</span><span>${escapeHtml(language)}</span></nav>
   <article class="seo-hero">
     <p class="seo-eyebrow">Multilingual worship catalogue</p>
-    <h1>${language === 'Armenian' ? 'Armenian Christian worship songs with lyrics' : `${escapeHtml(language)} worship videos with words`}</h1>
-    <p class="seo-lead">${language === 'Armenian' ? `Explore ${count.toLocaleString('en-GB')} playable Armenian Christian songs, Apostolic Church hymns and contemporary worship videos with on-screen words or subtitles.` : `Explore ${count.toLocaleString('en-GB')} playable Christian worship and hymn videos catalogued for ${escapeHtml(language)}-speaking churches, international congregations and services where English is a second language.`}</p>
+    <h1>${languageSeoOverride?.heading ?? `${escapeHtml(language)} worship videos with words`}</h1>
+    <p class="seo-lead">${languageSeoOverride?.lead ?? `Explore ${count.toLocaleString('en-GB')} playable Christian worship and hymn videos catalogued for ${escapeHtml(language)}-speaking churches, international congregations and services where English is a second language.`}</p>
     <div class="seo-actions"><a class="seo-button" href="${finderUrl(appQuery)}">Search all ${escapeHtml(language)} videos</a><a class="seo-button seo-button--quiet" href="/guides/multilingual-worship/">Plan multilingual worship</a></div>
   </article>
   <section class="seo-stats" aria-label="Catalogue summary">
@@ -490,9 +518,9 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
 
   return {
     path: `/languages/${slug}/`,
-    title: language.length > 20
+    title: languageSeoOverride?.title ?? (language.length > 20
       ? `${language} Worship Videos | Lyrics`
-      : `${language} Worship Songs with Lyrics | Church Videos`,
+      : `${language} Worship Songs with Lyrics | Church Videos`),
     description,
     body,
     schema: [
@@ -500,7 +528,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
         '@type': 'CollectionPage',
         '@id': `${SITE}/languages/${slug}/#page`,
         url: `${SITE}/languages/${slug}/`,
-        name: `${language} worship videos with words`,
+        name: languageSeoOverride?.schemaName ?? `${language} worship videos with words`,
         description,
         isPartOf: { '@id': `${SITE}/#website` },
         inLanguage: 'en-GB',

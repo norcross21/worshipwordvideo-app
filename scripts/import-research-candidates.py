@@ -245,6 +245,27 @@ def main() -> None:
     requested_target = integer_argument("target", TARGET)
     target = min(max(requested_target, 1), TARGET)
     existing_source_ids = research.existing_video_ids()
+    explicit_search_languages = {
+        str(item.get("youtubeId") or ""): (
+            str(item.get("language") or "Language not stated"),
+            str(item.get("languageCode") or "und"),
+            str(item.get("region") or "International / verify before use"),
+        )
+        for path in SOURCE_PATHS
+        for item in cached_candidates(path)
+        if item.get("youtubeId")
+        and item.get("language") not in {None, "Language not stated"}
+        and (
+            not selected_languages
+            or str(item.get("language")).casefold() in selected_languages
+        )
+        and research.has_language_signal(
+            str(item.get("sourceTitle") or ""),
+            str(item.get("sourceChannel") or ""),
+            str(item.get("language")),
+            str(item.get("languageCode") or "und"),
+        )
+    }
     reviewed_channel_languages = {
         str(item.get("youtubeId") or ""): (
             str(item.get("language") or "Language not stated"),
@@ -271,6 +292,7 @@ def main() -> None:
         and research.word_evidence(str(row[1]))
         and research.is_existing_quality_row(str(row[1]), str(row[2]), str(row[3]), str(row[4]))
     ][:target]
+    relabelled_from_explicit_search = 0
     for row in base_rows:
         named_language = explicitly_named_language(str(row[1]))
         if (
@@ -281,6 +303,9 @@ def main() -> None:
             row[3], row[4], row[5] = named_language
         if str(row[3]) == "Language not stated" and str(row[0]) in reviewed_channel_languages:
             row[3], row[4], row[5] = reviewed_channel_languages[str(row[0])]
+        if str(row[3]) == "Language not stated" and str(row[0]) in explicit_search_languages:
+            row[3], row[4], row[5] = explicit_search_languages[str(row[0])]
+            relabelled_from_explicit_search += 1
         if str(row[3]) == "Language not stated":
             script_language = language_from_unique_script(str(row[1]))
             if script_language:
@@ -494,6 +519,7 @@ def main() -> None:
         "imported": len(rows[:target]) - len(base_rows),
         "selected": len(rows[:target]),
         "explicit_languages": len({row[3] for row in rows[:target] if row[3] != "Language not stated"}),
+        "relabelled_from_explicit_search": relabelled_from_explicit_search,
     }, indent=2, ensure_ascii=False))
 
 

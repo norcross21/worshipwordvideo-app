@@ -1,14 +1,16 @@
 import { BookOpenCheck, Globe2, MonitorPlay, Music2 } from 'lucide-react';
 
 const popularLanguages = [
+  ['Luganda', 'luganda'],
+  ['Tok Pisin', 'tok-pisin'],
+  ['Armenian', 'armenian'],
   ['Persian / Farsi', 'persian-farsi'],
-  ['Urdu', 'urdu'],
   ['Portuguese', 'portuguese'],
-  ['Spanish', 'spanish'],
+  ['Punjabi', 'punjabi'],
+  ['Chichewa', 'chichewa'],
+  ['Twi', 'twi'],
   ['Arabic', 'arabic'],
-  ['French', 'french'],
-  ['Swahili', 'swahili'],
-  ['Yoruba', 'yoruba'],
+  ['Urdu', 'urdu'],
 ] as const;
 
 export function SeoDiscoverySection() {
@@ -46,6 +48,8 @@ export function SeoDiscoverySection() {
         {popularLanguages.map(([label, slug]) => <a key={slug} href={`/languages/${slug}/`}>{label}</a>)}
         <a href="/languages/">All languages →</a>
         <a href="/songs/">Well-known songs →</a>
+        <a href="/videos/">Verified videos →</a>
+        <a href="/guides/multilingual-worship/">Multilingual worship guide →</a>
         <a href="/about/">How videos are checked →</a>
       </nav>
     </section>
