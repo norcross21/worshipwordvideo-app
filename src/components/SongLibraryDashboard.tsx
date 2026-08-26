@@ -316,7 +316,7 @@ export function SongLibraryDashboard({
     <div className="music-dashboard">
       <section className="library-intro">
         <div>
-          <h2>Find a worship video</h2>
+          <h1>Find worship lyric videos for church services</h1>
           <p>Search by song, artist, language or hymn number.</p>
         </div>
       </section>

@@ -145,6 +145,7 @@ body:has(.modal-backdrop) {
 }
 
 .app-header__title {
+  display: block;
   font-family: var(--font-sans);
   font-size: 1.08rem;
   font-weight: 700;
@@ -389,7 +390,7 @@ body:has(.modal-backdrop) {
   text-transform: uppercase;
 }
 
-.library-intro h2 {
+.library-intro h1 {
   color: var(--color-brand-navy);
   font-family: var(--font-serif);
   font-size: clamp(1.55rem, 3vw, 2.15rem);
@@ -3739,7 +3740,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .app-main { padding-top: 1.35rem; }
 
 .library-intro__eyebrow { color: var(--color-brand-navy); }
-.library-intro h2 { color: var(--color-brand-navy); font-weight: 850; letter-spacing: -0.035em; }
+.library-intro h1 { color: var(--color-brand-navy); font-weight: 850; letter-spacing: -0.035em; }
 
 .music-dashboard__toolbar,
 .filter-bar,
@@ -5355,7 +5356,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
 .service-workspace__actions .service-workspace__new:hover { border-color: #0a205f; color: #ffffff; background: #0a205f; }
 
 .library-intro { padding: 0.1rem 0 0.15rem; }
-.library-intro h2 { font-family: var(--font-heading); font-size: clamp(1.45rem, 2.7vw, 1.95rem); }
+.library-intro h1 { font-family: var(--font-heading); font-size: clamp(1.45rem, 2.7vw, 1.95rem); }
 .library-intro p { margin-top: 0.22rem; font-size: 0.82rem; }
 
 .song-detail__actions { width: min(230px, 100%); flex-direction: column; align-items: stretch; }
@@ -5432,7 +5433,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   .service-workspace { margin-bottom: 0.65rem; padding: 0.5rem; }
   .service-workspace__actions button { min-height: 40px; }
   .library-intro__eyebrow { font-size: 0.62rem; }
-  .library-intro h2 { font-size: 1.35rem; }
+  .library-intro h1 { font-size: 1.35rem; }
   .library-intro p { font-size: 0.75rem; line-height: 1.45; }
   .song-detail__actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
   .song-detail__actions .btn-add-playlist,
@@ -5527,7 +5528,7 @@ body.projection-body { margin: 0; overflow: hidden; background: #000; }
   gap: 0.7rem;
   flex-wrap: wrap;
 }
-.library-intro h2 { font-size: clamp(1.35rem, 2.2vw, 1.7rem); }
+.library-intro h1 { font-size: clamp(1.35rem, 2.2vw, 1.7rem); }
 .library-intro p { margin: 0; color: var(--color-text-light); font-size: 0.76rem; }
 .music-dashboard { gap: 0.6rem; }
 

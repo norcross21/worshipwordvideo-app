@@ -26,7 +26,7 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
             <img src="/worship-word-video-logo.svg" alt="" />
           </span>
           <div className="app-header__brand-copy">
-            <h1 className="app-header__title"><span>Worship</span>{' '}Word Video</h1>
+            <span className="app-header__title"><span>Worship</span>{' '}Word Video</span>
             <p className="app-header__subtitle">Find the words. Plan the service. Press play.</p>
           </div>
         </button>
