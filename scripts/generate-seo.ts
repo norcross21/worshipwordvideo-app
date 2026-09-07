@@ -413,7 +413,7 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
     .filter((seconds): seconds is number => Boolean(seconds))
     .sort((left, right) => left - right);
   const withEnglishSubtitles = songs.filter((song) => /English subtitles/i.test(inferLanguagePresentation(song))).length;
-  const withEnglishSupport = songs.filter((song) => /English subtitles|translated subtitles|bilingual/i.test(inferLanguagePresentation(song))).length;
+  const withEnglishSupport = songs.filter((song) => /English subtitles|bilingual/i.test(inferLanguagePresentation(song))).length;
   const withNativeWords = songs.filter((song) => /native words/i.test(inferLanguagePresentation(song))).length;
   const rankedHere = [...new Set(songs.filter((song) => song.ccliUkRank).map((song) => song.title))];
   const entries = (total: number) => `${total.toLocaleString('en-GB')} ${total === 1 ? 'entry' : 'entries'}`;
@@ -445,7 +445,25 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
           lead: `Explore ${count.toLocaleString('en-GB')} playable Luganda worship, praise, gospel and hymn videos with on-screen words for churches in Uganda and Luganda-speaking congregations worldwide.`,
           intentSection: `<section class="seo-section"><h2>Praise and worship songs in Luganda with lyrics</h2><p>This collection includes Church of Uganda hymns, Catholic and SDA songbook videos, contemporary praise and Luganda gospel songs. Use the uploader titles and presentation labels to narrow the list before previewing the exact words and arrangement.</p>${withEnglishSupport ? `<p>${entries(withEnglishSupport)} ${withEnglishSupport === 1 ? 'is' : 'are'} labelled with English subtitles, translated words or bilingual presentation for services where both Luganda and English are used.</p>` : ''}</section>`,
         }
-        : undefined;
+        : language === 'Fijian'
+          ? {
+            title: 'Fijian Gospel & Worship Songs with Lyrics',
+            description: `Find ${count.toLocaleString('en-GB')} Fijian gospel, hymn and worship videos with words or subtitles. Compare versions and prepare a church service without an account.`,
+            heading: 'Fijian gospel and worship songs with lyrics',
+            schemaName: 'Fijian gospel and worship songs with lyrics',
+            lead: `Browse ${count.toLocaleString('en-GB')} videos catalogued in Fijian, with uploader titles and word-format labels to help you choose worship for your congregation.`,
+            intentSection: '<section class="seo-section"><h2>Choosing a Fijian gospel lyric video</h2><p>For congregational singing, look for Fijian vocals with Fijian words. For a service shared with English speakers, compare the English-subtitle and bilingual options below. These are different needs: an English recording with translated words is not the same as a song sung in Fijian.</p><p>Preview the lettering, pace and arrangement on your church screen. A choir performance may suit listening or reflection, while a clear lyric recording may be easier for everyone to sing along with.</p></section>',
+          }
+          : language === 'English'
+            ? {
+              title: 'Worship Lyric Videos for Churches | English Songs',
+              description: `Find ${count.toLocaleString('en-GB')} English worship lyric videos and hymns for churches without live musicians. Build a service playlist and set start and stop times.`,
+              heading: 'English worship lyric videos for churches',
+              schemaName: 'English worship lyric videos for churches',
+              lead: 'Preparing worship without live musicians? Find English worship songs and hymns with words on screen, then arrange your videos into a service playlist. No account is needed.',
+              intentSection: '<section class="seo-section"><h2>Plan a service without hours of searching</h2><p>Start with a song your congregation knows. Preview the exact video for readable lyrics, a singable arrangement and a suitable introduction. Add it to a named service, set the start and stop points, and use the separate church-screen view while keeping the controls on your laptop.</p><p>Service plans are saved in this browser on this device. Before the service, test the internet connection, sound and display; YouTube playback and adverts remain outside this tool\'s control.</p><p><a href="/guides/">Read the church planning guides →</a></p></section>',
+            }
+            : undefined;
 
   const description = truncateAtWord(
     languageSeoOverride
@@ -502,6 +520,13 @@ function languagePage(language: string, songs: WorshipSong[], related: string[],
     <p><a class="seo-text-link" href="/formats/">Understand what each words and subtitle label means →</a></p>
   </section>
   ${languageIntentSection}
+  <section class="seo-section"><h2>Choose the words and vocal format</h2>
+    <p>Open a filtered selection below. Counts describe catalogue labels, not a human review of every translation. Preview the exact upload before choosing it for worship.</p>
+    <div class="seo-card-grid">${presentations.map(([presentation, total]) => {
+      const query = new URLSearchParams({ language, presentation });
+      return `<a class="seo-card" href="${finderUrl(query)}"><strong>${escapeHtml(presentation)}</strong><span>${total.toLocaleString('en-GB')} ${total === 1 ? 'video' : 'videos'} · browse this format</span></a>`;
+    }).join('')}</div>
+  </section>
   ${familiesHere.length ? `<section class="seo-section"><h2>Familiar worship songs available in ${escapeHtml(language)}</h2><p>${familiesHere.length === 1 ? 'One well-known worship song in this catalogue has' : `${familiesHere.length.toLocaleString('en-GB')} well-known worship songs in this catalogue have`} a ${escapeHtml(language)} version, which helps a congregation sing something familiar in a language they read most naturally.</p><div class="seo-card-grid">${familiesHere.slice(0, 12).map(([family, familyCount]) => `<a class="seo-card" href="/songs/${family.slug}/"><strong>${escapeHtml(family.title)}</strong><span>${familyCount.toLocaleString('en-GB')} ${escapeHtml(language)} ${familyCount === 1 ? 'version' : 'versions'} · compare other languages</span></a>`).join('')}</div></section>` : ''}
   ${verifiedVideos.length ? `<section class="seo-section"><h2>Verified ${escapeHtml(language)} watch pages</h2><p>${verifiedVideos.length === 1 ? `One ${escapeHtml(language)} upload has` : `${verifiedVideos.length} ${escapeHtml(language)} uploads have`} a dedicated page with the YouTube title, uploader and publication date checked.</p><div class="seo-video-grid">${verifiedVideoCards(verifiedVideos)}</div></section>` : ''}
   <section class="seo-section">

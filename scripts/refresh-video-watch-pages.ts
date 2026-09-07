@@ -14,9 +14,15 @@ const TOTAL_TARGET = Number(process.env.WATCH_PAGE_TARGET ?? 160);
 const ENGLISH_TOTAL_TARGET = Number(process.env.WATCH_PAGE_ENGLISH_TARGET ?? 36);
 const MULTILINGUAL_MIN_PER_LANGUAGE = Number(process.env.WATCH_PAGE_LANGUAGE_MIN ?? 2);
 const MAX_CANDIDATE_GROUPS = Number(process.env.WATCH_PAGE_MAX_GROUPS ?? 120);
+// Optional demand-led pass; the normal broad-language pass remains the default.
+const PRIORITY_LANGUAGES = (process.env.WATCH_PAGE_PRIORITY_LANGUAGES ?? '')
+  .split(',').map((language) => language.trim()).filter(Boolean);
 const FETCH_CONCURRENCY = 3;
 const REQUEST_TIMEOUT_MS = 20_000;
 const VIDEO_BLOCKLIST = new Set([
+  // Indonesian "dari" is not the Dari language; spoken prayer is not a song.
+  'UvX9oGqD9UA',
+  '_k1VDqUioGg',
   // English Sunday 7pm Choir upload misclassified as Sundanese by an older importer.
   'SuUGPniE1D4',
   '-yUuUMFRBds',
@@ -281,7 +287,11 @@ function toRecord(song: WorshipSong, metadata: YouTubeMetadata): VideoWatchPageR
 async function firstPlayable(candidates: WorshipSong[]): Promise<VideoWatchPageRecord | null> {
   for (const song of candidates.slice(0, 4)) {
     const metadata = await fetchYouTubeMetadata(song.youtubeId);
-    if (metadata && !metadataLooksLikeNonWorshipContent(metadata) && metadataSupportsLanguage(song, metadata)) return toRecord(song, metadata);
+    if (metadata
+      && metadata.durationSeconds >= 90 && metadata.durationSeconds <= 900
+      && videoTitleIndicatesWords(metadata.title)
+      && !metadataLooksLikeNonWorshipContent(metadata)
+      && metadataSupportsLanguage(song, metadata)) return toRecord(song, metadata);
   }
   return null;
 }
@@ -354,6 +364,14 @@ async function refresh(): Promise<void> {
       const rightCount = existingLanguageCounts.get(right[0]) ?? 0;
       return leftCount - rightCount || right[1].length - left[1].length || left[0].localeCompare(right[0]);
     });
+
+  // Use several independent candidates per priority language, retaining all
+  // existing word-evidence, language, duration and live embed checks.
+  for (let round = 0; round < 4; round += 1) {
+    for (const language of PRIORITY_LANGUAGES) {
+      addCandidateGroup(sorted.filter((song) => effectiveLanguage(song) === language));
+    }
+  }
 
   // First represent languages that do not yet have a dedicated watch page.
   multilingualLanguages
