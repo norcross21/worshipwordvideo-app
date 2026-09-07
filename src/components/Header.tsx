@@ -1,23 +1,13 @@
-import { useState } from 'react';
-import { ListMusic, User, LogIn, LogOut, Cloud, Heart, Settings, ShieldCheck } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { ListMusic } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'all' | 'playlist' | 'admin';
-  onSelectTab: (tab: 'all' | 'playlist' | 'admin') => void;
+  activeTab: 'all' | 'playlist';
+  onSelectTab: (tab: 'all' | 'playlist') => void;
   playlistCount: number;
   activeServiceTitle: string | null;
-  onOpenSavedPlaylists?: () => void;
-  onOpenAuth: (tab: 'signin' | 'signup') => void;
-  onOpenAccount: () => void;
-  onOpenDonate: () => void;
 }
 
-export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTitle, onOpenSavedPlaylists, onOpenAuth, onOpenAccount, onOpenDonate }: HeaderProps) {
-  const { user, profile, adminRole, signOut } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const memberName = profile?.display_name?.trim() || user?.user_metadata?.display_name || user?.email?.split('@')[0];
-
+export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTitle }: HeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header__container">
@@ -31,132 +21,19 @@ export function Header({ activeTab, onSelectTab, playlistCount, activeServiceTit
           </div>
         </button>
 
-        <nav className={`app-header__nav ${user ? 'is-member' : 'is-guest'}`} aria-label="Main Navigation">
-          {user && (
-            <button
-              type="button"
-              className={`nav-tab nav-tab--playlist ${activeTab === 'playlist' ? 'is-active' : ''}`}
-              aria-pressed={activeTab === 'playlist'}
-              onClick={() => onSelectTab('playlist')}
-              title={activeServiceTitle ? `Open ${activeServiceTitle}` : 'Open service planning'}
-            >
-              <ListMusic size={17} /> <span className="nav-tab__label">Service</span> {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
-            </button>
-          )}
-          {!user && (
-            <button
-              type="button"
-              className="nav-tab nav-tab--donate"
-              onClick={onOpenDonate}
-              aria-label="Support Kairos Housing charity"
-            >
-              <Heart size={16} /> <span className="nav-tab__label">Support Kairos</span>
-            </button>
-          )}
+        <nav className="app-header__nav" aria-label="Main navigation">
+          <button
+            type="button"
+            className={`nav-tab nav-tab--playlist ${activeTab === 'playlist' ? 'is-active' : ''}`}
+            aria-pressed={activeTab === 'playlist'}
+            onClick={() => onSelectTab('playlist')}
+            title={activeServiceTitle ? `Open ${activeServiceTitle}` : 'Open service planning'}
+          >
+            <ListMusic size={17} /> <span className="nav-tab__label">Service plan</span>
+            {playlistCount > 0 && <span className="playlist-badge">{playlistCount}</span>}
+          </button>
         </nav>
-
-        {/* User Account & Donate Controls */}
-        <div className="app-header__right-controls">
-          <div className="app-header__user">
-            {user ? (
-              <div className="user-menu-wrapper">
-                <button
-                  type="button"
-                  className="user-pill"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  aria-expanded={showUserMenu}
-                  aria-haspopup="menu"
-                >
-                  <div className="user-avatar">
-                    <User size={14} />
-                  </div>
-                  <span className="user-email">{memberName}</span>
-                </button>
-
-                {showUserMenu && (
-                  <div className="user-dropdown" role="menu">
-                    <div className="user-dropdown__info">
-                      <strong>Signed in as</strong>
-                      <p>{user.email}</p>
-                    </div>
-                    {onOpenSavedPlaylists && (
-                      <button
-                        type="button"
-                        className="user-dropdown__item"
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          onOpenSavedPlaylists();
-                        }}
-                      >
-                        <Cloud size={15} /> Manage services
-                      </button>
-                    )}
-                    {adminRole === 'master_admin' && (
-                      <button
-                        type="button"
-                        className="user-dropdown__item"
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          onSelectTab('admin');
-                        }}
-                      >
-                        <ShieldCheck size={15} /> Administration
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="user-dropdown__item"
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        onOpenAccount();
-                      }}
-                    >
-                      <Settings size={15} /> Account & email choices
-                    </button>
-                    <a
-                      className="user-dropdown__item"
-                      href="https://operations.kairoshousing.org.uk/donate"
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <Heart size={15} /> Support Kairos Housing
-                    </a>
-                    <button
-                      type="button"
-                      className="user-dropdown__item user-dropdown__item--logout"
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        void signOut();
-                      }}
-                    >
-                      <LogOut size={15} /> Log Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="auth-buttons">
-                <button
-                  type="button"
-                  className="btn-login"
-                  onClick={() => onOpenAuth('signin')}
-                >
-                  <LogIn size={15} /> <span>Log In</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn-register"
-                  onClick={() => onOpenAuth('signup')}
-                >
-                  Create Account
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
-
     </header>
   );
 }

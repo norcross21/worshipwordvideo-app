@@ -1,5 +1,3 @@
-import { supabase } from './supabase';
-
 export type UsageEventName =
   | 'visit'
   | 'search'
@@ -20,11 +18,7 @@ export interface UsageAnalyticsContext {
   suppressed?: boolean;
 }
 
-/**
- * Supplies the already-restored auth context without asking the Supabase auth
- * client for it again. That avoids analytics waiting behind the SDK's auth
- * session lock during application startup.
- */
+/** Configure the small anonymous usage counter before its first event. */
 export function configureUsageAnalytics(context: UsageAnalyticsContext): void {
   accessToken = context.accessToken ?? null;
   analyticsSuppressed = context.suppressed === true;
@@ -97,6 +91,7 @@ export interface UsageMetrics {
 }
 
 export async function loadAdminUsageMetrics(days: number): Promise<UsageMetrics> {
+  const { supabase } = await import('./supabase');
   if (!supabase) throw new Error('Usage metrics are unavailable.');
   const { data, error } = await supabase.rpc('get_admin_usage_metrics', { days_back: days });
   if (error) throw error;

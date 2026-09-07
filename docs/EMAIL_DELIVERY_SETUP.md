@@ -1,6 +1,6 @@
-# Worship Word Video email delivery
+# Worship Word Video email delivery (archived)
 
-Status on 9 August 2026: the Resend compliance information has been submitted and email delivery must remain off until Resend approves the account.
+Status on 7 September 2026: the public app no longer offers accounts, login or invitations. Do not activate this historical email setup unless a future, separately reviewed account system is deliberately introduced.
 
 ## Prepared structure
 

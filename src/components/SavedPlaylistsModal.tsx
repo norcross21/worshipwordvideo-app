@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Archive,
   CalendarDays,
   CheckCircle2,
   Clock3,
-  Cloud,
   Copy,
+  HardDrive,
   Library,
   ListMusic,
   Music2,
@@ -16,19 +16,24 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
+import {
+  createSavedService,
+  deleteSavedService,
+  loadSavedServices,
+  upsertSavedService,
+  type SavedService,
+} from '../data/localServices';
 import { formatPlaybackTime, type WorshipQueueItem } from '../data/worshipQueue';
 import { useAccessibleDialog } from '../hooks/useAccessibleDialog';
 import { recordUsageEvent } from '../lib/usageAnalytics';
 
 interface SavedPlaylistsModalProps {
   activePlaylistId: string | null;
-  activePlaylist?: SavedUserPlaylist | null;
+  activePlaylist?: SavedService | null;
   pendingItem?: WorshipQueueItem | null;
   initialMode?: 'create' | 'manage';
-  onActivatePlaylist: (playlist: SavedUserPlaylist) => Promise<void> | void;
-  onPlaylistUpsert?: (playlist: SavedUserPlaylist) => void;
+  onActivatePlaylist: (playlist: SavedService) => Promise<void> | void;
+  onPlaylistUpsert?: (playlist: SavedService) => void;
   onPlaylistDeleted?: (playlistId: string) => void;
   onClose: () => void;
 }
@@ -39,19 +44,19 @@ interface VideoThumbnailProps {
 }
 
 interface SavedServiceCardProps {
-  playlist: SavedUserPlaylist;
+  playlist: SavedService;
   deleteCandidateId: string | null;
   deletingId: string | null;
   openingId: string | null;
   isActive: boolean;
   isArchived: boolean;
-  onOpen: (playlist: SavedUserPlaylist) => void;
-  onDuplicate: (playlist: SavedUserPlaylist) => void;
-  onArchive: (playlist: SavedUserPlaylist) => void;
-  onRename: (playlist: SavedUserPlaylist, title: string) => Promise<boolean>;
+  onOpen: (playlist: SavedService) => void;
+  onDuplicate: (playlist: SavedService) => void;
+  onArchive: (playlist: SavedService) => void;
+  onRename: (playlist: SavedService, title: string) => Promise<boolean>;
   onRequestDelete: (id: string) => void;
   onCancelDelete: () => void;
-  onConfirmDelete: (playlist: SavedUserPlaylist) => void;
+  onConfirmDelete: (playlist: SavedService) => void;
 }
 
 const serviceDateFormatter = new Intl.DateTimeFormat('en-GB', {
@@ -234,13 +239,10 @@ export function SavedPlaylistsModal({
   onPlaylistDeleted,
   onClose,
 }: SavedPlaylistsModalProps) {
-  const { user } = useAuth();
-  const userId = user?.id;
-  const [playlists, setPlaylists] = useState<SavedUserPlaylist[]>([]);
+  const [playlists, setPlaylists] = useState<SavedService[]>(loadSavedServices);
   const [newTitle, setNewTitle] = useState('');
   const [serviceDate, setServiceDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
@@ -253,37 +255,6 @@ export function SavedPlaylistsModal({
     ? { ...playlist, items: activePlaylist.items, updated_at: activePlaylist.updated_at }
     : playlist).filter((playlist) => showArchived ? Boolean(playlist.archived_at) : !playlist.archived_at);
 
-  const fetchUserPlaylists = useCallback(async () => {
-    if (!supabase || !userId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('user_playlists')
-        .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(100);
-
-      if (fetchError) {
-        setError(fetchError.message);
-      } else if (data) {
-        setPlaylists(data as SavedUserPlaylist[]);
-      }
-    } catch (err: unknown) {
-      setError(supabaseErrorMessage(err, 'Failed to fetch saved services.'));
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    void fetchUserPlaylists();
-  }, [fetchUserPlaylists]);
-
   const handleCreateService = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
@@ -294,155 +265,83 @@ export function SavedPlaylistsModal({
       return;
     }
 
-    if (!supabase || !userId) {
-      setError('You must be signed in to save services to your account.');
-      return;
-    }
-
     try {
       setSaving(true);
-      const { data, error: saveError } = await supabase
-        .from('user_playlists')
-        .insert({
-          user_id: userId,
-          title: newTitle.trim(),
-          items: [],
-          service_date: serviceDate || null,
-          notes: notes.trim() || null,
-        })
-        .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
-        .single();
-
-      if (saveError) {
-        setError(saveError.message);
-      } else {
-        setSuccess(`Created “${newTitle.trim()}”.`);
-        setNewTitle('');
-        setServiceDate('');
-        setNotes('');
-        if (data) {
-          const playlist = data as SavedUserPlaylist;
-          recordUsageEvent('service_create');
-          setPlaylists((current) => [playlist, ...current]);
-          await onActivatePlaylist(playlist);
-          onClose();
-        }
-      }
-    } catch (err: unknown) {
-      setError(supabaseErrorMessage(err, 'Failed to save this service.'));
+      const playlist = createSavedService({ title: newTitle, serviceDate, notes });
+      const next = upsertSavedService(playlist);
+      setSuccess(`Created “${playlist.title}”.`);
+      setNewTitle('');
+      setServiceDate('');
+      setNotes('');
+      recordUsageEvent('service_create');
+      setPlaylists(next);
+      await onActivatePlaylist(playlist);
+      onClose();
+    } catch {
+      setError('This service could not be saved in your browser. Check that site storage is allowed and try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeletePlaylist = async (playlist: SavedUserPlaylist) => {
-    if (!supabase || !userId) return;
-
+  const handleDeletePlaylist = (playlist: SavedService) => {
     try {
       setError('');
       setSuccess('');
       setDeletingId(playlist.id);
-      const { error: deleteError } = await supabase
-        .from('user_playlists')
-        .delete()
-        .eq('id', playlist.id)
-        .eq('user_id', userId);
-
-      if (deleteError) {
-        setError(deleteError.message);
-      } else {
-        setPlaylists((current) => current.filter((item) => item.id !== playlist.id));
-        onPlaylistDeleted?.(playlist.id);
-        setSuccess(`Deleted “${playlist.title}”.`);
-      }
-    } catch (err: unknown) {
-      setError(supabaseErrorMessage(err, 'Failed to delete this service.'));
+      setPlaylists(deleteSavedService(playlist.id));
+      onPlaylistDeleted?.(playlist.id);
+      setSuccess(`Deleted “${playlist.title}”.`);
+    } catch {
+      setError('This service could not be deleted from your browser.');
     } finally {
       setDeletingId(null);
       setDeleteCandidateId(null);
     }
   };
 
-  const handleRenamePlaylist = async (playlist: SavedUserPlaylist, title: string): Promise<boolean> => {
-    if (!supabase || !userId) return false;
+  const handleRenamePlaylist = async (playlist: SavedService, title: string): Promise<boolean> => {
     setError('');
-    const { data, error: renameError } = await supabase
-      .from('user_playlists')
-      .update({ title })
-      .eq('id', playlist.id)
-      .eq('user_id', userId)
-      .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
-      .single();
-    if (renameError || !data) {
-      setError(renameError?.message ?? 'This service could not be renamed.');
-      return false;
-    }
-    const renamed = data as SavedUserPlaylist;
-    setPlaylists((current) => current.map((item) => item.id === renamed.id ? renamed : item));
+    const renamed = { ...playlist, title, updated_at: new Date().toISOString() };
+    setPlaylists(upsertSavedService(renamed));
     onPlaylistUpsert?.(renamed);
     if (activePlaylistId === renamed.id) await onActivatePlaylist(renamed);
     setSuccess(`Renamed service to “${renamed.title}”.`);
     return true;
   };
 
-  const handleDuplicatePlaylist = async (playlist: SavedUserPlaylist) => {
-    if (!supabase || !userId) return;
+  const handleDuplicatePlaylist = (playlist: SavedService) => {
     setError('');
     setSuccess('');
     const copyTitle = `${playlist.title} — copy`.slice(0, 120);
-    const { data, error: duplicateError } = await supabase
-      .from('user_playlists')
-      .insert({
-        user_id: userId,
-        title: copyTitle,
-        items: Array.isArray(playlist.items) ? playlist.items : [],
-        service_date: null,
-        notes: playlist.notes,
-        archived_at: null,
-      })
-      .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
-      .single();
-    if (duplicateError || !data) {
-      setError(duplicateError?.message ?? 'This service could not be duplicated.');
-      return;
-    }
-    const duplicate = data as SavedUserPlaylist;
-    setPlaylists((current) => [duplicate, ...current]);
+    const duplicate = {
+      ...createSavedService({ title: copyTitle, notes: playlist.notes ?? undefined }),
+      items: Array.isArray(playlist.items) ? playlist.items : [],
+    };
+    setPlaylists(upsertSavedService(duplicate));
     onPlaylistUpsert?.(duplicate);
     setSuccess(`Created “${duplicate.title}” with ${duplicate.items.length} video${duplicate.items.length === 1 ? '' : 's'}.`);
   };
 
-  const handleArchivePlaylist = async (playlist: SavedUserPlaylist) => {
-    if (!supabase || !userId) return;
+  const handleArchivePlaylist = (playlist: SavedService) => {
     setError('');
     setSuccess('');
     const archivedAt = playlist.archived_at ? null : new Date().toISOString();
-    const { data, error: archiveError } = await supabase
-      .from('user_playlists')
-      .update({ archived_at: archivedAt })
-      .eq('id', playlist.id)
-      .eq('user_id', userId)
-      .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
-      .single();
-    if (archiveError || !data) {
-      setError(archiveError?.message ?? 'This service could not be updated.');
-      return;
-    }
-    const updated = data as SavedUserPlaylist;
-    setPlaylists((current) => current.map((item) => item.id === updated.id ? updated : item));
+    const updated = { ...playlist, archived_at: archivedAt, updated_at: new Date().toISOString() };
+    setPlaylists(upsertSavedService(updated));
     if (archivedAt && activePlaylistId === playlist.id) onPlaylistDeleted?.(playlist.id);
     else if (!archivedAt) onPlaylistUpsert?.(updated);
     setSuccess(`${archivedAt ? 'Archived' : 'Restored'} “${playlist.title}”.`);
   };
 
-  const openPlaylist = async (playlist: SavedUserPlaylist) => {
+  const openPlaylist = async (playlist: SavedService) => {
     setError('');
     setOpeningId(playlist.id);
     try {
       await onActivatePlaylist(playlist);
       onClose();
-    } catch (openError) {
-      setError(supabaseErrorMessage(openError, 'This service could not be opened.'));
+    } catch {
+      setError('This service could not be opened.');
     } finally {
       setOpeningId(null);
     }
@@ -479,7 +378,7 @@ export function SavedPlaylistsModal({
             <section className="service-library" aria-labelledby="service-library-heading">
               <div className="service-library__heading">
                 <div>
-                  <span><Cloud size={15} /> Stored securely in your account</span>
+                  <span><HardDrive size={15} /> Saved privately on this device</span>
                   <h4 id="service-library-heading">Your service library</h4>
                 </div>
                 <div className="service-library__view-controls">
@@ -488,12 +387,7 @@ export function SavedPlaylistsModal({
                 </div>
               </div>
 
-              {loading ? (
-                <div className="service-library-loading" role="status">
-                  <span className="service-library-loading__image" />
-                  <span><strong>Loading your services…</strong><small>Bringing back your videos and service notes.</small></span>
-                </div>
-              ) : displayedPlaylists.length === 0 ? (
+              {displayedPlaylists.length === 0 ? (
                 <div className="empty-playlists">
                   <span className="empty-playlists__icon"><ListMusic size={28} /></span>
                   <h5>Your first saved service will appear here</h5>
@@ -561,7 +455,7 @@ export function SavedPlaylistsModal({
                 <button type="submit" className="btn-primary save-service-panel__submit" disabled={saving}>
                   <Plus size={15} /> {saving ? 'Creating service…' : 'Create and open service'}
                 </button>
-                <p className="save-queue-box__hint">Services are private to your account and automatically updated as you plan.</p>
+                <p className="save-queue-box__hint">Services are saved automatically on this device. Clearing this site's browser data will remove them.</p>
               </form>
             </aside>
           </div>

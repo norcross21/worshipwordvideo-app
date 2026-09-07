@@ -47,7 +47,6 @@ import { recordUsageEvent } from '../lib/usageAnalytics';
 interface SongLibraryDashboardProps {
   initialFilter?: 'all' | 'ccli' | 'hymnals' | 'verified';
   onAddToPlaylist: (song: WorshipSong) => void;
-  playlistEnabled?: boolean;
   activeServiceTitle?: string | null;
   onPresentVideo?: (song: WorshipSong) => void;
   onVisitorEngaged?: () => void;
@@ -94,7 +93,6 @@ const hasInitialFinderRequest = Boolean(
 export function SongLibraryDashboard({
   initialFilter = 'all',
   onAddToPlaylist,
-  playlistEnabled = false,
   activeServiceTitle = null,
   onPresentVideo,
   onVisitorEngaged,
@@ -466,7 +464,7 @@ export function SongLibraryDashboard({
 
           <div className="song-list-panel__scroll">
             {catalogueLoading ? (
-              <div className="catalogue-loading-state" role="status"><span aria-hidden="true" /><strong>Loading the worship catalogue…</strong><small>The playlist and account controls remain ready while the finder opens.</small></div>
+              <div className="catalogue-loading-state" role="status"><span aria-hidden="true" /><strong>Loading the worship catalogue…</strong><small>Your service planner remains ready while the finder opens.</small></div>
             ) : catalogueError ? (
               <div className="empty-search-state" role="alert">
                 <Music size={32} />
@@ -562,7 +560,7 @@ export function SongLibraryDashboard({
                 </div>
 
                 <div className="song-detail__actions">
-                  {playlistEnabled && onPresentVideo && selectedSong.youtubeId && (
+                  {onPresentVideo && selectedSong.youtubeId && (
                     <button
                       type="button"
                       className="btn-present-single"
@@ -582,9 +580,7 @@ export function SongLibraryDashboard({
                       wordsIndicated: selectedSong.wordsIndicated || approvedVideoIds.has(selectedSong.youtubeId),
                     })}
                   >
-                    <ListPlus size={16} /> {playlistEnabled
-                      ? activeServiceTitle ? `Add to ${activeServiceTitle}` : 'Choose a service first'
-                      : 'Create account to plan a service'}
+                    <ListPlus size={16} /> {activeServiceTitle ? `Add to ${activeServiceTitle}` : 'Choose a service first'}
                   </button>
                 </div>
               </div>
@@ -637,7 +633,7 @@ export function SongLibraryDashboard({
             <div className="no-song-selected">
               <Music size={48} />
               <h3>Select a Song</h3>
-              <p>Choose a hymn or worship song from the catalogue to preview its video and check the words. Members can add videos to a reusable service plan.</p>
+              <p>Choose a hymn or worship song from the catalogue to preview its video and check the words. Add videos to a reusable service plan whenever you are ready.</p>
             </div>
           )}
         </div>

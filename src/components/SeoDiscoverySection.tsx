@@ -21,7 +21,7 @@ export function SeoDiscoverySection() {
         <h2 id="discover-worship-heading">Worship videos people can understand and sing</h2>
         <p>
           Many English-speaking and multilingual <a href="/guides/worship-videos-for-churches-without-musicians/">churches do not have musicians every week</a> and spend hours searching YouTube for dependable worship videos with words.
-          Search the catalogue and preview the exact upload without an account. Members can then build a service order, tidy its start and ending, save it for church and open a clean projection screen.
+          Search the catalogue, preview the exact upload, build a service order, tidy its start and ending, save it on this device and open a clean projection screen. No account is required.
         </p>
       </div>
 

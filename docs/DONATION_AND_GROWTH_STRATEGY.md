@@ -1,6 +1,6 @@
 # Worship Word Video: Usability, Discovery and Donation Strategy
 
-Last updated: 10 August 2026
+Last updated: 7 September 2026
 
 ## The guiding principle
 
@@ -10,29 +10,25 @@ Let a visitor receive value before asking for support. The finder should feel li
 
 ### Implemented
 
-- The automatic invitation is for guests only.
-- It cannot appear during the first 75 seconds.
-- It appears only after the guest searches for or selects a song.
-- It waits if another dialog is open and appears at most once during that browser visit.
-- Signed-in members do not receive the automatic popup.
-- The permanent **Support Kairos** control remains available for people who actively want to give.
-- Donation copy consistently explains Kairos Housing’s work, uses **Rebuilding lives with dignity**, and sends people to the charity’s internal donation page.
-- A member with at least three saved services sees a small optional thank-you and Kairos link only inside their account area. It never opens by itself or interrupts planning or playback.
+- There is no automatic donation popup or account-based fundraising prompt.
+- A single quiet link in the footer is available for people who actively want to support Kairos.
+- The link consistently names Kairos Housing, uses **Rebuilding lives with dignity**, and sends people to the charity’s internal donation page.
+- The finder, service planner, saved services, trimming and projection remain available without registration or donation.
 
 ### Recommended next stages
 
-1. Use the existing optional email consent to send occasional impact stories. Keep charity news useful and make unsubscribing simple.
-2. Explain tangible outcomes on the donation page—for example what a gift helps Kairos provide—using figures approved by the charity.
-3. Measure the journey anonymously and minimally: finder used, donation invitation shown, donation link selected and returning visit. Review privacy and consent requirements before adding any marketing analytics.
+1. Explain tangible outcomes on the donation page—for example what a gift helps Kairos provide—using figures approved by the charity.
+2. Measure the journey anonymously and minimally: finder used, donation link selected and returning visit. Review privacy and consent requirements before adding any marketing analytics.
+3. If optional charity emails are introduced later, collect explicit consent separately from using the app, keep updates useful and make unsubscribing simple.
 4. Test only one change at a time. Donation-link clicks are useful, but returning churches and completed service plans are stronger signs that trust is growing.
 
 ## Usability priorities
 
-1. Keep the main path to three ideas: find a video, preview it, and create an account when a service needs saving.
+1. Keep the main path to three ideas: find a video, preview it, and add it to a service.
 2. Use plain labels such as **Songs**, **Language**, **Words and subtitles**, **Church season** and **Service**.
-3. Keep optional controls behind **Filters** and member-only controls out of the guest journey.
+3. Keep optional controls behind **Filters** and avoid account prompts in the planning journey.
 4. Continue testing the complete experience on a small phone, tablet, laptop and a real second display.
-5. Add a short first-use walkthrough for signed-in members only if service creation still causes difficulty; avoid permanent explanatory clutter.
+5. Add a short first-use walkthrough only if service creation still causes difficulty; avoid permanent explanatory clutter.
 
 ## Discovery priorities
 
@@ -45,7 +41,7 @@ Let a visitor receive value before asking for support. The finder should feel li
 ## Trust safeguards
 
 - Never imply that a donation is required to use the public finder.
-- Never display a donation interruption during a playing video or projection workflow.
+- Keep the Kairos link passive and outside playback and projection workflows.
 - Never reproduce copyrighted lyrics on discovery pages.
 - Keep translation and theological review warnings visible.
 - Describe catalogue checks accurately and remove unavailable or unsuitable videos quickly.

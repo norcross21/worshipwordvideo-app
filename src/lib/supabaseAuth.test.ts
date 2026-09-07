@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { supabase } from './supabase';
 import { getWorshipQueue, addToWorshipQueue, worshipQueueItem } from '../data/worshipQueue';
 
-describe('Supabase Auth & Cloud Playlist Integration', () => {
+describe('Legacy Supabase client and public playlist integration', () => {
   it('should initialize Supabase client with environment variables', () => {
     expect(supabase).not.toBeNull();
   });
 
-  it('keeps the playlist empty until a member is identified', () => {
+  it('starts with an empty public playlist when this browser has no saved queue', () => {
     const queue = getWorshipQueue();
     expect(queue).toEqual([]);
 

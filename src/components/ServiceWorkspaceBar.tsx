@@ -1,12 +1,12 @@
 import { Check, Library, Plus } from 'lucide-react';
-import type { SavedUserPlaylist } from '../lib/supabase';
+import type { SavedService } from '../data/localServices';
 
 interface ServiceWorkspaceBarProps {
-  services: SavedUserPlaylist[];
-  activeService: SavedUserPlaylist | null;
+  services: SavedService[];
+  activeService: SavedService | null;
   loading?: boolean;
   saveState?: 'idle' | 'saving' | 'saved' | 'error';
-  onSelectService: (service: SavedUserPlaylist) => Promise<void> | void;
+  onSelectService: (service: SavedService) => Promise<void> | void;
   onCreateService: () => void;
   onManageServices: () => void;
 }
@@ -60,7 +60,7 @@ export function ServiceWorkspaceBar({
       ) : (
         <div className="service-workspace__empty">
           <strong>{loading ? 'Loading your services…' : 'Planning a service?'}</strong>
-          <span>{loading ? 'Please wait a moment.' : 'Create one to save songs and project them.'}</span>
+          <span>{loading ? 'Please wait a moment.' : 'Create one to save songs on this device and project them.'}</span>
         </div>
       )}
       <div className="service-workspace__actions">

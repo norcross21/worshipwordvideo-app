@@ -3,6 +3,7 @@ import type { WorshipSong } from './worshipSongs';
 export const WORSHIP_QUEUE_LIMIT = 30;
 const WORSHIP_QUEUE_KEY_PREFIX = 'worship_word_video_queue_v2';
 const ACTIVE_SERVICE_KEY_PREFIX = 'worship_word_video_active_service_v1';
+const LOCAL_PLANNER_ID = 'this-device';
 
 export interface WorshipQueueItem {
   id: string;
@@ -77,12 +78,11 @@ export function nextWorshipQueueIndex(currentIndex: number | null, queueLength: 
   return currentIndex + 1 < queueLength ? currentIndex + 1 : null;
 }
 
-function worshipQueueKey(userId: string): string {
+function worshipQueueKey(userId = LOCAL_PLANNER_ID): string {
   return `${WORSHIP_QUEUE_KEY_PREFIX}:${userId}`;
 }
 
 export function getWorshipQueue(userId?: string): WorshipQueueItem[] {
-  if (!userId) return [];
   try {
     const parsed = JSON.parse(localStorage.getItem(worshipQueueKey(userId)) ?? '[]') as WorshipQueueItem[];
     return Array.isArray(parsed) ? parsed.filter((item) => item?.youtubeId && item?.title).slice(0, WORSHIP_QUEUE_LIMIT) : [];
@@ -92,7 +92,6 @@ export function getWorshipQueue(userId?: string): WorshipQueueItem[] {
 }
 
 export function saveWorshipQueue(queue: WorshipQueueItem[], userId?: string) {
-  if (!userId) return;
   try {
     localStorage.setItem(worshipQueueKey(userId), JSON.stringify(queue.slice(0, WORSHIP_QUEUE_LIMIT)));
   } catch {
@@ -100,12 +99,11 @@ export function saveWorshipQueue(queue: WorshipQueueItem[], userId?: string) {
   }
 }
 
-function activeServiceKey(userId: string): string {
+function activeServiceKey(userId = LOCAL_PLANNER_ID): string {
   return `${ACTIVE_SERVICE_KEY_PREFIX}:${userId}`;
 }
 
 export function getActiveServiceId(userId?: string): string | null {
-  if (!userId) return null;
   try {
     return localStorage.getItem(activeServiceKey(userId));
   } catch {
@@ -114,7 +112,6 @@ export function getActiveServiceId(userId?: string): string | null {
 }
 
 export function saveActiveServiceId(serviceId: string | null, userId?: string) {
-  if (!userId) return;
   try {
     if (serviceId) localStorage.setItem(activeServiceKey(userId), serviceId);
     else localStorage.removeItem(activeServiceKey(userId));

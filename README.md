@@ -2,7 +2,7 @@
 
 Worship Word Video helps English-speaking and multilingual churches find worship and hymn words videos on YouTube. It is especially useful when a church does not have musicians and would otherwise spend hours searching for suitable word videos.
 
-The app includes contemporary worship songs, traditional hymns, CCLI UK favourites, several hymn-book indexes, verified words-video markers, local custom songs, and optional cloud playlist saving.
+The app includes contemporary worship songs, traditional hymns, CCLI UK favourites, several hymn-book indexes, verified words-video markers, local custom songs, and browser-saved service planning.
 
 The international catalogue combines curated collections with a large, regularly rechecked words/subtitle discovery library. Automatically researched entries retain their exact YouTube ID, channel, language, region, duration, words-evidence label and review date. Language is only asserted when the uploader title, channel or script supports it; otherwise the entry says “Language not stated”. They are discovery aids rather than linguistic, theological or copyright endorsements, so a fluent speaker or church leader should review a video before public use.
 
@@ -16,7 +16,7 @@ Requirements:
 
 - Node.js 22 or later
 - npm
-- A Supabase project for account and cloud-playlist features
+- A Supabase project only if maintaining the legacy account records or anonymous usage metrics
 
 Install and run:
 
@@ -60,13 +60,11 @@ The language-depth research command works through collections below the 500-vide
 npm run catalogue:research:language-depth
 ```
 
-## Supabase
+## Supabase (legacy accounts and anonymous metrics)
 
-Database changes are stored in `supabase/migrations`. The cloud playlist table uses Row Level Security so signed-in users can only read and change their own playlists.
+Historical database changes are stored in `supabase/migrations`. The former cloud-playlist tables retain Row Level Security while legacy records are reviewed or deleted.
 
-The confirmed master account `stephen@kairoshousing.org.uk` receives the protected administrator directory after database verification. It includes account search, confirmation state, sign-in activity, consent-safe invitations and guarded member deletion. Deletion requires authenticator verification, exact-email confirmation and a private audit record.
-
-The administrator can also prepare a consent-safe member invitation. Invitations and account deletion run in an authenticated Supabase Edge Function, never from ordinary browser permissions, and the recipient must choose their own password, accept the account terms and make their own optional Kairos email choice. See [docs/EMAIL_DELIVERY_SETUP.md](docs/EMAIL_DELIVERY_SETUP.md) for the email checklist.
+The public application no longer requires or offers an account. Service plans, trim points and the active service are stored in the user's browser so every planning and projection feature is available immediately. The earlier Supabase authentication tables and administrative functions remain only as legacy infrastructure while existing records are reviewed or deleted.
 
 For a linked Supabase project:
 
@@ -77,10 +75,10 @@ supabase db advisors --linked --type all
 
 ## Deployment
 
-The site is deployed as a Vite app on Vercel. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for Production, Preview, and Development. Sensitive account administration runs in the deployed `member-account-actions` Supabase Edge Function; never expose a secret or service-role key through a `VITE_` variable.
+The site is deployed as a Vite app on Vercel. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` only when anonymous usage metrics or legacy-account maintenance is required. Never expose a secret or service-role key through a `VITE_` variable.
 
 ## Charity support
 
 The app is currently provided without charge. The optional charity link sends visitors directly to Kairos Housing's internal donation page at `https://operations.kairoshousing.org.uk/donate`; Worship Word Video does not process donations or receive payment details.
 
-Guests receive one optional Kairos invitation per browser-tab visit. Dismissing it stores only a session flag in the browser so it does not reopen during that visit. Signed-in users do not receive the automatic invitation; the voluntary charity link remains available in the header and footer banner.
+There is no donation popup. A single quiet footer link is available for people who choose to learn about supporting Kairos Housing, without interrupting search, planning or playback.

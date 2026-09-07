@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Info,
   ListMusic,
-  LogIn,
   MonitorUp,
   Play,
   Plus,
@@ -19,8 +18,6 @@ import {
 } from 'lucide-react';
 import { YouTubePlayer } from './YouTubePlayer';
 import { VideoTrimEditor } from './VideoTrimEditor';
-import { useAuth } from '../context/AuthContext';
-import { AuthModal } from './AuthModal';
 import { ProjectionSetupGuide } from './ProjectionSetupGuide';
 import {
   openProjectionWindow,
@@ -30,7 +27,7 @@ import {
   subscribeToProjectionState,
   type ProjectionLaunchResult,
 } from '../data/projection';
-import type { SavedUserPlaylist } from '../lib/supabase';
+import type { SavedService } from '../data/localServices';
 import {
   WORSHIP_QUEUE_LIMIT,
   formatPlaybackTime,
@@ -44,7 +41,7 @@ import { recordUsageEvent } from '../lib/usageAnalytics';
 interface WorshipQueueProps {
   queue: WorshipQueueItem[];
   onChange: (queue: WorshipQueueItem[]) => void;
-  activeService: SavedUserPlaylist | null;
+  activeService: SavedService | null;
   serviceLoading?: boolean;
   onOpenSavedPlaylists?: () => void;
   onBrowseSongs?: () => void;
@@ -58,10 +55,8 @@ export function WorshipQueue({
   onOpenSavedPlaylists,
   onBrowseSongs,
 }: WorshipQueueProps) {
-  const { user } = useAuth();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [playbackRevision, setPlaybackRevision] = useState(0);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [timingEditorId, setTimingEditorId] = useState<string | null>(null);
   const [startDraft, setStartDraft] = useState('');
   const [endDraft, setEndDraft] = useState('');
@@ -254,10 +249,6 @@ export function WorshipQueue({
   };
 
   const startTimingEdit = (item: WorshipQueueItem) => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
     setTimingEditorId(item.id);
     setStartDraft(formatPlaybackTime(item.startSeconds));
     setEndDraft(formatPlaybackTime(item.endSeconds));
@@ -353,9 +344,6 @@ export function WorshipQueue({
         </div>
 
         <div className="worship-queue__heading-actions">
-          {!user && (
-            <button type="button" className="worship-queue__btn-login" onClick={() => setShowAuthModal(true)}><LogIn size={14} /> Log in to save</button>
-          )}
           {activeService && queue.length > 0 && (
             <>
               <button type="button" className="worship-queue__btn-project" onClick={() => setShowProjectionGuide(true)}><MonitorUp size={15} /> Present</button>
@@ -444,7 +432,7 @@ export function WorshipQueue({
                 </div>
                 <div className="worship-queue__item-actions">
                   <button type="button" className="worship-queue__btn-play" onClick={() => selectVideo(index)}><Play size={13} /> {isPlaying ? 'Restart' : projectionActive ? 'Show' : 'Play'}</button>
-                  {user && <button type="button" className={`worship-queue__btn-trim ${hasTrim ? 'has-trim' : ''}`} onClick={() => isEditingTiming ? setTimingEditorId(null) : startTimingEdit(item)} title="Set clean start and stop times"><Scissors size={14} /><span>Trim</span></button>}
+                  <button type="button" className={`worship-queue__btn-trim ${hasTrim ? 'has-trim' : ''}`} onClick={() => isEditingTiming ? setTimingEditorId(null) : startTimingEdit(item)} title="Set clean start and stop times"><Scissors size={14} /><span>Trim</span></button>
                   <button type="button" disabled={index === 0} onClick={() => moveAt(index, -1)} title="Move up" aria-label={`Move ${item.title} up`}><ArrowUp size={14} /></button>
                   <button type="button" disabled={index === queue.length - 1} onClick={() => moveAt(index, 1)} title="Move down" aria-label={`Move ${item.title} down`}><ArrowDown size={14} /></button>
                   <button type="button" className="worship-queue__btn-remove" onClick={() => removeAt(index)} title="Remove" aria-label={`Remove ${item.title}`}><Trash2 size={14} /></button>
@@ -499,7 +487,6 @@ export function WorshipQueue({
         </ol>
       )}
 
-      {showAuthModal && <AuthModal initialTab="signin" onClose={() => setShowAuthModal(false)} />}
       {showProjectionGuide && (
         <ProjectionSetupGuide
           serviceTitle={activeService?.title || 'Current service'}

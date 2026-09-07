@@ -21,7 +21,7 @@ export function LegalModal({ initialSection = 'terms', onClose }: LegalModalProp
     <div className="modal-backdrop legal-backdrop" onClick={onClose}>
       <div ref={dialogRef} tabIndex={-1} className="modal-card legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header legal-modal__header">
-          <div><span className="eyebrow"><Scale size={14} /> Legal & safety</span><h2 id="legal-title">Terms, privacy and copyright</h2><p>Effective 8 August 2026 · Last reviewed 13 August 2026</p></div>
+          <div><span className="eyebrow"><Scale size={14} /> Legal & safety</span><h2 id="legal-title">Terms, privacy and copyright</h2><p>Effective 8 August 2026 · Last reviewed 7 September 2026</p></div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close legal and safety information"><X size={19} /></button>
         </div>
 
@@ -52,18 +52,18 @@ export function LegalModal({ initialSection = 'terms', onClose }: LegalModalProp
 function TermsSection() {
   return <article className="legal-copy">
     <h3>Terms of use</h3>
-    <p><strong>Worship Word Video</strong> is a directory, preview and member playlist-planning tool currently provided without charge. It helps users find third-party YouTube videos; it is not a music publisher, lyrics provider, streaming licence or substitute for professional advice.</p>
+    <p><strong>Worship Word Video</strong> is a directory, preview and playlist-planning tool provided without charge. It helps users find third-party YouTube videos; it is not a music publisher, lyrics provider, streaming licence or substitute for professional advice.</p>
     <h4>Agreement and eligibility</h4>
-    <p>By using the service or creating an account, you agree to these terms. Accounts are intended for people aged 13 or over. Anyone under 18 should use the service with a parent, guardian or responsible church leader.</p>
+    <p>By using the service, you agree to these terms. Anyone under 18 should use the service with a parent, guardian or responsible church leader.</p>
     <h4>Lawful use</h4>
     <ul>
       <li>Use the service only for lawful purposes and without infringing another person's rights.</li>
       <li>Only add YouTube links and metadata you reasonably believe may lawfully be shared and embedded.</li>
       <li>Do not upload or paste copyrighted lyrics, recordings, harmful material, malware, personal data belonging to others, or misleading information.</li>
-      <li>Do not attempt to bypass YouTube restrictions, security controls, account permissions or administrator safeguards.</li>
+      <li>Do not attempt to bypass YouTube restrictions or the site's security and safety controls.</li>
     </ul>
     <h4>Your entries and playlists</h4>
-    <p>You remain responsible for custom links, titles and playlists you add. You confirm that your contributions are accurate and lawful. We may correct or remove catalogue links, restrict accounts or preserve evidence where reasonably necessary to address infringement, misuse, security or legal obligations.</p>
+    <p>You remain responsible for custom links, titles and playlists you add. You confirm that your contributions are accurate and lawful. We may correct or remove catalogue links or preserve evidence where reasonably necessary to address infringement, misuse, security or legal obligations.</p>
     <h4>Third-party services</h4>
     <p>YouTube, Supabase, Vercel and donation providers operate under their own terms and privacy notices. Their services can change, display advertising, restrict embedding or become unavailable. A link does not mean Worship Word Video endorses the uploader or owns the material.</p>
     <h4>Availability and liability</h4>
@@ -102,26 +102,21 @@ function CopyrightSection() {
 function PrivacySection() {
   return <article className="legal-copy">
     <h3>Privacy and cookies information</h3>
-    <p>Worship Word Video is the service responsible for deciding how account information is used. The service contact is <a href={`mailto:${APP_CONTACT}`}>{APP_CONTACT}</a>.</p>
+    <p>Worship Word Video is responsible for deciding how information collected by the service is used. The service contact is <a href={`mailto:${APP_CONTACT}`}>{APP_CONTACT}</a>.</p>
     <h4>Information used</h4>
     <ul>
-      <li><strong>Accounts:</strong> email address, display name, optional church or organisation, account identifier, confirmation date, sign-in timestamps and acceptance of the current terms.</li>
-      <li><strong>Email choices:</strong> whether and when you opted in to or out of occasional Kairos Housing news, appeals and fundraising emails.</li>
-      <li><strong>Saved service plans:</strong> playlist names, optional service date and notes, selected video metadata, playback start/stop points and update dates.</li>
-      <li><strong>Anonymous usage totals:</strong> page visits and broad actions such as searches, video previews, playlist additions and projection launches. These events use a random page-lifetime identifier and do not include IP addresses, account identifiers, search words, video IDs or playlist names. They are used only as aggregate service-improvement metrics, expire after 13 months, and master-administrator activity is excluded.</li>
-      <li><strong>On your device:</strong> current queue, custom links, display choices and video-verification choices may be stored in browser storage.</li>
+      <li><strong>Saved service plans on your device:</strong> playlist names, optional service date and notes, selected video metadata, playback start/stop points, current queue, display choices and update dates may be stored in browser storage.</li>
+      <li><strong>Anonymous usage totals:</strong> page visits and broad actions such as searches, video previews, playlist additions and projection launches. These events use a random page-lifetime identifier and do not include account identifiers, search words, video IDs or playlist names. They are used only as aggregate service-improvement metrics and expire after 13 months.</li>
       <li><strong>Security and delivery:</strong> Supabase and Vercel may process technical logs such as IP address, device/browser details, request times and errors.</li>
       <li><strong>YouTube:</strong> opening a song page loads its embedded player and sends technical information to Google/YouTube. Privacy-enhanced mode reduces personalisation but does not prevent every third-party request or cookie.</li>
     </ul>
     <h4>Why and lawful basis</h4>
-    <p>Account and playlist information is used to provide the service requested by the member. Essential confirmation, password, account and security emails are part of operating the membership. Security, fault diagnosis, abuse prevention, anonymous aggregate usage measurement and basic service administration are carried out for legitimate operational interests, balanced against user rights.</p>
-    <p>Kairos Housing news, appeals and fundraising emails are separate from essential account messages. They are sent only where a recorded permission or another lawful basis applies. The sign-up choice is optional, not pre-selected, and can be changed in Account &amp; email choices. Marketing messages must identify Kairos Housing and provide a simple way to stop future messages.</p>
+    <p>Browser storage is used so the planner works without an account. Security, fault diagnosis, abuse prevention and anonymous aggregate usage measurement are carried out for legitimate operational interests, balanced against user rights.</p>
     <h4>Storage, sharing and transfers</h4>
-    <p>Supabase provides authentication and database services; Vercel hosts the application; YouTube provides video playback; and the external donation provider processes donations. These providers may process information outside the UK under their own safeguards and notices. Browser-only information stays on that device unless you choose a cloud-saving feature.</p>
+    <p>Vercel hosts the application; Supabase stores anonymous aggregate events; YouTube provides video playback; and Kairos Housing's external donation system processes donations. These providers may process technical information outside the UK under their own safeguards and notices. Service plans stay in browser storage on your device.</p>
     <h4>Retention and your rights</h4>
-    <p>Account and cloud-playlist information is retained while the account is active and for the limited period reasonably needed for security, backup or legal obligations after deletion. Marketing preference records may be retained as a suppression record so an opt-out continues to be honoured. Browser data remains until you clear it. You may ask to access, correct, export or delete your information, withdraw marketing permission, restrict or object to processing, or complain to the UK Information Commissioner's Office.</p>
-    <p>Signed-in members can download a copy of their profile, saved services and recorded consent choices, or permanently delete their account, from <strong>Account &amp; email choices</strong>. The master administrator account cannot be deleted through the app. An administrator may delete another member only after two-step authenticator verification; the action is recorded in a private audit log.</p>
-    <p>Email <a href={`mailto:${APP_CONTACT}?subject=Worship%20Word%20Video%20privacy%20request`}>{APP_CONTACT}</a> for an account or privacy request. Identity may need to be verified before account information is disclosed or deleted.</p>
+    <p>Browser data remains until you clear it. Anonymous usage events expire after 13 months. The public app no longer offers account registration or cloud playlists; any legacy account record is not used by the public planner and can be deleted on request. You may ask to access, correct or delete information about you, restrict or object to processing, or complain to the UK Information Commissioner's Office.</p>
+    <p>Email <a href={`mailto:${APP_CONTACT}?subject=Worship%20Word%20Video%20privacy%20request`}>{APP_CONTACT}</a> for a privacy or legacy-account request. Identity may need to be verified before personal information is disclosed or deleted.</p>
     <div className="legal-links">
       <a href="https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-be-informed/" target="_blank" rel="noreferrer">ICO privacy guidance <ExternalLink size={12} /></a>
       <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google privacy notice <ExternalLink size={12} /></a>
@@ -134,9 +129,9 @@ function PrivacySection() {
 function CharitySection() {
   return <article className="legal-copy">
     <h3>Charity donation statement</h3>
-    <p>Worship Word Video is currently provided without charge. Donations are entirely optional and do not unlock features, improve search placement or affect account access.</p>
+    <p>Worship Word Video is provided without charge. Donations are entirely optional and do not unlock features or improve search placement.</p>
     <p>The donation link goes to <strong>Kairos Housing, registered charity 1198820</strong>, using its internal donation page at <strong>operations.kairoshousing.org.uk/donate</strong>. Worship Word Video does not collect card or bank details and does not process the payment; the donation system's terms, privacy practices, fees and Gift Aid arrangements apply.</p>
-    <p>Guests may see one optional donation invitation per browser visit, but only after they have had time to use and interact with the finder. Closing it sets a session-only browser flag so it does not reopen during that visit. Signed-in users are not shown the automatic invitation.</p>
+    <p>The app does not open an automatic donation prompt. A single, quiet link in the footer lets people choose whether to learn about supporting Kairos Housing.</p>
     <p>Kairos Housing being the donation beneficiary does not, by itself, mean that Kairos Housing owns, publishes, endorses or accepts responsibility for every catalogue entry or third-party video in this app.</p>
     <p>Before donating, check that the destination page names Kairos Housing and uses the expected secure address. Kairos Housing’s work is guided by the commitment <strong>Rebuilding lives with dignity</strong>. Donation questions should be directed through the charity's official website.</p>
     <div className="legal-links">

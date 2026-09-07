@@ -1,8 +1,6 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { AuthProvider, CURRENT_TERMS_VERSION, useAuth } from './context/AuthContext';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Header } from './components/Header';
 import { LegalModal } from './components/LegalModal';
-import { VersionRefreshButton } from './components/VersionRefreshButton';
 import {
   getActiveServiceId,
   getWorshipQueue,
@@ -12,350 +10,172 @@ import {
   worshipQueueItem,
   type WorshipQueueItem,
 } from './data/worshipQueue';
+import {
+  loadSavedServices,
+  upsertSavedService,
+  type SavedService,
+} from './data/localServices';
 import type { WorshipSong } from './data/worshipSongs';
-import { Sparkles } from 'lucide-react';
 import './App.css';
 import { ProjectionScreen } from './components/ProjectionScreen';
 import { ServiceWorkspaceBar } from './components/ServiceWorkspaceBar';
 import { ProjectionControllerDock } from './components/ProjectionControllerDock';
 import { SeoDiscoverySection } from './components/SeoDiscoverySection';
-import { supabase, supabaseErrorMessage, type SavedUserPlaylist } from './lib/supabase';
-import { accountSetupIsCurrent, accountSetupPromptKey } from './lib/accountSetup';
 import { configureUsageAnalytics, recordUsageEvent } from './lib/usageAnalytics';
-import {
-  openProjectionWindow,
-  publishProjectionState,
-} from './data/projection';
+import { openProjectionWindow, publishProjectionState } from './data/projection';
 import { PUBLIC_CONTACT_EMAIL, contactMailto } from './data/contact';
 
 const SongLibraryDashboard = lazy(() => import('./components/SongLibraryDashboard').then((module) => ({ default: module.SongLibraryDashboard })));
 const WorshipQueue = lazy(() => import('./components/WorshipQueue').then((module) => ({ default: module.WorshipQueue })));
 const SavedPlaylistsModal = lazy(() => import('./components/SavedPlaylistsModal').then((module) => ({ default: module.SavedPlaylistsModal })));
-const DonateModal = lazy(() => import('./components/DonateModal').then((module) => ({ default: module.DonateModal })));
-const AdminDashboard = lazy(() => import('./components/AdminDashboard').then((module) => ({ default: module.AdminDashboard })));
-const AuthModal = lazy(() => import('./components/AuthModal').then((module) => ({ default: module.AuthModal })));
-const AccountModal = lazy(() => import('./components/AccountModal').then((module) => ({ default: module.AccountModal })));
-const DONATION_PROMPT_MINIMUM_DELAY_MS = 75_000;
+
+interface PlanningState {
+  services: SavedService[];
+  activeService: SavedService | null;
+  queue: WorshipQueueItem[];
+}
+
+function currentServices(services = loadSavedServices()): SavedService[] {
+  return services.filter((service) => !service.archived_at);
+}
+
+function restorePlanningState(): PlanningState {
+  const services = currentServices();
+  const activeServiceId = getActiveServiceId();
+  const activeService = activeServiceId ? services.find((service) => service.id === activeServiceId) ?? null : null;
+  if (activeServiceId && !activeService) saveActiveServiceId(null);
+  return {
+    services,
+    activeService,
+    queue: activeService?.items ?? getWorshipQueue(),
+  };
+}
 
 function LoadingPanel({ label = 'Loading Worship Word Video…' }: { label?: string }) {
   return <div className="app-loading" role="status">{label}</div>;
 }
 
 function MainApp() {
-  const {
-    user,
-    session,
-    loading: authLoading,
-    profile,
-    profileLoading,
-    adminRole,
-    adminLoading,
-  } = useAuth();
-  const [activeTab, setActiveTab] = useState<'all' | 'playlist' | 'admin'>('all');
-  const [queue, setQueue] = useState<WorshipQueueItem[]>([]);
-  const [queueOwnerId, setQueueOwnerId] = useState<string | null>(null);
-  const [activeService, setActiveService] = useState<SavedUserPlaylist | null>(null);
-  const [availableServices, setAvailableServices] = useState<SavedUserPlaylist[]>([]);
-  const [serviceLoading, setServiceLoading] = useState(false);
+  const [initialPlanning] = useState(restorePlanningState);
+  const [activeTab, setActiveTab] = useState<'all' | 'playlist'>('all');
+  const [queue, setQueue] = useState<WorshipQueueItem[]>(initialPlanning.queue);
+  const [activeService, setActiveService] = useState<SavedService | null>(initialPlanning.activeService);
+  const [availableServices, setAvailableServices] = useState<SavedService[]>(initialPlanning.services);
   const [serviceSaveState, setServiceSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [pendingPlaylistItem, setPendingPlaylistItem] = useState<WorshipQueueItem | null>(null);
-  const lastCloudItemsRef = useRef('');
   const [toastMessage, setToastMessage] = useState('');
   const [showSavedPlaylistsModal, setShowSavedPlaylistsModal] = useState(false);
   const [serviceModalMode, setServiceModalMode] = useState<'create' | 'manage'>('manage');
-  const [showDonateModal, setShowDonateModal] = useState(false);
-  const [donationDelayElapsed, setDonationDelayElapsed] = useState(false);
-  const [guestHasEngaged, setGuestHasEngaged] = useState(false);
-  const [showLegalModal, setShowLegalModal] = useState(() =>
-    new URLSearchParams(window.location.search).get('legal') === '1'
-  );
-  const [showAccountModal, setShowAccountModal] = useState(false);
-  const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup' | 'recover' | 'new-password' | null>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('reset-password') === '1' || params.get('invite') === '1' ? 'new-password' : null;
-  });
+  const [showLegalModal, setShowLegalModal] = useState(() => new URLSearchParams(window.location.search).get('legal') === '1');
+  const activeServiceRef = useRef(activeService);
+  const savedStateTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (authLoading || adminLoading) return;
-    configureUsageAnalytics({
-      accessToken: session?.access_token ?? null,
-      suppressed: adminRole === 'master_admin',
-    });
+    configureUsageAnalytics({ accessToken: null, suppressed: false });
     recordUsageEvent('visit', 'page');
-  }, [adminLoading, adminRole, authLoading, session?.access_token]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    let active = true;
-    if (!user) {
-      setQueue([]);
-      setQueueOwnerId(null);
-      setActiveService(null);
-      setAvailableServices([]);
-      setServiceLoading(false);
-      setActiveTab('all');
-      setShowSavedPlaylistsModal(false);
-      setShowAccountModal(false);
-      return;
-    }
-
-    const restoreService = async () => {
-      setServiceLoading(true);
-      setQueueOwnerId(null);
-      const localQueue = getWorshipQueue(user.id);
-      const activeServiceId = getActiveServiceId(user.id);
-      if (!supabase) {
-        if (!active) return;
-        setActiveService(null);
-        setAvailableServices([]);
-        setQueue(localQueue);
-        lastCloudItemsRef.current = '';
-        setQueueOwnerId(user.id);
-        setServiceLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('user_playlists')
-        .select('id,user_id,title,items,service_date,notes,archived_at,created_at,updated_at')
-        .eq('user_id', user.id)
-        .is('archived_at', null)
-        .order('updated_at', { ascending: false })
-        .limit(100);
-      if (!active) return;
-      const playlists = error || !data ? [] : data as SavedUserPlaylist[];
-      setAvailableServices(playlists);
-      const restored = activeServiceId ? playlists.find((playlist) => playlist.id === activeServiceId) : null;
-      if (!restored) {
-        saveActiveServiceId(null, user.id);
-        setActiveService(null);
-        setQueue(localQueue);
-        lastCloudItemsRef.current = '';
-      } else {
-        const items = Array.isArray(restored.items) ? restored.items : [];
-        lastCloudItemsRef.current = JSON.stringify(items);
-        setActiveService(restored);
-        setQueue(items);
-      }
-      setQueueOwnerId(user.id);
-      setServiceLoading(false);
-    };
-
-    void restoreService();
-    return () => { active = false; };
-  }, [authLoading, user]);
-
-  useEffect(() => {
-    if (user && queueOwnerId === user.id) saveWorshipQueue(queue, user.id);
-  }, [queue, queueOwnerId, user]);
-
-  useEffect(() => {
-    if (!user || queueOwnerId !== user.id) return;
-    setActiveService((current) => current ? { ...current, items: queue } : current);
-    setAvailableServices((current) => current.map((service) => service.id === activeService?.id ? { ...service, items: queue } : service));
-  }, [activeService?.id, queue, queueOwnerId, user]);
-
-  useEffect(() => {
-    const client = supabase;
-    if (!client || !user || !activeService || queueOwnerId !== user.id) return;
-    const serialisedItems = JSON.stringify(queue);
-    if (serialisedItems === lastCloudItemsRef.current) return;
-    setServiceSaveState('saving');
-    const timer = window.setTimeout(() => {
-      void client
-        .from('user_playlists')
-        .update({ items: queue })
-        .eq('id', activeService.id)
-        .eq('user_id', user.id)
-        .eq('updated_at', activeService.updated_at)
-        .select('updated_at')
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (error || !data) {
-            setServiceSaveState('error');
-            setToastMessage(error
-              ? 'This service could not be saved. Check your connection and try again.'
-              : 'This service was changed in another tab. Reopen it before making more changes.');
-            window.setTimeout(() => setToastMessage(''), 4500);
-            return;
-          }
-          lastCloudItemsRef.current = serialisedItems;
-          setActiveService((current) => current?.id === activeService.id ? { ...current, items: queue, updated_at: data.updated_at } : current);
-          setAvailableServices((current) => current.map((service) => service.id === activeService.id
-            ? { ...service, items: queue, updated_at: data.updated_at }
-            : service));
-          setServiceSaveState('saved');
-          window.setTimeout(() => setServiceSaveState('idle'), 1800);
-        });
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [activeService, queue, queueOwnerId, user]);
-
-  useEffect(() => {
-    if (!user || profileLoading || !profile || accountSetupIsCurrent(profile, CURRENT_TERMS_VERSION) || authModalTab) return;
-    try {
-      // A dismissed reminder stays dismissed on this device for this terms
-      // version. A genuinely new version gets one fresh, non-repeating prompt.
-      if (localStorage.getItem(accountSetupPromptKey(user.id, CURRENT_TERMS_VERSION)) === 'dismissed') return;
-    } catch {
-      // Do not repeatedly interrupt people when durable storage is restricted.
-      return;
-    }
-    setShowAccountModal(true);
-  }, [authModalTab, profile, profileLoading, user]);
-
-  const closeAccountModal = () => {
-    if (user) {
-      try {
-        localStorage.setItem(accountSetupPromptKey(user.id, CURRENT_TERMS_VERSION), 'dismissed');
-      } catch {
-        // Closing account settings must always work.
-      }
-    }
-    setShowAccountModal(false);
-  };
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (user) {
-      setShowDonateModal(false);
-      setDonationDelayElapsed(false);
-      setGuestHasEngaged(false);
-      return;
-    }
-
-    const timer = window.setTimeout(() => setDonationDelayElapsed(true), DONATION_PROMPT_MINIMUM_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [authLoading, user]);
-
-  useEffect(() => {
-    if (authLoading || user || !donationDelayElapsed || !guestHasEngaged) return;
-
-    let cancelled = false;
-    let timer = 0;
-    const promptWasSeen = () => {
-      try {
-        return sessionStorage.getItem('worship_donation_prompt_seen') === 'yes';
-      } catch {
-        return false;
-      }
-    };
-    const openWhenInterfaceIsSettled = () => {
-      if (cancelled || promptWasSeen()) return;
-      if (document.querySelector('[role="dialog"]')) {
-        timer = window.setTimeout(openWhenInterfaceIsSettled, 1500);
-        return;
-      }
-      setShowDonateModal(true);
-    };
-
-    // Ask only after a guest has had time to search or choose a video, and never
-    // stack the optional invitation over an account or service dialog.
-    timer = window.setTimeout(openWhenInterfaceIsSettled, 250);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [authLoading, donationDelayElapsed, guestHasEngaged, user]);
-
-  const recordGuestEngagement = useCallback(() => {
-    setGuestHasEngaged(true);
   }, []);
 
-  const closeDonateModal = () => {
-    try {
-      sessionStorage.setItem('worship_donation_prompt_seen', 'yes');
-    } catch {
-      // Closing the modal must always work, even in strict privacy modes.
-    }
-    setShowDonateModal(false);
+  useEffect(() => {
+    activeServiceRef.current = activeService;
+  }, [activeService]);
+
+  useEffect(() => () => {
+    if (savedStateTimerRef.current) window.clearTimeout(savedStateTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    saveWorshipQueue(queue);
+    const current = activeServiceRef.current;
+    if (!current || JSON.stringify(current.items) === JSON.stringify(queue)) return;
+
+    setServiceSaveState('saving');
+    const updated = { ...current, items: queue, updated_at: new Date().toISOString() };
+    const stored = upsertSavedService(updated);
+    activeServiceRef.current = updated;
+    setActiveService(updated);
+    setAvailableServices(currentServices(stored));
+    setServiceSaveState('saved');
+    if (savedStateTimerRef.current) window.clearTimeout(savedStateTimerRef.current);
+    savedStateTimerRef.current = window.setTimeout(() => setServiceSaveState('idle'), 1_800);
+  }, [queue]);
+
+  const showToast = (message: string, duration = 3_000) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(''), duration);
   };
 
   const handleAddToPlaylist = (song: WorshipSong) => {
-    if (!user) {
-      setAuthModalTab('signup');
-      setToastMessage('Create an account to build, trim and save service playlists.');
-      window.setTimeout(() => setToastMessage(''), 3500);
-      return;
-    }
     if (!song.youtubeId) {
-      alert('This song does not have a video link yet. Please add or link a YouTube video first.');
+      window.alert('This song does not have a video link yet. Please choose a playable YouTube video.');
       return;
     }
 
     const item = worshipQueueItem(song);
     if (!activeService) {
       setPendingPlaylistItem(item);
-      setServiceModalMode('manage');
+      setServiceModalMode(availableServices.length ? 'manage' : 'create');
       setShowSavedPlaylistsModal(true);
-      setToastMessage('Choose a service or create a new one before adding this video.');
-      window.setTimeout(() => setToastMessage(''), 3500);
+      showToast('Choose a saved service or create a new one for this video.');
       return;
     }
-    const nextQueue = addToWorshipQueue(queue, item);
 
+    const nextQueue = addToWorshipQueue(queue, item);
     setQueue(nextQueue);
     if (nextQueue.length > queue.length) recordUsageEvent('playlist_add');
-    setToastMessage(nextQueue.length === queue.length
+    showToast(nextQueue.length === queue.length
       ? `“${song.title}” is already in ${activeService.title}.`
       : `✓ Added “${song.title}” to ${activeService.title}`);
-    setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleActivateService = async (playlist: SavedUserPlaylist) => {
-    if (!user) return;
+  const handleActivateService = async (playlist: SavedService) => {
     let items = Array.isArray(playlist.items) ? playlist.items : [];
     const recoveredItems = activeService ? [] : queue;
     for (const recoveredItem of recoveredItems) items = addToWorshipQueue(items, recoveredItem);
     if (pendingPlaylistItem) items = addToWorshipQueue(items, pendingPlaylistItem);
-    const itemsChanged = JSON.stringify(items) !== JSON.stringify(playlist.items ?? []);
-    if (itemsChanged) {
-      if (!supabase) throw new Error('Cloud services are unavailable. Please refresh and try again.');
-      const { error } = await supabase
-        .from('user_playlists')
-        .update({ items })
-        .eq('id', playlist.id)
-        .eq('user_id', user.id);
-      if (error) throw new Error(supabaseErrorMessage(error, 'The video could not be added to this service.'));
-    }
-    const nextService = { ...playlist, items };
+
+    const nextService = {
+      ...playlist,
+      items,
+      updated_at: JSON.stringify(items) === JSON.stringify(playlist.items) ? playlist.updated_at : new Date().toISOString(),
+    };
+    const stored = upsertSavedService(nextService);
     if (pendingPlaylistItem) recordUsageEvent('playlist_add');
-    lastCloudItemsRef.current = JSON.stringify(items);
+    activeServiceRef.current = nextService;
     setActiveService(nextService);
-    setAvailableServices((current) => [nextService, ...current.filter((service) => service.id !== nextService.id)]);
+    setAvailableServices(currentServices(stored));
     setQueue(items);
-    setQueueOwnerId(user.id);
-    saveActiveServiceId(playlist.id, user.id);
+    saveWorshipQueue(items);
+    saveActiveServiceId(playlist.id);
     setPendingPlaylistItem(null);
     setServiceSaveState('saved');
-    setToastMessage(pendingPlaylistItem
+    showToast(pendingPlaylistItem
       ? `✓ Added “${pendingPlaylistItem.title}” to ${playlist.title}`
       : recoveredItems.length
-        ? `✓ Opened ${playlist.title} and recovered ${recoveredItems.length} unsaved video${recoveredItems.length === 1 ? '' : 's'}`
-      : `✓ ${playlist.title} is now your active service`);
-    window.setTimeout(() => {
-      setToastMessage('');
-      setServiceSaveState('idle');
-    }, 3000);
+        ? `✓ Opened ${playlist.title} and recovered ${recoveredItems.length} video${recoveredItems.length === 1 ? '' : 's'}`
+        : `✓ ${playlist.title} is now your active service`);
   };
 
   const handleServiceDeleted = (serviceId: string) => {
     setAvailableServices((current) => current.filter((service) => service.id !== serviceId));
     if (activeService?.id !== serviceId) return;
+    activeServiceRef.current = null;
     setActiveService(null);
     setQueue([]);
-    lastCloudItemsRef.current = '';
-    saveActiveServiceId(null, user?.id);
+    saveWorshipQueue([]);
+    saveActiveServiceId(null);
   };
 
-  const handleServiceUpsert = (service: SavedUserPlaylist) => {
+  const handleServiceUpsert = (service: SavedService) => {
     if (service.archived_at) return;
     setAvailableServices((current) => [service, ...current.filter((item) => item.id !== service.id)]);
-    if (activeService?.id === service.id) setActiveService(service);
+    if (activeService?.id === service.id) {
+      activeServiceRef.current = service;
+      setActiveService(service);
+    }
   };
 
   const handlePresentSingleVideo = async (song: WorshipSong) => {
-    if (!user || !song.youtubeId) return;
+    if (!song.youtubeId) return;
     const item = worshipQueueItem(song);
     const playbackRevision = Date.now();
     const launchId = `single-${playbackRevision}`;
@@ -375,18 +195,14 @@ function MainApp() {
     url.hash = '';
     const launch = await openProjectionWindow(url);
     if (launch.result === 'blocked') {
-      setToastMessage('Your browser blocked the presentation window. Allow pop-ups for this site, then try again.');
-      window.setTimeout(() => setToastMessage(''), 4000);
+      showToast('Your browser blocked the presentation window. Allow pop-ups for this site, then try again.', 4_000);
       return;
     }
     if (launch.result === 'single-screen') {
-      setToastMessage('Connect a second display and choose Extend, then try Send to screen again.');
-      window.setTimeout(() => setToastMessage(''), 4000);
+      showToast('Connect a second display and choose Extend, then try Send to screen again.', 4_000);
       return;
     }
     recordUsageEvent('projection_open');
-    // Send once more after the receiver is focused so reloads and strict privacy
-    // modes cannot miss the newly selected video.
     publishProjectionState({
       queue: [item],
       playingIndex: 0,
@@ -395,10 +211,9 @@ function MainApp() {
       stopped: false,
       autoAdvance: false,
     });
-    setToastMessage(launch.result === 'placed'
+    showToast(launch.result === 'placed'
       ? `Showing “${song.title}” on the second screen.`
       : `Showing “${song.title}” in the linked church-screen window.`);
-    window.setTimeout(() => setToastMessage(''), 3000);
   };
 
   return (
@@ -409,64 +224,37 @@ function MainApp() {
         onSelectTab={setActiveTab}
         playlistCount={queue.length}
         activeServiceTitle={activeService?.title ?? null}
-        onOpenSavedPlaylists={() => {
-          setServiceModalMode('manage');
-          setShowSavedPlaylistsModal(true);
-        }}
-        onOpenAuth={setAuthModalTab}
-        onOpenAccount={() => setShowAccountModal(true)}
-        onOpenDonate={() => setShowDonateModal(true)}
       />
 
-      {user && <ProjectionControllerDock />}
-      {!authLoading && !user && (
-        <section className="member-value-bar" aria-label="Member account benefits">
-          <div className="member-value-bar__message">
-            <span className="member-value-bar__icon" aria-hidden="true"><Sparkles size={17} /></span>
-            <p><strong>Planning a service?</strong> Save playlists, tidy start and finish points, and use a clean church screen.</p>
-          </div>
-          <div className="member-value-bar__actions">
-            <button type="button" className="member-value-bar__create" onClick={() => setAuthModalTab('signup')}>Create an account</button>
-          </div>
-        </section>
-      )}
+      <ProjectionControllerDock />
 
-      {toastMessage && (
-        <div className="toast-notification" role="status">
-          {toastMessage}
-        </div>
-      )}
+      {toastMessage && <div className="toast-notification" role="status">{toastMessage}</div>}
 
       <main className="app-main" id="main-content">
-        {user && activeTab !== 'admin' && (
-          <ServiceWorkspaceBar
-            services={availableServices}
-            activeService={activeService}
-            loading={serviceLoading}
-            saveState={serviceSaveState}
-            onSelectService={handleActivateService}
-            onCreateService={() => {
-              setPendingPlaylistItem(null);
-              setServiceModalMode('create');
-              setShowSavedPlaylistsModal(true);
-            }}
-            onManageServices={() => {
-              setPendingPlaylistItem(null);
-              setServiceModalMode('manage');
-              setShowSavedPlaylistsModal(true);
-            }}
-          />
-        )}
+        <ServiceWorkspaceBar
+          services={availableServices}
+          activeService={activeService}
+          saveState={serviceSaveState}
+          onSelectService={handleActivateService}
+          onCreateService={() => {
+            setPendingPlaylistItem(null);
+            setServiceModalMode('create');
+            setShowSavedPlaylistsModal(true);
+          }}
+          onManageServices={() => {
+            setPendingPlaylistItem(null);
+            setServiceModalMode('manage');
+            setShowSavedPlaylistsModal(true);
+          }}
+        />
+
         <Suspense fallback={<LoadingPanel />}>
-          {activeTab === 'admin' ? (
-            <AdminDashboard />
-          ) : activeTab === 'playlist' ? (
+          {activeTab === 'playlist' ? (
             <WorshipQueue
               key={activeService?.id ?? 'no-service'}
               queue={queue}
               onChange={setQueue}
               activeService={activeService}
-              serviceLoading={serviceLoading}
               onOpenSavedPlaylists={() => {
                 setServiceModalMode('create');
                 setShowSavedPlaylistsModal(true);
@@ -478,10 +266,8 @@ function MainApp() {
               <SongLibraryDashboard
                 initialFilter="all"
                 onAddToPlaylist={handleAddToPlaylist}
-                playlistEnabled={Boolean(user)}
                 activeServiceTitle={activeService?.title ?? null}
-                onPresentVideo={user ? handlePresentSingleVideo : undefined}
-                onVisitorEngaged={!user ? recordGuestEngagement : undefined}
+                onPresentVideo={handlePresentSingleVideo}
               />
               <SeoDiscoverySection />
             </>
@@ -507,46 +293,26 @@ function MainApp() {
         </Suspense>
       )}
 
-      {authModalTab && (
-        <Suspense fallback={null}>
-          <AuthModal initialTab={authModalTab} onClose={() => setAuthModalTab(null)} />
-        </Suspense>
-      )}
-
-      {showAccountModal && user && (
-        <Suspense fallback={null}>
-          <AccountModal savedServiceCount={availableServices.length} onClose={closeAccountModal} />
-        </Suspense>
-      )}
-
-      {showDonateModal && !user && (
-        <Suspense fallback={null}>
-          <DonateModal onClose={closeDonateModal} />
-        </Suspense>
-      )}
-
-      {showLegalModal && (
-        <LegalModal onClose={() => setShowLegalModal(false)} />
-      )}
+      {showLegalModal && <LegalModal onClose={() => setShowLegalModal(false)} />}
 
       <footer className="app-footer">
         <div className="app-footer__container">
-          <p>© {new Date().getFullYear()} Worship Word Video (<a href="https://worshipwordvideo.org" target="_blank" rel="noreferrer">worshipwordvideo.org</a>) — UK Hymn & Worship Lyric Video Finder for Churches.</p>
-          <p className="app-footer__sub">The catalogue is currently available without charge. Videos are provided by YouTube and remain subject to YouTube's own terms.</p>
+          <p>© {new Date().getFullYear()} Worship Word Video (<a href="https://worshipwordvideo.org" target="_blank" rel="noreferrer">worshipwordvideo.org</a>) — UK Hymn &amp; Worship Lyric Video Finder for Churches.</p>
+          <p className="app-footer__sub">The catalogue is available without charge. Videos are provided by YouTube and remain subject to YouTube's own terms.</p>
+          <p className="app-footer__kairos">Optional charity support: <a href="https://operations.kairoshousing.org.uk/donate" target="_blank" rel="noreferrer">Kairos Housing — Rebuilding lives with dignity</a></p>
           <div className="app-footer__legal-links">
             <a href="/videos/">Featured videos</a>
             <a href="/languages/">Languages</a>
-            <a href="/formats/">Lyrics & subtitles</a>
+            <a href="/formats/">Lyrics &amp; subtitles</a>
             <a href="/songs/">Songs across languages</a>
             <a href="/seasons/">Church seasons</a>
             <a href="/arrangements/">Worship styles</a>
             <a href="/guides/">Church guides</a>
-            <a href="/about/">About & catalogue method</a>
+            <a href="/about/">About &amp; catalogue method</a>
             <a href={contactMailto('enquiry')}>Contact: {PUBLIC_CONTACT_EMAIL}</a>
-            <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy & Copyright</button>
+            <button type="button" onClick={() => setShowLegalModal(true)}>Terms, Privacy &amp; Copyright</button>
             <a href={contactMailto('content report')}>Report a content concern</a>
           </div>
-          {adminRole === 'master_admin' && <VersionRefreshButton />}
         </div>
       </footer>
     </div>
@@ -555,11 +321,7 @@ function MainApp() {
 
 export function App() {
   if (new URLSearchParams(window.location.search).get('projection') === '1') return <ProjectionScreen />;
-  return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
-  );
+  return <MainApp />;
 }
 
 export default App;
